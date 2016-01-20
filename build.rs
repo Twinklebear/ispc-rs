@@ -1,12 +1,18 @@
+use std::path::Path;
 use std::process::Command;
 use std::env;
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
+    let debug = env::var("DEBUG").unwrap();
 
+    let mut ispc_args = vec!["src/say_hello.ispc", "--pic"];
+    if debug == "true" {
+        ispc_args.push("-g");
+    }
     // Invoke ISPC to compile our code
-    let ispc_status = Command::new("ispc").args(&["src/say_hello.ispc", "--pic", "-o"])
-        .arg(&format!("{}/say_hello.o", out_dir))
+    let ispc_status = Command::new("ispc").args(&ispc_args[..])
+        .args(&["-o", &format!("{}/say_hello.o", out_dir)])
         .status().unwrap();
     if !ispc_status.success() {
         panic!("ISPC compilation failed");
