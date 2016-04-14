@@ -1,18 +1,14 @@
-mod ispc {
-    mod raw {
-        #[link(name="say_hello", kind="static")]
-        extern {
-            pub fn say_hello();
-        }
-    }
 
-    pub fn say_hello() {
-        unsafe { raw::say_hello(); };
-    }
+#[allow(dead_code, non_camel_case_types)]
+mod ispc {
+    include!(concat!(env!("OUT_DIR"), "/say_hello.rs"));
 }
 
 fn main() {
-    ispc::say_hello();
+    unsafe {
+        ispc::say_hello();
+        println!("Result from ispc: {}", ispc::add_nums(1, 2));
+    }
     println!("Hello from Rust!");
 }
 
