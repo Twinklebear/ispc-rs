@@ -25,5 +25,6 @@ fn main() {
         panic!("Linking ISPC code into archive failed");
     }
     println!("cargo:rustc-flags=-L native={}", out_dir);
+    println!("cargo:rerun-if-changed=src/say_hello.ispc");
 }
 
