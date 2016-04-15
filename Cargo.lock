@@ -3,6 +3,7 @@ name = "rust_ispc"
 version = "0.0.1"
 dependencies = [
  "bindgen 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gcc 0.3.27 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -18,6 +19,11 @@ dependencies = [
 [[package]]
 name = "bitflags"
 version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "gcc"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]

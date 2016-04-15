@@ -1,8 +1,40 @@
 extern crate bindgen;
+extern crate gcc;
 
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, ExitStatus};
 use std::env;
+
+/// Link the ISPC code into a static library on Unix using `ar`
+#[cfg(unix)]
+fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
+    // TODO: should push into a struct
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let mut args = Vec::with_capacity(2 + objs.len());
+    args.push(String::from("crus"));
+    args.push(lib_name.to_string());
+    for o in objs {
+        args.push(o.clone());
+    }
+    Command::new("ar").args(&args[..])
+        .current_dir(&Path::new(&out_dir))
+        .status().unwrap()
+}
+/// Link the ISPC code into a static library on Windows using `lib.exe`
+#[cfg(windows)]
+fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let mut lib_cmd = gcc::windows_registry::find_tool(lib_name, "lib.exe")
+        .expect("Failed to find link.exe for MSVC toolchain, aborting");
+    let mut args = Vec::with_capacity(1 + objs.len());
+    args.push(String::from("/OUT:").push_str(lib_name));
+    for o in objs {
+        args.push(o);
+    }
+    lib_cmd.args(&args[..])
+        .current_dir(&Path::new(&out_dir))
+        .status().unwrap()
+}
 
 fn main() {
     println!("cargo:rerun-if-changed=src/say_hello.ispc");
@@ -35,10 +67,7 @@ fn main() {
     }
 
     // Place our code into a static library we can link against
-    let link_status = Command::new("ar").args(&["crus", "libsay_hello.a", "say_hello.o"])
-        .current_dir(&Path::new(&out_dir))
-        .status().unwrap();
-    if !link_status.success() {
+    if !link_ispc("libsay_hello.a", &vec![String::from("say_hello.o")]).success() {
         panic!("Linking ISPC code into archive failed");
     }
     println!("cargo:rustc-flags=-L native={}", out_dir);
