@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate ispc;
 
-ispc_module!(say_hello, [say_hello]);
+ispc_module!(say_hello);
 
 fn main() {
     unsafe {

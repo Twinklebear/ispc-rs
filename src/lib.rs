@@ -4,28 +4,19 @@ extern crate bindgen;
 extern crate gcc;
 
 use std::path::{Path, PathBuf};
+use std::fs::File;
+use std::io::Write;
 use std::process::{Command, ExitStatus};
 use std::env;
-
-#[macro_export]
-macro_rules! ispc_file_bindings {
-    ($file:ident) => (
-        include!(concat!(env!("OUT_DIR"), "/", stringify!($file), ".rs"));
-    );
-    ($file:ident, $($rest:ident)*) => (
-        include!(concat!(env!("OUT_DIR"), "/", stringify!($file), ".rs"));
-        ispc_file_bindings!($($rest)*);
-    );
-}
 
 // Convenience macro for generating the module to hold the raw/unsafe ISPC bindings
 // Pulls in the generated bindings for the ispc file 
 #[macro_export]
 macro_rules! ispc_module {
-    ($lib:ident, [ $($files:ident)* ] ) => (
+    ($lib:ident) => (
         #[allow(dead_code, non_camel_case_types)]
         mod $lib {
-            ispc_file_bindings!($($files)*);
+            include!(concat!(env!("OUT_DIR"), "/", stringify!($lib), ".rs"));
         }
     )
 }
@@ -57,7 +48,7 @@ pub fn compile_ispc(srcs: &Vec<PathBuf>) -> bool {
     if cfg!(unix) {
         ispc_args.push("--pic");
     }
-
+    let mut headers = Vec::with_capacity(srcs.len());
     for s in srcs {
         let fname = s.file_stem().expect("ISPC source files must be files")
             .to_str().expect("ISPC source file names must be valid UTF-8");
@@ -67,9 +58,16 @@ pub fn compile_ispc(srcs: &Vec<PathBuf>) -> bool {
             .args(&["-o", &format!("{}/{}.o", out_dir, fname)])
             .args(&["-h", &format!("{}/{}.h", out_dir, fname)])
             .status().unwrap();
+        headers.push(fname);
         if !status.success() {
             return false;
         }
+    }
+    // Generate a single header that includes everything that we can pass to bindgen
+    // TODO: This global header name should be based on the libname to avoid conflicts
+    let mut include_file = File::create(out_dir + "/ispc_header.h").unwrap();
+    for h in headers {
+        write!(include_file, "#include \"{}.h\"\n", h).unwrap();
     }
     true
 }
@@ -108,18 +106,14 @@ pub fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
 // Generate Rust bindings for each ISPC file we compiled into the library
 pub fn generate_bindings(lib_name: &str, srcs: &Vec<PathBuf>) -> bool {
     let out_dir = env::var("OUT_DIR").unwrap();
-    for s in srcs {
-        let fname = s.file_stem().expect("ISPC source files must be files")
-            .to_str().expect("ISPC source file names must be valid UTF-8");
-        let mut bindings = bindgen::builder();
-        bindings.forbid_unknown_types()
-            .header(format!("{}/{}.h", out_dir, fname))
-            .link_static(lib_name);
-        match bindings.generate() {
-            Ok(b) => b.write_to_file(Path::new(&format!("{}/{}.rs", out_dir, fname))).unwrap(),
-            Err(_) => return false,
-        };
-    }
+    let mut bindings = bindgen::builder();
+    bindings.forbid_unknown_types()
+        .header(format!("{}/ispc_header.h", out_dir))
+        .link_static(lib_name);
+    match bindings.generate() {
+        Ok(b) => b.write_to_file(Path::new(&format!("{}/{}.rs", out_dir, lib_name))).unwrap(),
+        Err(_) => return false,
+    };
     true
 }
 

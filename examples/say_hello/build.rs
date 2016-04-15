@@ -9,7 +9,7 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
 
     // Invoke ISPC to compile our code
-    let ispc_files = vec![PathBuf::from("src/say_hello.ispc")];
+    let ispc_files = vec![PathBuf::from("src/say_hello.ispc"), PathBuf::from("src/add_nums.ispc")];
     let ispc_status = ispc::compile_ispc(&ispc_files);
     if !ispc_status {
         panic!("ISPC compilation failed");
@@ -18,13 +18,16 @@ fn main() {
     // Place our code into a static library we can link against
     // TODO: This state should be tracked internally, user shouldn't know or care
     // where we put the objs
-    let objs = vec![format!("{}/say_hello.o", out_dir).to_string()];
+    let objs = vec![format!("{}/say_hello.o", out_dir).to_string(),
+        format!("{}/add_nums.o", out_dir).to_string()];
     if !ispc::link_ispc("say_hello", &objs).success() {
         panic!("Linking ISPC code into archive failed");
     }
     println!("cargo:rustc-flags=-L native={}", out_dir);
 
     // Generate Rust bindings for the header
-    ispc::generate_bindings("say_hello", &ispc_files);
+    if !ispc::generate_bindings("say_hello", &ispc_files) {
+        panic!("Failed to generate bindings");
+    }
 }
 
