@@ -73,7 +73,6 @@ fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
     let mut args = Vec::with_capacity(2 + objs.len());
     println!("Linker command = {:?}", lib_cmd.path());
     args.push(String::from("/OUT:") + lib_name + ".lib");
-    args.push(String::from("/MACHINE:x64"));
     for o in objs {
         args.push(o.clone());
     }
