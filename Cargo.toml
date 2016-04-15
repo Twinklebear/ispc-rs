@@ -1,11 +1,11 @@
 [package]
 
-name = "rust_ispc"
+name = "ispc"
 version = "0.0.1"
 authors = ["Will Usher <willusher.life@gmail.com>"]
-build = "build.rs"
+license = "MIT"
 
-[build-dependencies]
+[dependencies]
 bindgen = "0.16.0"
 gcc = "0.3"
 

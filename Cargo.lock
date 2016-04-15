@@ -1,5 +1,5 @@
 [root]
-name = "rust_ispc"
+name = "ispc"
 version = "0.0.1"
 dependencies = [
  "bindgen 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -1,0 +1,13 @@
+[package]
+
+name = "rust_ispc"
+version = "0.0.1"
+authors = ["Will Usher <willusher.life@gmail.com>"]
+build = "build.rs"
+
+[dependencies]
+ispc = { path = "../../" }
+
+[build-dependencies]
+ispc = { path = "../../" }
+

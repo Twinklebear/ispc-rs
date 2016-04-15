@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 extern crate bindgen;
 extern crate gcc;
 
@@ -5,11 +7,34 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 use std::env;
 
+#[macro_export]
+macro_rules! ispc_file_bindings {
+    ($file:ident) => (
+        include!(concat!(env!("OUT_DIR"), "/", stringify!($file), ".rs"));
+    );
+    ($file:ident, $($rest:ident)*) => (
+        include!(concat!(env!("OUT_DIR"), "/", stringify!($file), ".rs"));
+        ispc_file_bindings!($($rest)*);
+    );
+}
+
+// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings
+// Pulls in the generated bindings for the ispc file 
+#[macro_export]
+macro_rules! ispc_module {
+    ($lib:ident, [ $($files:ident)* ] ) => (
+        #[allow(dead_code, non_camel_case_types)]
+        mod $lib {
+            ispc_file_bindings!($($files)*);
+        }
+    )
+}
+
 /// Use the ISPC compiler to compile all ISPC files into object files on Linux
 /// Returns true if all ISPC files compiled, or false immediately after one fails to compile
 /// Object files will be written to $OUT_DIR/<file_name>.o and headers to
 /// $OUT_DIR/<file_name>.h
-fn compile_ispc(srcs: &Vec<PathBuf>) -> bool {
+pub fn compile_ispc(srcs: &Vec<PathBuf>) -> bool {
     // TODO: again should push into a struct that keeps this state
     let out_dir = env::var("OUT_DIR").unwrap();
     let debug = env::var("DEBUG").unwrap();
@@ -34,7 +59,7 @@ fn compile_ispc(srcs: &Vec<PathBuf>) -> bool {
     }
 
     for s in srcs {
-        let fname = s.file_name().expect("ISPC source files must be files")
+        let fname = s.file_stem().expect("ISPC source files must be files")
             .to_str().expect("ISPC source file names must be valid UTF-8");
 
         let status = Command::new("ispc").args(&ispc_args[..])
@@ -50,7 +75,7 @@ fn compile_ispc(srcs: &Vec<PathBuf>) -> bool {
 }
 /// Link the ISPC code into a static library on Unix using `ar`
 #[cfg(unix)]
-fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
+pub fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
     // TODO: should push into a struct
     let out_dir = env::var("OUT_DIR").unwrap();
     let mut args = Vec::with_capacity(2 + objs.len());
@@ -65,7 +90,7 @@ fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
 }
 /// Link the ISPC code into a static library on Windows using `lib.exe`
 #[cfg(windows)]
-fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
+pub fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
     let out_dir = env::var("OUT_DIR").unwrap();
     let target = env::var("TARGET").unwrap();
     let lib_cmd = gcc::windows_registry::find_tool(&target[..], "lib.exe")
@@ -81,10 +106,10 @@ fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
         .status().unwrap()
 }
 // Generate Rust bindings for each ISPC file we compiled into the library
-fn generate_bindings(lib_name: &str, srcs: &Vec<PathBuf>) -> bool {
+pub fn generate_bindings(lib_name: &str, srcs: &Vec<PathBuf>) -> bool {
     let out_dir = env::var("OUT_DIR").unwrap();
     for s in srcs {
-        let fname = s.file_name().expect("ISPC source files must be files")
+        let fname = s.file_stem().expect("ISPC source files must be files")
             .to_str().expect("ISPC source file names must be valid UTF-8");
         let mut bindings = bindgen::builder();
         bindings.forbid_unknown_types()
@@ -96,27 +121,5 @@ fn generate_bindings(lib_name: &str, srcs: &Vec<PathBuf>) -> bool {
         };
     }
     true
-}
-
-fn main() {
-    println!("cargo:rerun-if-changed=src/say_hello.ispc");
-
-    let out_dir = env::var("OUT_DIR").unwrap();
-
-    // Invoke ISPC to compile our code
-    let ispc_files = vec![PathBuf::from("src/say_hello.ispc")];
-    let ispc_status = compile_ispc(&ispc_files);
-    if !ispc_status {
-        panic!("ISPC compilation failed");
-    }
-
-    // Place our code into a static library we can link against
-    if !link_ispc("say_hello", &vec![String::from("say_hello.o")]).success() {
-        panic!("Linking ISPC code into archive failed");
-    }
-    println!("cargo:rustc-flags=-L native={}", out_dir);
-
-    // Generate Rust bindings for the header
-    generate_bindings("say_hello", &ispc_files);
 }
 
