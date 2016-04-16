@@ -18,6 +18,7 @@ fn main() {
     // Place our code into a static library we can link against
     // TODO: This state should be tracked internally, user shouldn't know or care
     // where we put the objs
+    // TODO: On windows with multiple ISPC files we get linker errors
     let objs = vec![format!("{}/say_hello.o", out_dir).to_string(),
         format!("{}/add_nums.o", out_dir).to_string()];
     if !ispc::link_ispc("say_hello", &objs).success() {

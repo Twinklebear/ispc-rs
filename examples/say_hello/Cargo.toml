@@ -1,6 +1,6 @@
 [package]
 
-name = "rust_ispc"
+name = "simple_example"
 version = "0.0.1"
 authors = ["Will Usher <willusher.life@gmail.com>"]
 build = "build.rs"
