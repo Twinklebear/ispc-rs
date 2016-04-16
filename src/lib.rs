@@ -10,7 +10,7 @@ use std::process::{Command, ExitStatus};
 use std::env;
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings
-/// Pulls in the generated bindings for the ispc file 
+/// Pulls in the generated bindings for the ispc file
 #[macro_export]
 macro_rules! ispc_module {
     ($lib:ident) => (
@@ -129,7 +129,7 @@ impl Config {
     #[cfg(windows)]
     fn assemble(&self, lib: &str) -> ExitStatus {
         let target = self.get_target();
-        let lib_cmd = gcc::windows_registry::find_tool(&target[..], "lib.exe")
+        let mut lib_cmd = gcc::windows_registry::find_tool(&target[..], "lib.exe")
             .expect("Failed to find lib.exe for MSVC toolchain, aborting")
             .to_command();
         lib_cmd.arg(format!("/OUT:{}.lib", lib))
