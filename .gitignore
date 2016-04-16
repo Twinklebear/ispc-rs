@@ -1,4 +1,5 @@
 target
 *.swp
 Cargo.lock
+*.png
 
