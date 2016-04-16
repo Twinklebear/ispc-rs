@@ -1,34 +1,13 @@
 extern crate ispc;
 
-use std::path::PathBuf;
-use std::env;
-
 fn main() {
-    println!("cargo:rerun-if-changed=src/say_hello.ispc");
-
-    let out_dir = env::var("OUT_DIR").unwrap();
-
-    // Invoke ISPC to compile our code
-    let ispc_files = vec![PathBuf::from("src/say_hello.ispc"), PathBuf::from("src/add_nums.ispc")];
-    let ispc_status = ispc::compile_ispc(&ispc_files);
-    if !ispc_status {
-        panic!("ISPC compilation failed");
+    // Only re-run the build script if the ISPC files have been changed 
+    let ispc_files = vec!["src/say_hello.ispc", "src/add_nums.ispc"];
+    for s in &ispc_files[..] {
+        println!("cargo:rerun-if-changed={}", s);
     }
-
-    // Place our code into a static library we can link against
-    // TODO: This state should be tracked internally, user shouldn't know or care
-    // where we put the objs
-    // TODO: On windows with multiple ISPC files we get linker errors
-    let objs = vec![format!("{}/say_hello.o", out_dir).to_string(),
-        format!("{}/add_nums.o", out_dir).to_string()];
-    if !ispc::link_ispc("say_hello", &objs).success() {
-        panic!("Linking ISPC code into archive failed");
-    }
-    println!("cargo:rustc-flags=-L native={}", out_dir);
-
-    // Generate Rust bindings for the header
-    if !ispc::generate_bindings("say_hello", &ispc_files) {
-        panic!("Failed to generate bindings");
+    if !ispc::compile_library("say_hello", &ispc_files[..]) {
+        panic!("Failed to compile ISPC library say hello");
     }
 }
 

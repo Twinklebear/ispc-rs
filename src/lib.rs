@@ -9,8 +9,8 @@ use std::io::Write;
 use std::process::{Command, ExitStatus};
 use std::env;
 
-// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings
-// Pulls in the generated bindings for the ispc file 
+/// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings
+/// Pulls in the generated bindings for the ispc file 
 #[macro_export]
 macro_rules! ispc_module {
     ($lib:ident) => (
@@ -21,99 +21,188 @@ macro_rules! ispc_module {
     )
 }
 
-/// Use the ISPC compiler to compile all ISPC files into object files on Linux
-/// Returns true if all ISPC files compiled, or false immediately after one fails to compile
-/// Object files will be written to $OUT_DIR/<file_name>.o and headers to
-/// $OUT_DIR/<file_name>.h
-pub fn compile_ispc(srcs: &Vec<PathBuf>) -> bool {
-    // TODO: again should push into a struct that keeps this state
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let debug = env::var("DEBUG").unwrap();
-    let opt_level = env::var("OPT_LEVEL").unwrap();
+/// Compile the list of ISPC files into a static library and generate bindings for
+/// the library using bindgen. Returns true if compilation and binding generation
+/// succeeded, will panic or return false depending on what operations failed,
+/// if compilation fails a build script would likely want to panic to show the
+/// compilation errors
+pub fn compile_library(lib: &str, files: &[&str]) -> bool {
+    let mut cfg = Config::new();
+    for f in &files[..] {
+        cfg.file(*f);
+    }
+    cfg.compile(lib)
+}
 
-    let mut ispc_args = Vec::new();
-    if debug == "true" {
-        ispc_args.push("-g");
-    }
-    if opt_level == "0" {
-        ispc_args.push("-O0");
-    } else if opt_level == "1" {
-        ispc_args.push("-O1");
-    } else if opt_level == "2" {
-        ispc_args.push("-O2");
-    } else if opt_level == "3" {
-        ispc_args.push("-O3");
-    }
-    // If we're on Unix we need position independent code
-    if cfg!(unix) {
-        ispc_args.push("--pic");
-    }
-    let mut headers = Vec::with_capacity(srcs.len());
-    for s in srcs {
-        let fname = s.file_stem().expect("ISPC source files must be files")
-            .to_str().expect("ISPC source file names must be valid UTF-8");
+/// Extra configuration to be passed to ISPC
+pub struct Config {
+    ispc_files: Vec<PathBuf>,
+    objects: Vec<PathBuf>,
+    headers: Vec<PathBuf>,
+    include_directories: Vec<PathBuf>,
+    // We need to generate a single header so we have one header to give bindgen
+    bindgen_header: PathBuf,
+    // These options are set from the environment if not set by the user
+    out_dir: Option<PathBuf>,
+    debug: Option<bool>,
+    opt_level: Option<u32>,
+    target: Option<String>,
+    cargo_metadata: bool,
+}
 
-        let status = Command::new("ispc").args(&ispc_args[..])
-            .arg(s)
-            .args(&["-o", &format!("{}/{}.o", out_dir, fname)])
-            .args(&["-h", &format!("{}/{}.h", out_dir, fname)])
-            .status().unwrap();
-        headers.push(fname);
-        if !status.success() {
-            return false;
+impl Config {
+    pub fn new() -> Config {
+        Config {
+            ispc_files: Vec::new(),
+            objects: Vec::new(),
+            headers: Vec::new(),
+            include_directories: Vec::new(),
+            bindgen_header: PathBuf::new(),
+            out_dir: None,
+            debug: None,
+            opt_level: None,
+            target: None,
+            cargo_metadata: true,
         }
     }
-    // Generate a single header that includes everything that we can pass to bindgen
-    // TODO: This global header name should be based on the libname to avoid conflicts
-    let mut include_file = File::create(out_dir + "/ispc_header.h").unwrap();
-    for h in headers {
-        write!(include_file, "#include \"{}.h\"\n", h).unwrap();
+    /// Add an ISPC file to be compiled
+    pub fn file<P: AsRef<Path>>(&mut self, p: P) -> &mut Config {
+        self.ispc_files.push(p.as_ref().to_path_buf());
+        self
     }
-    true
-}
-/// Link the ISPC code into a static library on Unix using `ar`
-#[cfg(unix)]
-pub fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
-    // TODO: should push into a struct
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let mut args = Vec::with_capacity(2 + objs.len());
-    args.push(String::from("crus"));
-    args.push(String::from("lib") + lib_name + ".a");
-    for o in objs {
-        args.push(o.clone());
+    /// Run the compiler, producing the library `lib`. Returns false
+    /// if compilation fails, in a build script to see ISPC compilation
+    /// errors the caller should panic in this case as they'll be logged to stderr
+    ///
+    /// The library name should not have any prefix or suffix, e.g. instead of
+    /// `libexample.a` or `example.lib` simple pass `example`
+    pub fn compile(&mut self, lib: &str) -> bool {
+        let dst = self.get_out_dir();
+        println!("dst = {}", dst.display());
+        let default_args = self.default_args();
+        for s in &self.ispc_files[..] {
+            let fname = s.file_stem().expect("ISPC source files must be files")
+                .to_str().expect("ISPC source file names must be valid UTF-8");
+
+            let ispc_fname = String::from(fname) + "_ispc";
+            let object = dst.join(ispc_fname.clone()).with_extension("o");
+            let header = dst.join(ispc_fname).with_extension("h");
+            let status = Command::new("ispc").args(&default_args[..])
+                .arg(s).arg("-o").arg(&object).arg("-h").arg(&header)
+                .status().unwrap();
+
+            if !status.success() {
+                return false;
+            }
+            self.objects.push(object);
+            self.headers.push(header);
+        }
+        if !self.assemble(lib).success() {
+            return false;
+        }
+        // Now generate a header we can give to bindgen and generate bindings
+        self.generate_bindgen_header(lib);
+        let mut bindings = bindgen::builder();
+        bindings.forbid_unknown_types()
+            .header(self.bindgen_header.to_str().unwrap())
+            .link_static(lib);
+        let bindgen_file = dst.join(lib).with_extension("rs");
+        match bindings.generate() {
+            Ok(b) => b.write_to_file(bindgen_file).unwrap(),
+            Err(_) => return false,
+        };
+        // Tell cargo where to find the library we just built if we're running
+        // in a build script
+        self.print(&format!("cargo:rustc-link-search=native={}", dst.display()));
+        true
     }
-    Command::new("ar").args(&args[..])
-        .current_dir(&Path::new(&out_dir))
-        .status().unwrap()
-}
-/// Link the ISPC code into a static library on Windows using `lib.exe`
-#[cfg(windows)]
-pub fn link_ispc(lib_name: &str, objs: &Vec<String>) -> ExitStatus {
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let target = env::var("TARGET").unwrap();
-    let lib_cmd = gcc::windows_registry::find_tool(&target[..], "lib.exe")
-        .expect("Failed to find lib.exe for MSVC toolchain, aborting");
-    let mut args = Vec::with_capacity(2 + objs.len());
-    println!("Linker command = {:?}", lib_cmd.path());
-    args.push(String::from("/OUT:") + lib_name + ".lib");
-    for o in objs {
-        args.push(o.clone());
+    /// Link the ISPC code into a static library on Unix using `ar`
+    #[cfg(unix)]
+    fn assemble(&self, lib: &str) -> ExitStatus {
+        Command::new("ar").arg("crus")
+            .arg(format!("lib{}.a", lib))
+            .args(&self.objects[..])
+            .current_dir(&self.get_out_dir())
+            .status().unwrap()
     }
-    lib_cmd.to_command().args(&args[..])
-        .current_dir(&Path::new(&out_dir))
-        .status().unwrap()
-}
-// Generate Rust bindings for each ISPC file we compiled into the library
-pub fn generate_bindings(lib_name: &str, srcs: &Vec<PathBuf>) -> bool {
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let mut bindings = bindgen::builder();
-    bindings.forbid_unknown_types()
-        .header(format!("{}/ispc_header.h", out_dir))
-        .link_static(lib_name);
-    match bindings.generate() {
-        Ok(b) => b.write_to_file(Path::new(&format!("{}/{}.rs", out_dir, lib_name))).unwrap(),
-        Err(_) => return false,
-    };
-    true
+    /// Link the ISPC code into a static library on Windows using `lib.exe`
+    #[cfg(windows)]
+    fn assemble(&self, lib: &str) -> ExitStatus {
+        let target = self.get_target();
+        let lib_cmd = gcc::windows_registry::find_tool(&target[..], "lib.exe")
+            .expect("Failed to find lib.exe for MSVC toolchain, aborting")
+            .to_command();
+        lib_cmd.arg(format!("/OUT:{}.lib", lib))
+            .args(&self.objects[..])
+            .current_dir(&self.get_out_dir())
+            .status().unwrap()
+    }
+    /// Generate a single header that includes all of our ISPC headers which we can
+    /// pass to bindgen
+    fn generate_bindgen_header(&mut self, lib: &str) {
+        self.bindgen_header = self.get_out_dir().join(format!("_{}_ispc_bindgen_header.h", lib));
+        let mut include_file = File::create(&self.bindgen_header).unwrap();
+        for h in &self.headers[..] {
+            write!(include_file, "#include \"{}\"\n", h.display()).unwrap();
+        }
+    }
+    /// Build up list of basic args for each target, debug, opt level, etc.
+    fn default_args(&self) -> Vec<String> {
+        let mut ispc_args = Vec::new();
+        if self.get_debug() {
+            ispc_args.push(String::from("-g"));
+        }
+        let opt_level = self.get_opt_level();
+        if opt_level == 0 {
+            ispc_args.push(String::from("-O0"));
+        } else if opt_level == 1 {
+            ispc_args.push(String::from("-O1"));
+        } else if opt_level == 2 {
+            ispc_args.push(String::from("-O2"));
+        } else if opt_level == 3 {
+            ispc_args.push(String::from("-O3"));
+        }
+        // If we're on Unix we need position independent code
+        if cfg!(unix) {
+            ispc_args.push(String::from("--pic"));
+        }
+        ispc_args
+    }
+    /// Returns the user-set output directory if they've set one, otherwise
+    /// returns env("OUT_DIR")
+    fn get_out_dir(&self) -> PathBuf {
+        self.out_dir.clone().unwrap_or_else(|| {
+            // TODO: The */out part is incorrectly interpreted as the file name so append a /
+            env::var_os("OUT_DIR").map(PathBuf::from).unwrap()
+        })
+    }
+    /// Returns the user-set debug flag if they've set one, otherwise returns
+    /// env("DEBUG")
+    fn get_debug(&self) -> bool {
+        self.debug.unwrap_or_else(|| {
+            env::var("DEBUG").map(|x| x == "true").unwrap()
+        })
+    }
+    /// Returns the user-set optimization level if they've set one, otherwise
+    /// returns env("OPT_LEVEL")
+    fn get_opt_level(&self) -> u32 {
+        self.opt_level.unwrap_or_else(|| {
+            let opt = env::var("OPT_LEVEL").unwrap();
+            opt.parse::<u32>().unwrap()
+        })
+    }
+    /// Returns the user-set target triple if they're set one, otherwise
+    /// returns env("TARGET")
+    fn get_target(&self) -> String {
+        self.target.clone().unwrap_or_else(|| {
+            env::var("TARGET").unwrap()
+        })
+    }
+    /// Print out cargo metadata if enabled
+    fn print(&self, s: &str) {
+        if self.cargo_metadata {
+            println!("{}", s);
+        }
+    }
 }
 
