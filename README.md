@@ -5,7 +5,7 @@ integrating [ISPC](https://ispc.github.io/) code into Rust projects.
 
 ## Documentation
 
-Rust doc can be found [here](www.willusher.io/ispc-rs/ispc)
+Rust doc can be found [here](http://www.willusher.io/ispc-rs/ispc)
 
 ## Compile-time Requirements
 
