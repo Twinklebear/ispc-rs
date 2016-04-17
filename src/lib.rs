@@ -80,8 +80,21 @@ use std::io::Write;
 use std::process::{Command, ExitStatus};
 use std::env;
 
-/// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings
-/// Pulls in the generated bindings for the ispc file
+/// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
+///
+/// In addition to building the library with ISPC we use rust-bindgen to generate
+/// a rust module containing bindings to the functions exported from ISPC. These
+/// can be imported by passing the name of your library to the `ispc_module` macro.
+///
+/// # Example
+///
+/// ```rust
+/// #[macro_use]
+/// extern crate ispc;
+///
+/// // Functions exported from foo will be callable under foo::*
+/// ispc_module!(foo);
+/// ```
 #[macro_export]
 macro_rules! ispc_module {
     ($lib:ident) => (
@@ -183,7 +196,7 @@ impl Config {
     /// errors the caller should panic in this case as they'll be logged to stderr
     ///
     /// The library name should not have any prefix or suffix, e.g. instead of
-    /// `libexample.a` or `example.lib` simple pass `example`
+    /// `libexample.a` or `example.lib` simply pass `example`
     pub fn compile(&mut self, lib: &str) -> bool {
         let dst = self.get_out_dir();
         println!("dst = {}", dst.display());

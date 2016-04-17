@@ -1,9 +1,24 @@
 [package]
-
 name = "ispc"
 version = "0.0.1"
 authors = ["Will Usher <willusher.life@gmail.com>"]
+homepage = "https://github.com/Twinklebear/ispc-rs"
+documentation = "http://www.willusher.io/ispc-rs/ispc/"
+repository = "https://github.com/Twinklebear/ispc-rs"
+readme = "README.md"
 license = "MIT"
+description = """
+A build-time dependency for Cargo build scripts to help with compiling
+and linking to ISPC code and generating Rust bindings for the resulting library
+"""
+keywords = ["build-dependencies"]
+
+exclude = [
+	".travis.yml",
+	"*.png",
+	".gitignore",
+	"examples/"
+]
 
 [dependencies]
 bindgen = "0.16.0"
