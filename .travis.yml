@@ -1,0 +1,28 @@
+language: rust
+addons:
+  apt:
+    sources:
+    - llvm-toolchain-precise
+    - llvm-toolchain-precise-3.8
+    - ubuntu-toolchain-r-test
+    packages:
+    - libclang-3.8-dev
+    - llvm-3.8-dev
+rust:
+    - stable
+before_script:
+    - export LIBCLANG_PATH=/usr/lib/llvm-${LLVM_VERSION}/lib
+    - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+script:
+    - travis-cargo build
+    - travis-cargo doc
+after_success:
+    - git config user.name "Travis-CI Doc Bot"
+    - git config user.email "willusher.life@gmail.com"
+    - travis-cargo --only stable doc-upload
+env:
+  matrix:
+  - LLVM_VERSION=3.8
+  global:
+    secure: WwruT8gXkwGD3iojTU2iemzttaAk2c2irIlocge27xSaOKUGzZWV7ZEDQR56VG8Y1fQBA9kEYB+G7yltPwWh8LRHNrKvjB6t+w0hXXIildbj1Wt7D+u5hRsgWYcYBTtlJLyCvNAbJVkeVImJwDaAjwAk0u3ZPLBM9NBkdlQfjj8=
+
