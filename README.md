@@ -66,8 +66,8 @@ Both the [ISPC compiler](https://ispc.github.io/) and [libclang](http://clang.ll
 
 ### Windows Users
 
-You'll need to use the MSVC ABI version of Rust since this is what ISPC and Clang link with
-on windows. For bindgen to find libclang you'll need to copy `libclang.lib` to `clang.lib` and
+You'll need to use the MSVC ABI version of Rust since ISPC and Clang link with MSVC
+on Windows. For bindgen to find libclang you'll need to copy `libclang.lib` to `clang.lib` and
 place it in your path.
 
 I've also had issues with multiple definition link errors coming up when compiling multiple
