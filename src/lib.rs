@@ -52,7 +52,8 @@
 //! ispc_module!(simple);
 //! ```
 //!
-//! Some more complete examples can be found in the [examples/](examples/) folder.
+//! Some more complete examples can be found in the
+//! [examples/](https://github.com/Twinklebear/ispc-rs/tree/master/examples) folder.
 //!
 //! # Compile-time Requirements
 //!
