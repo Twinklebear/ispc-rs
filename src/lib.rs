@@ -1,3 +1,74 @@
+//! A small library meant to be used as a build dependency with Cargo for easily
+//! integrating [ISPC](https://ispc.github.io/) code into Rust projects.
+//!
+//! # Documentation
+//!
+//! Rust doc can be found [here](http://www.willusher.io/ispc-rs/ispc)
+//!
+//! # Using ispc-rs
+//!
+//! You'll want to add a build script to your crate (`build.rs`), tell Cargo about it and add this crate
+//! as a build dependency.
+//!
+//! ```toml
+//! # Cargo.toml
+//! [package]
+//! # ...
+//! build = "build.rs"
+//!
+//! [build-dependencies]
+//! ispc = "0.0.1"
+//! ```
+//!
+//! Now you can use `ispc` to compile your code into a static library:
+//!
+//! ```rust
+//! extern crate ispc;
+//!
+//! fn main() {
+//!     let ispc_files = vec!["src/simple.ispc"];
+//!     // Optional: Only re-run the build script if the ISPC files have been changed
+//!     for s in &ispc_files[..] {
+//!         println!("cargo:rerun-if-changed={}", s);
+//!     }
+//! 	// Compile our ISPC library and make sure it went ok
+//!     if !ispc::compile_library("simple", &ispc_files[..]) {
+//!         panic!("Failed to compile ISPC library 'simple'");
+//!     }
+//! }
+//! ```
+//!
+//! Running `cargo build` should now build your ISPC files into a library and link your Rust
+//! application with it. For extra convenience the `ispc_module` macro is provided to import
+//! bindings to the library generated with [rust-bindgen](https://github.com/crabtw/rust-bindgen)
+//! into a module of the same name. Note that all the functions imported will be unsafe as they're
+//! the raw C bindings to your lib.
+//!
+//! ```rust
+//! #[macro_use]
+//! extern crate ispc;
+//!
+//! // Functions exported from simple will be callable under simple::*
+//! ispc_module!(simple);
+//! ```
+//!
+//! Some more complete examples can be found in the [examples/](examples/) folder.
+//!
+//! # Compile-time Requirements
+//!
+//! Both the [ISPC compiler](https://ispc.github.io/) and [libclang](http://clang.llvm.org/)
+//! (for [rust-bindgen](https://github.com/crabtw/rust-bindgen)) must be available in your path.
+//!
+//! ## Windows Users
+//!
+//! You'll need to use the MSVC ABI version of Rust since this is what ISPC and Clang link with
+//! on windows. For bindgen to find libclang you'll need to copy `libclang.lib` to `clang.lib` and
+//! place it in your path.
+//!
+//! I've also had issues with multiple definition link errors coming up when compiling multiple
+//! ISPC files into a library on MSVC, I haven't figured out the cause yet. On Linux the repeated
+//! symbols are defined in each object as well but the linker doesn't seem to mind.
+
 #![allow(dead_code)]
 
 extern crate bindgen;
@@ -21,11 +92,22 @@ macro_rules! ispc_module {
     )
 }
 
-/// Compile the list of ISPC files into a static library and generate bindings for
-/// the library using bindgen. Returns true if compilation and binding generation
-/// succeeded, will panic or return false depending on what operations failed,
-/// if compilation fails a build script would likely want to panic to show the
-/// compilation errors
+/// Compile the list of ISPC files into a static library and generate bindings
+/// using bindgen.
+///
+/// Returns true if compilation and binding generation
+/// succeeded, will panic or return false depending on what operations failed.
+/// If compilation fails your build script would likely want to panic to show the
+/// compilation errors.
+///
+/// The library name should not contain a lib prefix or a lib extension like
+/// '.a' or '.lib', the appropriate prefix and suffix wil be added based on
+/// the compilation target.
+///
+/// # Example
+/// ```no_run
+/// ispc::compile_library("foo", &["src/foo.ispc", "src/bar.ispc"]);
+/// ```
 pub fn compile_library(lib: &str, files: &[&str]) -> bool {
     let mut cfg = Config::new();
     for f in &files[..] {

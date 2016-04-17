@@ -3,15 +3,74 @@
 A small library meant to be used as a build dependency with Cargo for easily
 integrating [ISPC](https://ispc.github.io/) code into Rust projects.
 
+[![Crates.io](https://img.shields.io/crates/v/ispc.svg)](https://crates.io/crates/ispc)
+[![Build Status](https://travis-ci.org/Twinklebear/ispc-rs.svg?branch=master)](https://travis-ci.org/Twinklebear/ispc-rs)
+
 ## Documentation
 
 Rust doc can be found [here](http://www.willusher.io/ispc-rs/ispc)
+
+## Using ispc-rs
+
+You'll want to add a build script to your crate (`build.rs`), tell Cargo about it and add this crate
+as a build dependency.
+
+```toml
+# Cargo.toml
+[package]
+# ...
+build = "build.rs"
+
+[build-dependencies]
+ispc = "0.0.1"
+```
+
+Now you can use `ispc` to compile your code into a static library:
+
+```rust
+extern crate ispc;
+
+fn main() {
+    let ispc_files = vec!["src/simple.ispc"];
+    // Optional: Only re-run the build script if the ISPC files have been changed
+    for s in &ispc_files[..] {
+        println!("cargo:rerun-if-changed={}", s);
+    }
+	// Compile our ISPC library and make sure it went ok
+    if !ispc::compile_library("simple", &ispc_files[..]) {
+        panic!("Failed to compile ISPC library 'simple'");
+    }
+}
+```
+
+Running `cargo build` should now build your ISPC files into a library and link your Rust
+application with it. For extra convenience the `ispc_module` macro is provided to import
+bindings to the library generated with [rust-bindgen](https://github.com/crabtw/rust-bindgen)
+into a module of the same name. Note that all the functions imported will be unsafe as they're
+the raw C bindings to your lib.
+
+```rust
+#[macro_use]
+extern crate ispc;
+
+// Functions exported from simple will be callable under simple::*
+ispc_module!(simple);
+```
+
+Some more complete examples can be found in the [examples/](examples/) folder.
 
 ## Compile-time Requirements
 
 Both the [ISPC compiler](https://ispc.github.io/) and [libclang](http://clang.llvm.org/)
 (for [rust-bindgen](https://github.com/crabtw/rust-bindgen)) must be available in your path.
 
-*Windows note:* For bindgen to find libclang you'll need to copy `libclang.lib` to `clang.lib` and
+### Windows Users
+
+You'll need to use the MSVC ABI version of Rust since this is what ISPC and Clang link with
+on windows. For bindgen to find libclang you'll need to copy `libclang.lib` to `clang.lib` and
 place it in your path.
+
+I've also had issues with multiple definition link errors coming up when compiling multiple
+ISPC files into a library on MSVC, I haven't figured out the cause yet. On Linux the repeated
+symbols are defined in each object as well but the linker doesn't seem to mind.
 
