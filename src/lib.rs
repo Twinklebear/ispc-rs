@@ -62,9 +62,9 @@
 //!
 //! ## Windows Users
 //!
-//! You'll need to use the MSVC ABI version of Rust since ISPC and Clang link with MSVC
-//! on Windows. For bindgen to find libclang you'll need to copy `libclang.lib` to `clang.lib` and
-//! place it in your path.
+//! You'll need Visual Studio and will have to use the MSVC ABI version of Rust since ISPC
+//! and Clang link with MSVC on Windows. For bindgen to find libclang you'll need to copy
+//! `libclang.lib` to `clang.lib` and place it in your path.
 //!
 //! I've also had issues with multiple definition link errors coming up when compiling multiple
 //! ISPC files into a library on MSVC, I haven't figured out the cause yet. On Linux the repeated
