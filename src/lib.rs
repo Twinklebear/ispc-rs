@@ -1,10 +1,6 @@
 //! A small library meant to be used as a build dependency with Cargo for easily
 //! integrating [ISPC](https://ispc.github.io/) code into Rust projects.
 //!
-//! # Documentation
-//!
-//! Rust doc can be found [here](http://www.willusher.io/ispc-rs/ispc)
-//!
 //! # Using ispc-rs
 //!
 //! You'll want to add a build script to your crate (`build.rs`), tell Cargo about it and add this crate
