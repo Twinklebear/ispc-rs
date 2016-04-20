@@ -1,0 +1,11 @@
+[package]
+name = "simple_tasks"
+version = "0.1.0"
+authors = ["Will Usher <willusher.life@gmail.com>"]
+build = "build.rs"
+
+[dependencies]
+ispc = { path = "../../" }
+
+[build-dependencies]
+ispc = { path = "../../" }

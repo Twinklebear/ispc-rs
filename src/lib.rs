@@ -70,6 +70,7 @@
 
 extern crate bindgen;
 extern crate gcc;
+extern crate libc;
 
 use std::path::{Path, PathBuf};
 use std::fs::File;
@@ -322,5 +323,27 @@ impl Config {
             println!("{}", s);
         }
     }
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: libc::int64_t,
+                                   alignment: libc::int32_t) -> *mut libc::c_void {
+    // TODO: This is not sufficient, we must respect the alignment
+    println!("ISPCAlloc, size: {}, align: {}", size, alignment);
+    libc::malloc(size as usize)
+}
+#[allow(non_snake_case)]
+#[no_mangle]
+pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut libc::c_void,
+                                    count0: libc::c_int, count1: libc::c_int, count2: libc::c_int){
+    // TODO: Launching tasks
+    println!("ISPCLaunch, counts: [{}, {}, {}]", count0, count1, count2);
+}
+#[allow(non_snake_case)]
+#[no_mangle]
+pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
+    // TODO: Sync tasks
+    println!("ISPCSync");
 }
 
