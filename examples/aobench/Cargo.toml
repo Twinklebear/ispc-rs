@@ -6,6 +6,7 @@ build = "build.rs"
 
 [dependencies]
 image = "0.9.0"
+rand = "0.3.14"
 ispc = { path = "../../" }
 
 [build-dependencies]

@@ -1,16 +1,20 @@
 #[macro_use]
 extern crate ispc;
 extern crate image;
+extern crate rand;
+
+use rand::Rng;
 
 ispc_module!(ao);
 
 fn main() {
     let width = 256;
     let height = 256;
-    let n_samples = 4;
+    let n_samples = 16;
     let mut fimg = vec![0.0; width * height];
+    let mut rng = rand::thread_rng();
     unsafe {
-        ao::aobench(width as i32, height as i32, n_samples, fimg.as_mut_ptr());
+        ao::aobench(width as i32, height as i32, n_samples, rng.gen::<i32>(), fimg.as_mut_ptr());
     }
     // Convert the image to grey scale u8 to save
     let img = fimg.iter().map(|x| {

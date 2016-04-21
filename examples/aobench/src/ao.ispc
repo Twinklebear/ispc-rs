@@ -135,16 +135,16 @@ float ambient_occlusion(const Isect &isect, const uniform Sphere *uniform sphere
 	return occlusion;
 }
 
-export void aobench(const uniform int w, const uniform int h, const uniform int n_samples, uniform float img[]){
+export void aobench(const uniform int w, const uniform int h, const uniform int n_samples, const uniform int seed,
+		uniform float img[]){
 	const uniform Plane plane = {{0.f, -0.5f, 0.f}, {0.f, 1.f, 0.f}};
 	const uniform Sphere spheres[3] = {
 		{{-2.f, 0.f, -3.5f}, 0.5f},
 		{{-0.5f, 0.f, -3.f}, 0.5f},
 		{{1.f, 0.f, -2.2f}, 0.5f}
 	};
-	// TODO: Better random seed?
 	RNGState rng_state;
-	seed_rng(&rng_state, programIndex);
+	seed_rng(&rng_state, seed * (programIndex + 1));
 	const float inv_samples = 1.f / n_samples;
 
 	// TODO: Tiled looping?
