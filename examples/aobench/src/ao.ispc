@@ -95,7 +95,7 @@ inline void ortho_basis(Vec3f basis[3], const Vec3f n){
 }
 
 float ambient_occlusion(const Isect &isect, const uniform Sphere *uniform spheres,
-						const uniform Plane &plane, RNGState &rng_state){
+		const uniform Plane &plane, RNGState &rng_state){
 	const Vec3f p = isect.p + 0.0001f * isect.n;
 	Vec3f basis[3];
 	ortho_basis(basis, isect.n);
