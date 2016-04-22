@@ -46,7 +46,6 @@ float grad(const int hash, const float x, const float y, const float z){
 float noise(const float<3> p){
 	// Find unit cube containing the point
 	int<3> cell = {floor(p.x), floor(p.y), floor(p.z)};
-	// TODO: This applies to the whole vector right?
 	cell &= 255;
 
 	// Relative position of this point in the cell
@@ -74,14 +73,28 @@ float noise(const float<3> p){
 			lerp(weight.y, lerp(weight.x, g111, g011), lerp(weight.x, g101, g001)),
 			lerp(weight.y, lerp(weight.x, g110, g010), lerp(weight.x, g100, g000)));
 }
+// TODO: why do I get such a strange/buggy image at 8 octaves?
+float octave_noise(const float<3> p, const uniform int octaves, const uniform float persistence){
+	float total = 0.f;
+	float frequency = 1.f;
+	float amplitude = 1.f;
+	float max_val = 0.f;
+	for (int i = 0; i < octaves; ++i){
+		total += noise(p * frequency) * amplitude;
+		max_val += amplitude;
+		amplitude *= persistence;
+		frequency *= 2.f;
+	}
+	return total / max_val;
+}
 
 export void perlin(const uniform float width, const uniform float height,
 		const uniform int img_width, const uniform int img_height, uniform float img[]){
 	uniform const float dx = width / img_width;
 	uniform const float dy = height / img_height;
 	foreach_tiled (j = 0 ... img_height, i = 0 ... img_width){
-		float<3> p = {dx * i, dy * j, 0.f};
-		img[j * img_width + i] = noise(p);
+		float<3> p = {dx * i, dy * j, 0.2f};
+		img[j * img_width + i] = octave_noise(p, 6, 0.5);
 	}
 }
 
