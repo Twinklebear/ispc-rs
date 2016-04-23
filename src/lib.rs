@@ -71,6 +71,7 @@
 extern crate bindgen;
 extern crate gcc;
 extern crate libc;
+extern crate aligned_alloc;
 
 use std::path::{Path, PathBuf};
 use std::fs::File;
@@ -325,25 +326,52 @@ impl Config {
     }
 }
 
+/// The ISPC task function pointer is:
+/// ```c
+/// void (*TaskFuncPtr)(void *data, int threadIndex, int threadCount,
+///                     int taskIndex, int taskCount,
+///                     int taskIndex0, int taskIndex1, int taskIndex2,
+///                     int taskCount0, int taskCount1, int taskCount2);
+/// ```
+type ISPCTaskFn = extern "C" fn(data: *mut libc::c_void, thread_idx: libc::c_int, thread_cnt: libc::c_int,
+                                task_idx: libc::c_int, task_cnt: libc::c_int, task_idx0: libc::c_int,
+                                task_idx1: libc::c_int, task_idx2: libc::c_int, task_cnt0: libc::c_int,
+                                task_cnt1: libc::c_int, task_cnt2: libc::c_int);
+
 #[allow(non_snake_case)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: libc::int64_t,
-                                   alignment: libc::int32_t) -> *mut libc::c_void {
-    // TODO: This is not sufficient, we must respect the alignment
-    println!("ISPCAlloc, size: {}, align: {}", size, alignment);
-    libc::malloc(size as usize)
+                                   align: libc::int32_t) -> *mut libc::c_void {
+    println!("ISPCAlloc, size: {}, align: {}", size, align);
+    // TODO: The README for this lib mentions it may be slow. Maybe use some other allocator?
+    *handle_ptr = aligned_alloc::aligned_alloc(size as usize, align as usize) as *mut libc::c_void;
+    *handle_ptr
 }
+
 #[allow(non_snake_case)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut libc::c_void,
-                                    count0: libc::c_int, count1: libc::c_int, count2: libc::c_int){
-    // TODO: Launching tasks
+                                    data: *mut libc::c_void, count0: libc::c_int,
+                                    count1: libc::c_int, count2: libc::c_int) {
+    // TODO: Launching tasks in parallel
     println!("ISPCLaunch, counts: [{}, {}, {}]", count0, count1, count2);
+    let task_fn: ISPCTaskFn = std::mem::transmute(f);
+    let total_tasks = count0 * count1 * count2;
+    for i in 0..count0 {
+        for j in 0..count1 {
+            for k in 0..count2 {
+                let task_id = i * count1 * count2 + j * count2 + k;
+                task_fn(data, 0, 1, task_id, total_tasks, i, j, k, count0, count1, count2);
+            }
+        }
+    }
 }
+
 #[allow(non_snake_case)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // TODO: Sync tasks
     println!("ISPCSync");
+    aligned_alloc::aligned_free(handle as *mut ());
 }
 

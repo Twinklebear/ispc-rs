@@ -24,4 +24,5 @@ exclude = [
 bindgen = "0.16.0"
 gcc = "0.3"
 libc = "0.2.10"
+aligned_alloc = "0.1.2"
 
