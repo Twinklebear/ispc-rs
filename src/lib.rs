@@ -73,11 +73,14 @@ extern crate gcc;
 extern crate libc;
 extern crate aligned_alloc;
 
+mod task;
+
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::Write;
 use std::process::{Command, ExitStatus};
 use std::env;
+use std::mem;
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
@@ -326,26 +329,51 @@ impl Config {
     }
 }
 
-/// The ISPC task function pointer is:
-/// ```c
-/// void (*TaskFuncPtr)(void *data, int threadIndex, int threadCount,
-///                     int taskIndex, int taskCount,
-///                     int taskIndex0, int taskIndex1, int taskIndex2,
-///                     int taskCount0, int taskCount1, int taskCount2);
-/// ```
-type ISPCTaskFn = extern "C" fn(data: *mut libc::c_void, thread_idx: libc::c_int, thread_cnt: libc::c_int,
-                                task_idx: libc::c_int, task_cnt: libc::c_int, task_idx0: libc::c_int,
-                                task_idx1: libc::c_int, task_idx2: libc::c_int, task_cnt0: libc::c_int,
-                                task_cnt1: libc::c_int, task_cnt2: libc::c_int);
+static mut TASK_LIST: Option<&'static mut Vec<Box<task::Tasks>>> = None;
+static mut NEXT_TASK_ID: usize = 0;
 
 #[allow(non_snake_case)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: libc::int64_t,
                                    align: libc::int32_t) -> *mut libc::c_void {
+    // TODO: This is a bit nasty, but I'm not sure on a nicer solution. Maybe something that
+    // would let the user register the desired (or default) task system? But if
+    // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
+    if TASK_LIST.is_none() {
+        let mut list = Box::new(Vec::new());
+        let l: *mut Vec<Box<task::Tasks>> = &mut *list;
+        mem::forget(list);
+        TASK_LIST = Some(&mut *l);
+    }
     println!("ISPCAlloc, size: {}, align: {}", size, align);
+    // If the handle is null this is the first time this function has spawned tasks
+    // and we should create a new Tasks structure in the TASK_LIST for it, otherwise
+    // it's the pointer to where we should append the new TaskGroup
+    let mut tasks = if (*handle_ptr).is_null() {
+        println!("handle ptr is null");
+        // This is a bit hairy. We allocate the new task context in a box, then
+        // unbox it into a raw ptr to get a ptr we can pass back to ISPC through
+        // the handle_ptr and then re-box it into our TASK_LIST so it will 
+        // be free'd properly when we erase it from the vector in ISPCSync
+        let t = Box::new(task::Tasks::new(NEXT_TASK_ID));
+        let h = Box::into_raw(t);
+        *handle_ptr = mem::transmute(h);
+        NEXT_TASK_ID += 1;
+        TASK_LIST.as_mut().map(|list| {
+            list.push(Box::from_raw(h));
+            list.last_mut().unwrap()
+        }).unwrap()
+    } else {
+        println!("handle ptr is not null");
+        let handle_task: *mut task::Tasks = mem::transmute(*handle_ptr);
+        TASK_LIST.as_mut().map(|list| {
+            list.iter_mut().find(|t| (*handle_task).id == t.id).unwrap()
+        }).unwrap()
+    };
     // TODO: The README for this lib mentions it may be slow. Maybe use some other allocator?
-    *handle_ptr = aligned_alloc::aligned_alloc(size as usize, align as usize) as *mut libc::c_void;
-    *handle_ptr
+    tasks.mem.push(aligned_alloc::aligned_alloc(size as usize, align as usize) as *mut libc::c_void);
+    println!("tasks.id = {}", tasks.id);
+    tasks.mem[tasks.mem.len() - 1]
 }
 
 #[allow(non_snake_case)]
@@ -353,25 +381,40 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
 pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut libc::c_void,
                                     data: *mut libc::c_void, count0: libc::c_int,
                                     count1: libc::c_int, count2: libc::c_int) {
+    // Push the tasks being launched on to the list of task groups for this function
+    let mut tasks: &mut task::Tasks = mem::transmute(*handle_ptr);
     // TODO: Launching tasks in parallel
-    println!("ISPCLaunch, counts: [{}, {}, {}]", count0, count1, count2);
-    let task_fn: ISPCTaskFn = std::mem::transmute(f);
-    let total_tasks = count0 * count1 * count2;
-    for i in 0..count0 {
-        for j in 0..count1 {
-            for k in 0..count2 {
-                let task_id = i * count1 * count2 + j * count2 + k;
-                task_fn(data, 0, 1, task_id, total_tasks, i, j, k, count0, count1, count2);
-            }
-        }
-    }
+    println!("ISPCLaunch, tasks.id = {}, counts: [{}, {}, {}]", tasks.id, count0, count1, count2);
+    let task_fn: task::ISPCTaskFn = mem::transmute(f);
+    tasks.tasks.push(task::TaskGroup::new((count0 as isize, count1 as isize, count2 as isize), data, task_fn));
 }
 
 #[allow(non_snake_case)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // TODO: Sync tasks
-    println!("ISPCSync");
-    aligned_alloc::aligned_free(handle as *mut ());
+    let tasks: &task::Tasks = mem::transmute(handle);
+    // Make sure all tasks are done, and execute them if not for this simple
+    // serial version. TODO: In the future we'd want on each TaskGroup's semaphore or atomic bool
+    println!("ISPCSync, tasks.id = {}", tasks.id);
+    for tg in tasks.tasks.iter() {
+        let total_tasks = tg.total.0 * tg.total.1 * tg.total.2;
+        for i in 0..tg.total.0 {
+            for j in 0..tg.total.1 {
+                for k in 0..tg.total.2 {
+                    let task_id = i * tg.total.1 * tg.total.2 + j * tg.total.2 + k;
+                    (tg.fcn)(tg.data, 0, 1, task_id as libc::c_int, total_tasks as libc::c_int,
+                             i as libc::c_int, j as libc::c_int, k as libc::c_int,
+                             tg.total.0 as libc::c_int, tg.total.1 as libc::c_int, tg.total.2 as libc::c_int);
+                }
+            }
+        }
+        aligned_alloc::aligned_free(tg.data as *mut ());
+    }
+    // Now erase this task list from our vector
+    TASK_LIST.as_mut().map(|list| {
+        let pos = list.iter().position(|t| tasks.id == t.id).unwrap();
+        list.remove(pos);
+    }).unwrap();
 }
 
