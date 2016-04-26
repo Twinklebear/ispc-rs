@@ -329,7 +329,7 @@ impl Config {
     }
 }
 
-static mut TASK_LIST: Option<&'static mut Vec<Box<task::Tasks>>> = None;
+static mut TASK_LIST: Option<&'static mut Vec<Box<task::Context>>> = None;
 static mut NEXT_TASK_ID: usize = 0;
 
 #[allow(non_snake_case)]
@@ -341,21 +341,21 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
     if TASK_LIST.is_none() {
         let mut list = Box::new(Vec::new());
-        let l: *mut Vec<Box<task::Tasks>> = &mut *list;
+        let l: *mut Vec<Box<task::Context>> = &mut *list;
         mem::forget(list);
         TASK_LIST = Some(&mut *l);
     }
     println!("ISPCAlloc, size: {}, align: {}", size, align);
     // If the handle is null this is the first time this function has spawned tasks
-    // and we should create a new Tasks structure in the TASK_LIST for it, otherwise
+    // and we should create a new Context structure in the TASK_LIST for it, otherwise
     // it's the pointer to where we should append the new TaskGroup
     let mut tasks = if (*handle_ptr).is_null() {
         println!("handle ptr is null");
         // This is a bit hairy. We allocate the new task context in a box, then
         // unbox it into a raw ptr to get a ptr we can pass back to ISPC through
-        // the handle_ptr and then re-box it into our TASK_LIST so it will 
+        // the handle_ptr and then re-box it into our TASK_LIST so it will
         // be free'd properly when we erase it from the vector in ISPCSync
-        let t = Box::new(task::Tasks::new(NEXT_TASK_ID));
+        let t = Box::new(task::Context::new(NEXT_TASK_ID));
         let h = Box::into_raw(t);
         *handle_ptr = mem::transmute(h);
         NEXT_TASK_ID += 1;
@@ -365,7 +365,7 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
         }).unwrap()
     } else {
         println!("handle ptr is not null");
-        let handle_task: *mut task::Tasks = mem::transmute(*handle_ptr);
+        let handle_task: *mut task::Context = mem::transmute(*handle_ptr);
         TASK_LIST.as_mut().map(|list| {
             list.iter_mut().find(|t| (*handle_task).id == t.id).unwrap()
         }).unwrap()
@@ -382,7 +382,7 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
                                     data: *mut libc::c_void, count0: libc::c_int,
                                     count1: libc::c_int, count2: libc::c_int) {
     // Push the tasks being launched on to the list of task groups for this function
-    let mut tasks: &mut task::Tasks = mem::transmute(*handle_ptr);
+    let mut tasks: &mut task::Context = mem::transmute(*handle_ptr);
     // TODO: Launching tasks in parallel
     println!("ISPCLaunch, tasks.id = {}, counts: [{}, {}, {}]", tasks.id, count0, count1, count2);
     let task_fn: task::ISPCTaskFn = mem::transmute(f);
@@ -393,7 +393,7 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
 #[no_mangle]
 pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // TODO: Sync tasks
-    let tasks: &task::Tasks = mem::transmute(handle);
+    let tasks: &task::Context = mem::transmute(handle);
     // Make sure all tasks are done, and execute them if not for this simple
     // serial version. TODO: In the future we'd want on each TaskGroup's semaphore or atomic bool
     println!("ISPCSync, tasks.id = {}", tasks.id);

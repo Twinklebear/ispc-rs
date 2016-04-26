@@ -38,9 +38,10 @@ impl TaskGroup {
     }
 }
 
-/// A list of all task groups spawned by a function
+/// A list of all task groups spawned by a function in some launch context
+/// These will be sync'd at an explicit `sync` call or function exit
 #[derive(Debug)]
-pub struct Tasks {
+pub struct Context {
     /// Task groups launched by this function
     pub tasks: Vec<TaskGroup>,
     /// The memory allocated for the various task group's parameters
@@ -48,10 +49,10 @@ pub struct Tasks {
     pub id: usize,
 }
 
-impl Tasks {
+impl Context {
     /// Create a new list of tasks for some function with id `id`
-    pub fn new(id: usize) -> Tasks {
-        Tasks { tasks: Vec::new(), mem: Vec::new(), id: id }
+    pub fn new(id: usize) -> Context {
+        Context { tasks: Vec::new(), mem: Vec::new(), id: id }
     }
 }
 
