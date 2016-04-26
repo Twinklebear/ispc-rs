@@ -395,7 +395,13 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // TODO: Sync tasks
     let tasks: &task::Context = mem::transmute(handle);
     // Make sure all tasks are done, and execute them if not for this simple
-    // serial version. TODO: In the future we'd want on each Group's semaphore or atomic bool
+    // serial version. TODO: In the future we'd wait on each Group's semaphore or atomic bool
+    // Maybe the waiting thread could help execute tasks as well, otherwise it might be
+    // possible to deadlock, where all threads are waiting for some enqueue'd tasks but no
+    // threads are available to run them. Just running tasks in our context is not sufficient
+    // to prevent deadlock actually, because those tasks could in turn launch & sync and get stuck
+    // so if our tasks aren't done and there's none left to run in our context we should start
+    // running tasks from other contexts to help out
     println!("ISPCSync, tasks.id = {}", tasks.id);
     for tg in tasks.tasks.iter() {
         let total_tasks = tg.total.0 * tg.total.1 * tg.total.2;

@@ -3,6 +3,8 @@
 
 use libc;
 
+/// A pointer to an ISPC task function.
+///
 /// The ISPC task function pointer is:
 /// ```c
 /// void (*TaskFuncPtr)(void *data, int threadIndex, int threadCount,
