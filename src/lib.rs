@@ -348,7 +348,7 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
     println!("ISPCAlloc, size: {}, align: {}", size, align);
     // If the handle is null this is the first time this function has spawned tasks
     // and we should create a new Context structure in the TASK_LIST for it, otherwise
-    // it's the pointer to where we should append the new TaskGroup
+    // it's the pointer to where we should append the new Group
     let mut tasks = if (*handle_ptr).is_null() {
         println!("handle ptr is null");
         // This is a bit hairy. We allocate the new task context in a box, then
@@ -386,7 +386,7 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
     // TODO: Launching tasks in parallel
     println!("ISPCLaunch, tasks.id = {}, counts: [{}, {}, {}]", tasks.id, count0, count1, count2);
     let task_fn: task::ISPCTaskFn = mem::transmute(f);
-    tasks.tasks.push(task::TaskGroup::new((count0 as isize, count1 as isize, count2 as isize), data, task_fn));
+    tasks.tasks.push(task::Group::new((count0 as isize, count1 as isize, count2 as isize), data, task_fn));
 }
 
 #[allow(non_snake_case)]
@@ -395,7 +395,7 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // TODO: Sync tasks
     let tasks: &task::Context = mem::transmute(handle);
     // Make sure all tasks are done, and execute them if not for this simple
-    // serial version. TODO: In the future we'd want on each TaskGroup's semaphore or atomic bool
+    // serial version. TODO: In the future we'd want on each Group's semaphore or atomic bool
     println!("ISPCSync, tasks.id = {}", tasks.id);
     for tg in tasks.tasks.iter() {
         let total_tasks = tg.total.0 * tg.total.1 * tg.total.2;

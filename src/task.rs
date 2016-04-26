@@ -17,7 +17,7 @@ pub type ISPCTaskFn = extern "C" fn(data: *mut libc::c_void, thread_idx: libc::c
 
 /// A group of tasks spawned by a call to `launch` in ISPC
 #[derive(Debug)]
-pub struct TaskGroup {
+pub struct Group {
     /// Current starting index to execute the remaining tasks in this group
     pub start: (isize, isize, isize),
     /// Total number of tasks scheduled in this group
@@ -31,10 +31,10 @@ pub struct TaskGroup {
     pub finished: bool,
 }
 
-impl TaskGroup {
+impl Group {
     /// Create a new task group for execution of the function
-    pub fn new(total: (isize, isize, isize), data: *mut libc::c_void, fcn: ISPCTaskFn) -> TaskGroup {
-        TaskGroup { start: (0, 0, 0), total: total, data: data, fcn: fcn, finished: false }
+    pub fn new(total: (isize, isize, isize), data: *mut libc::c_void, fcn: ISPCTaskFn) -> Group {
+        Group { start: (0, 0, 0), total: total, data: data, fcn: fcn, finished: false }
     }
 }
 
@@ -43,7 +43,7 @@ impl TaskGroup {
 #[derive(Debug)]
 pub struct Context {
     /// Task groups launched by this function
-    pub tasks: Vec<TaskGroup>,
+    pub tasks: Vec<Group>,
     /// The memory allocated for the various task group's parameters
     pub mem: Vec<*mut libc::c_void>,
     pub id: usize,
