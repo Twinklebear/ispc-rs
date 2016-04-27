@@ -4,6 +4,8 @@
 use libc;
 
 use std::cmp;
+use std::sync::{Mutex};
+use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT};
 
 /// A pointer to an ISPC task function.
 ///
@@ -58,7 +60,7 @@ pub struct Group {
     /// would expose next() and behave like an iterator to go through the chunk of tasks
     /// and run them. Right now we just schedule tasks like in a nested for loop,
     /// would some tiled scheduling be better?
-    pub start: isize,
+    pub start: Mutex<isize>,
     /// Total number of tasks scheduled in this group
     pub total: (isize, isize, isize),
     /// Function to run for this task
@@ -70,24 +72,27 @@ pub struct Group {
     /// I'm unsure whether an atomic or semaphore would be the better choice here
     /// The TASK_LIST would want to send an alert when new tasks are pushed so in
     /// Sync we could wait on the context to finish?
-    pub finished: bool,
+    pub finished: AtomicBool,
 }
 
 impl Group {
     /// Create a new task group for execution of the function
     pub fn new(total: (isize, isize, isize), data: *mut libc::c_void, fcn: ISPCTaskFn) -> Group {
-        Group { start: 0, total: total, data: data, fcn: fcn, finished: false }
+        Group { start: Mutex::new(0), total: total, data: data, fcn: fcn, finished: ATOMIC_BOOL_INIT }
     }
     /// Get a chunk of tasks from the group to run if there are any tasks left to run
     ///
     /// `desired_tasks` specifies the number of tasks we'd like the chunk to contain,
-    /// though you may get fewer if there aren't that many tasks left
-    pub fn get_chunk(&mut self, desired_tasks: isize) -> Option<Chunk> {
+    /// though you may get fewer if there aren't that many tasks left. If the chunk
+    /// you get is the last chunk to be executed (`chunk.end == total.0 * total.1 * total.2`)
+    /// you must mark this group as finished upon completing execution of the chunk
+    pub fn get_chunk(&self, desired_tasks: isize) -> Option<Chunk> {
         let end = self.total.0 * self.total.1 * self.total.2;
-        if self.start <  end {
+        let mut start = self.start.lock().unwrap();
+        if *start < end {
             // Give the chunk 4 tasks or whatever remain
-            let c = Some(Chunk::new(self, cmp::min(self.start + desired_tasks, end)));
-            self.start += desired_tasks;
+            let c = Some(Chunk::new(self, *start, cmp::min(*start + desired_tasks, end)));
+            *start += desired_tasks;
             c
         } else {
             None
@@ -114,8 +119,8 @@ pub struct Chunk {
 
 impl Chunk {
     /// Create a new chunk to execute tasks in the group from [start, end)
-    pub fn new(group: &Group, end: isize) -> Chunk {
-        Chunk { start: group.start, end: end, total: group.total,
+    pub fn new(group: &Group, start: isize, end: isize) -> Chunk {
+        Chunk { start: start, end: end, total: group.total,
                 fcn: group.fcn, data: group.data
         }
     }

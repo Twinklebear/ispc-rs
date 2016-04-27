@@ -81,7 +81,8 @@ use std::io::Write;
 use std::process::{Command, ExitStatus};
 use std::env;
 use std::mem;
-use std::sync;
+use std::sync::{Once, ONCE_INIT};
+use std::sync::atomic;
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
@@ -331,7 +332,7 @@ impl Config {
 }
 
 static mut TASK_LIST: Option<&'static mut Vec<Box<task::Context>>> = None;
-static TASK_INIT: sync::Once = sync::ONCE_INIT;
+static TASK_INIT: Once = ONCE_INIT;
 static mut NEXT_TASK_ID: usize = 0;
 
 #[allow(non_snake_case)]
@@ -341,7 +342,6 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
     // TODO: This is a bit nasty, but I'm not sure on a nicer solution. Maybe something that
     // would let the user register the desired (or default) task system? But if
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
-    // TODO: This init should be done with a `Once`
     TASK_INIT.call_once(|| {
         let mut list = Box::new(Vec::new());
         let l: *mut Vec<Box<task::Context>> = &mut *list;
@@ -420,6 +420,10 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
                             indices.0 as libc::c_int, indices.1 as libc::c_int, indices.2 as libc::c_int,
                             chunk.total.0 as libc::c_int, chunk.total.1 as libc::c_int,
                             chunk.total.2 as libc::c_int);
+            }
+            // If this chunk finished the group mark the group as finished
+            if chunk.end == total_tasks {
+                tg.finished.store(true, atomic::Ordering::SeqCst);
             }
         }
         // TODO: Note the free of this must wait until all tasks in the group have been finished
