@@ -339,6 +339,7 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
     // TODO: This is a bit nasty, but I'm not sure on a nicer solution. Maybe something that
     // would let the user register the desired (or default) task system? But if
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
+    // TODO: This init should be done with a `Once`
     if TASK_LIST.is_none() {
         let mut list = Box::new(Vec::new());
         let l: *mut Vec<Box<task::Context>> = &mut *list;
@@ -393,7 +394,7 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
 #[no_mangle]
 pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // TODO: Sync tasks
-    let tasks: &task::Context = mem::transmute(handle);
+    let tasks: &mut task::Context = mem::transmute(handle);
     // Make sure all tasks are done, and execute them if not for this simple
     // serial version. TODO: In the future we'd wait on each Group's semaphore or atomic bool
     // Maybe the waiting thread could help execute tasks as well, otherwise it might be
@@ -403,18 +404,23 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // so if our tasks aren't done and there's none left to run in our context we should start
     // running tasks from other contexts to help out
     println!("ISPCSync, tasks.id = {}", tasks.id);
-    for tg in tasks.tasks.iter() {
-        let total_tasks = tg.total.0 * tg.total.1 * tg.total.2;
-        for i in 0..tg.total.0 {
-            for j in 0..tg.total.1 {
-                for k in 0..tg.total.2 {
-                    let task_id = i * tg.total.1 * tg.total.2 + j * tg.total.2 + k;
-                    (tg.fcn)(tg.data, 0, 1, task_id as libc::c_int, total_tasks as libc::c_int,
-                             i as libc::c_int, j as libc::c_int, k as libc::c_int,
-                             tg.total.0 as libc::c_int, tg.total.1 as libc::c_int, tg.total.2 as libc::c_int);
-                }
+    for tg in tasks.tasks.iter_mut() {
+        loop {
+            let chunk = match tg.get_chunk(4) {
+                Some(c) => c,
+                None => break,
+            };
+            let total_tasks = chunk.total.0 * chunk.total.1 * chunk.total.2;
+            println!("Running chunk {:?}", chunk);
+            for t in chunk.start..chunk.end {
+                let indices = chunk.task_indices(t);
+                (chunk.fcn)(chunk.data, 0, 1, t as libc::c_int, total_tasks as libc::c_int,
+                            indices.0 as libc::c_int, indices.1 as libc::c_int, indices.2 as libc::c_int,
+                            chunk.total.0 as libc::c_int, chunk.total.1 as libc::c_int,
+                            chunk.total.2 as libc::c_int);
             }
         }
+        // TODO: Note the free of this must wait until all tasks in the group have been finished
         aligned_alloc::aligned_free(tg.data as *mut ());
     }
     // Now erase this task list from our vector
