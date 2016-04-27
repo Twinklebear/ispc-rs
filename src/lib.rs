@@ -81,6 +81,7 @@ use std::io::Write;
 use std::process::{Command, ExitStatus};
 use std::env;
 use std::mem;
+use std::sync;
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
@@ -330,6 +331,7 @@ impl Config {
 }
 
 static mut TASK_LIST: Option<&'static mut Vec<Box<task::Context>>> = None;
+static TASK_INIT: sync::Once = sync::ONCE_INIT;
 static mut NEXT_TASK_ID: usize = 0;
 
 #[allow(non_snake_case)]
@@ -340,12 +342,12 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
     // would let the user register the desired (or default) task system? But if
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
     // TODO: This init should be done with a `Once`
-    if TASK_LIST.is_none() {
+    TASK_INIT.call_once(|| {
         let mut list = Box::new(Vec::new());
         let l: *mut Vec<Box<task::Context>> = &mut *list;
         mem::forget(list);
         TASK_LIST = Some(&mut *l);
-    }
+    });
     println!("ISPCAlloc, size: {}, align: {}", size, align);
     // If the handle is null this is the first time this function has spawned tasks
     // and we should create a new Context structure in the TASK_LIST for it, otherwise
