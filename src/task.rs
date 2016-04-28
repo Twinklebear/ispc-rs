@@ -4,6 +4,7 @@
 use libc;
 
 use std::cmp;
+use std::iter::Iterator;
 use std::sync::{Mutex};
 use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT};
 
@@ -60,9 +61,9 @@ pub struct Group {
     /// would expose next() and behave like an iterator to go through the chunk of tasks
     /// and run them. Right now we just schedule tasks like in a nested for loop,
     /// would some tiled scheduling be better?
-    pub start: Mutex<isize>,
+    pub start: Mutex<i32>,
     /// Total number of tasks scheduled in this group
-    pub total: (isize, isize, isize),
+    pub total: (i32, i32, i32),
     /// Function to run for this task
     pub fcn: ISPCTaskFn,
     /// Data pointer to user params to pass to the function
@@ -77,8 +78,11 @@ pub struct Group {
 
 impl Group {
     /// Create a new task group for execution of the function
-    pub fn new(total: (isize, isize, isize), data: *mut libc::c_void, fcn: ISPCTaskFn) -> Group {
+    pub fn new(total: (i32, i32, i32), data: *mut libc::c_void, fcn: ISPCTaskFn) -> Group {
         Group { start: Mutex::new(0), total: total, data: data, fcn: fcn, finished: ATOMIC_BOOL_INIT }
+    }
+    pub fn chunks(&self, chunk_size: i32) -> GroupChunks {
+        GroupChunks { group: self, chunk_size: chunk_size }
     }
     /// Get a chunk of tasks from the group to run if there are any tasks left to run
     ///
@@ -86,7 +90,7 @@ impl Group {
     /// though you may get fewer if there aren't that many tasks left. If the chunk
     /// you get is the last chunk to be executed (`chunk.end == total.0 * total.1 * total.2`)
     /// you must mark this group as finished upon completing execution of the chunk
-    pub fn get_chunk(&self, desired_tasks: isize) -> Option<Chunk> {
+    fn get_chunk(&self, desired_tasks: i32) -> Option<Chunk> {
         let end = self.total.0 * self.total.1 * self.total.2;
         let mut start = self.start.lock().unwrap();
         if *start < end {
@@ -100,32 +104,63 @@ impl Group {
     }
 }
 
+/// An iterator over chunks of tasks to be executed in a Group
+pub struct GroupChunks<'a> {
+    group: &'a Group,
+    chunk_size: i32,
+}
+
+impl<'a> Iterator for GroupChunks<'a> {
+    type Item = Chunk;
+
+    /// Get the next chunk of tasks to be executed
+    fn next(&mut self) -> Option<Chunk> {
+        self.group.get_chunk(self.chunk_size)
+    }
+}
+
 /// A chunk of tasks from a Group to be executed
 ///
 /// Executes task in the range [start, end)
 #[derive(Debug)]
 pub struct Chunk {
     /// The next task to be executed in this chunk
-    pub start: isize,
+    start: i32,
     /// The last task to be executed in this chunk
-    pub end: isize,
+    end: i32,
     /// Total number of tasks scheduled in the group this chunk came from
-    pub total: (isize, isize, isize),
+    total: (i32, i32, i32),
     /// Function to run for this task
-    pub fcn: ISPCTaskFn,
+    fcn: ISPCTaskFn,
     /// Data pointer to user params to pass to the function
-    pub data: *mut libc::c_void,
+    data: *mut libc::c_void,
 }
 
 impl Chunk {
     /// Create a new chunk to execute tasks in the group from [start, end)
-    pub fn new(group: &Group, start: isize, end: isize) -> Chunk {
+    pub fn new(group: &Group, start: i32, end: i32) -> Chunk {
         Chunk { start: start, end: end, total: group.total,
                 fcn: group.fcn, data: group.data
         }
     }
+    /// Execute all tasks in this chunk
+    pub fn execute(&self, thread_id: i32, total_threads: i32) {
+        let total_tasks = self.total.0 * self.total.1 * self.total.2;
+        for t in self.start..self.end {
+            let id = self.task_indices(t);
+            (self.fcn)(self.data, thread_id as libc::c_int, total_threads as libc::c_int,
+                       t as libc::c_int, total_tasks as libc::c_int,
+                       id.0 as libc::c_int, id.1 as libc::c_int, id.2 as libc::c_int,
+                       self.total.0 as libc::c_int, self.total.1 as libc::c_int,
+                       self.total.2 as libc::c_int);
+        }
+    }
+    /// Check if this is the last chunk in the group
+    pub fn is_last(&self) -> bool {
+        self.end == self.total.0 * self.total.1 * self.total.2
+    }
     /// Get the global task id for the task index
-    pub fn task_indices(&self, id: isize) -> (isize, isize, isize) {
+    fn task_indices(&self, id: i32) -> (i32, i32, i32) {
         (id % self.total.0, (id / self.total.0) % self.total.1, id / (self.total.0 * self.total.1))
     }
 }

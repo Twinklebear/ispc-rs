@@ -389,7 +389,7 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
     // TODO: Launching tasks in parallel
     println!("ISPCLaunch, tasks.id = {}, counts: [{}, {}, {}]", tasks.id, count0, count1, count2);
     let task_fn: task::ISPCTaskFn = mem::transmute(f);
-    tasks.tasks.push(task::Group::new((count0 as isize, count1 as isize, count2 as isize), data, task_fn));
+    tasks.tasks.push(task::Group::new((count0 as i32, count1 as i32, count2 as i32), data, task_fn));
 }
 
 #[allow(non_snake_case)]
@@ -407,27 +407,19 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // running tasks from other contexts to help out
     println!("ISPCSync, tasks.id = {}", tasks.id);
     for tg in tasks.tasks.iter_mut() {
-        loop {
-            let chunk = match tg.get_chunk(4) {
-                Some(c) => c,
-                None => break,
-            };
-            let total_tasks = chunk.total.0 * chunk.total.1 * chunk.total.2;
+        for chunk in tg.chunks(4) {
             println!("Running chunk {:?}", chunk);
-            for t in chunk.start..chunk.end {
-                let indices = chunk.task_indices(t);
-                (chunk.fcn)(chunk.data, 0, 1, t as libc::c_int, total_tasks as libc::c_int,
-                            indices.0 as libc::c_int, indices.1 as libc::c_int, indices.2 as libc::c_int,
-                            chunk.total.0 as libc::c_int, chunk.total.1 as libc::c_int,
-                            chunk.total.2 as libc::c_int);
-            }
+            chunk.execute(0, 1);
             // If this chunk finished the group mark the group as finished
-            if chunk.end == total_tasks {
+            if chunk.is_last() {
                 tg.finished.store(true, atomic::Ordering::SeqCst);
             }
         }
-        // TODO: Note the free of this must wait until all tasks in the group have been finished
-        aligned_alloc::aligned_free(tg.data as *mut ());
+    }
+    // TODO: Note the free of this must wait until all groups in the context have been finished,
+    // then run through the mem vec and free everything
+    for m in tasks.mem.drain(0..) {
+        aligned_alloc::aligned_free(m as *mut ());
     }
     // Now erase this task list from our vector
     TASK_LIST.as_mut().map(|list| {
