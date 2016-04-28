@@ -25,9 +25,9 @@ pub type ISPCTaskFn = extern "C" fn(data: *mut libc::c_void, thread_idx: libc::c
 /// A list of all task groups spawned by a function in some launch context which
 /// will be sync'd at an explicit `sync` call or function exit.
 ///
-/// A Context is done if and only if ISPCSync has been called and passed its
-/// handle and all of its tasks are finished. Until ISPCSync is called on the
-/// Context's handle more tasks could be launched in it.
+/// **Note:** A Context is done if and only if ISPCSync has been called with
+/// its handle and all of its tasks are finished. Until ISPCSync is called on the
+/// Context's handle more tasks could be launched.
 #[derive(Debug)]
 pub struct Context {
     /// Task groups launched by this function
@@ -44,6 +44,18 @@ impl Context {
     /// Create a new list of tasks for some function with id `id`
     pub fn new(id: usize) -> Context {
         Context { tasks: Vec::new(), mem: Vec::new(), id: id }
+    }
+    /// Check if all tasks currently in the task list are completed
+    ///
+    /// **Note:** A Context is done if and only if ISPCSync has been called with
+    /// its handle and all of its tasks are finished. Until ISPCSync is called on the
+    /// Context's handle more tasks could be launched.
+    /// TODO: With this design we're essentially requiring the thread waiting on the context
+    /// to busy wait since we provide no condition variable to block on.
+    pub fn current_tasks_done(&self) -> bool {
+        self.tasks.iter().fold(true, |done, t| {
+            done && t.finished.load(atomic::Ordering::SeqCst)
+        })
     }
 }
 
@@ -69,7 +81,7 @@ pub struct Group {
     /// I'm unsure whether an atomic or semaphore would be the better choice here
     /// The TASK_LIST would want to send an alert when new tasks are pushed so in
     /// Sync we could wait on the context to finish?
-    pub finished: AtomicBool,
+    finished: AtomicBool,
 }
 
 impl Group {

@@ -411,6 +411,9 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
             chunk.execute(0, 1);
         }
     }
+    if tasks.current_tasks_done() {
+        println!("All tasks for context id {} are done!", tasks.id);
+    }
     // TODO: Note the free of this must wait until all groups in the context have been finished,
     // then run through the mem vec and free everything
     for m in tasks.mem.drain(0..) {
