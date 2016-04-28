@@ -411,6 +411,14 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
             chunk.execute(0, 1);
         }
     }
+    // TODO: If all the tasks for this context have been finished we're done sync'ing and can
+    // clean up memory and remove the context from the TASK_LIST. Otherwise there are some
+    // unfinished groups further down the the tree that were spawned by our direct tasks that
+    // those are now sync'ing on and we need to help out. However since we don't know the tree
+    // our best option is to just start grabbing chunks from unfinished groups in the TASK_LIST
+    // and running them to at least ensure global forward progress, which will eventually get
+    // the stuff we're waiting on to finish. After each chunk execution we should check if
+    // our sync'ing context is done and break
     if tasks.current_tasks_done() {
         println!("All tasks for context id {} are done!", tasks.id);
     }
