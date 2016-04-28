@@ -82,7 +82,7 @@ use std::process::{Command, ExitStatus};
 use std::env;
 use std::mem;
 use std::sync::{Once, ONCE_INIT};
-use std::sync::atomic;
+use std::sync::atomic::{self, AtomicUsize, ATOMIC_USIZE_INIT};
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
@@ -333,7 +333,7 @@ impl Config {
 
 static mut TASK_LIST: Option<&'static mut Vec<Box<task::Context>>> = None;
 static TASK_INIT: Once = ONCE_INIT;
-static mut NEXT_TASK_ID: usize = 0;
+static NEXT_TASK_ID: AtomicUsize = ATOMIC_USIZE_INIT;
 
 #[allow(non_snake_case)]
 #[no_mangle]
@@ -358,10 +358,9 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
         // unbox it into a raw ptr to get a ptr we can pass back to ISPC through
         // the handle_ptr and then re-box it into our TASK_LIST so it will
         // be free'd properly when we erase it from the vector in ISPCSync
-        let t = Box::new(task::Context::new(NEXT_TASK_ID));
+        let t = Box::new(task::Context::new(NEXT_TASK_ID.fetch_add(1, atomic::Ordering::SeqCst)));
         let h = Box::into_raw(t);
         *handle_ptr = mem::transmute(h);
-        NEXT_TASK_ID += 1;
         TASK_LIST.as_mut().map(|list| {
             list.push(Box::from_raw(h));
             list.last_mut().unwrap()
