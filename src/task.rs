@@ -6,7 +6,7 @@ use libc;
 use std::cmp;
 use std::iter::Iterator;
 use std::sync::{Mutex};
-use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT};
+use std::sync::atomic::{self, AtomicBool, ATOMIC_BOOL_INIT};
 
 /// A pointer to an ISPC task function.
 ///
@@ -22,8 +22,12 @@ pub type ISPCTaskFn = extern "C" fn(data: *mut libc::c_void, thread_idx: libc::c
                                     task_idx1: libc::c_int, task_idx2: libc::c_int, task_cnt0: libc::c_int,
                                     task_cnt1: libc::c_int, task_cnt2: libc::c_int);
 
-/// A list of all task groups spawned by a function in some launch context
-/// These will be sync'd at an explicit `sync` call or function exit
+/// A list of all task groups spawned by a function in some launch context which
+/// will be sync'd at an explicit `sync` call or function exit.
+///
+/// A Context is done if and only if ISPCSync has been called and passed its
+/// handle and all of its tasks are finished. Until ISPCSync is called on the
+/// Context's handle more tasks could be launched in it.
 #[derive(Debug)]
 pub struct Context {
     /// Task groups launched by this function
@@ -34,20 +38,12 @@ pub struct Context {
     /// TODO: Must be protected by a Reader-Writer lock
     pub mem: Vec<*mut libc::c_void>,
     pub id: usize,
-    /// TODO: Semaphore or atomic? There's some trickiness here actually since we
-    /// can't really say a context is done until we've called sync on it, until
-    /// that point new tasks could be launched for it on any thread. Maybe finished
-    /// could be a semaphore and we'd have some atomic `syncing` which would be set
-    /// when sync is called. Then if Group's are still running they would set the finished
-    /// semaphore once the last group has been finished on a context or if all groups
-    /// are already done we'd just retire the context immediately.
-    pub finished: bool,
 }
 
 impl Context {
     /// Create a new list of tasks for some function with id `id`
     pub fn new(id: usize) -> Context {
-        Context { tasks: Vec::new(), mem: Vec::new(), id: id, finished: false }
+        Context { tasks: Vec::new(), mem: Vec::new(), id: id }
     }
 }
 
@@ -84,6 +80,12 @@ impl Group {
     pub fn chunks(&self, chunk_size: i32) -> GroupChunks {
         GroupChunks { group: self, chunk_size: chunk_size }
     }
+    pub fn is_finished(&self) -> bool {
+        self.finished.load(atomic::Ordering::SeqCst)
+    }
+    fn mark_finished(&self) {
+        self.finished.store(true, atomic::Ordering::SeqCst)
+    }
     /// Get a chunk of tasks from the group to run if there are any tasks left to run
     ///
     /// `desired_tasks` specifies the number of tasks we'd like the chunk to contain,
@@ -111,10 +113,10 @@ pub struct GroupChunks<'a> {
 }
 
 impl<'a> Iterator for GroupChunks<'a> {
-    type Item = Chunk;
+    type Item = Chunk<'a>;
 
     /// Get the next chunk of tasks to be executed
-    fn next(&mut self) -> Option<Chunk> {
+    fn next(&mut self) -> Option<Chunk<'a>> {
         self.group.get_chunk(self.chunk_size)
     }
 }
@@ -123,7 +125,7 @@ impl<'a> Iterator for GroupChunks<'a> {
 ///
 /// Executes task in the range [start, end)
 #[derive(Debug)]
-pub struct Chunk {
+pub struct Chunk<'a> {
     /// The next task to be executed in this chunk
     start: i32,
     /// The last task to be executed in this chunk
@@ -134,13 +136,15 @@ pub struct Chunk {
     fcn: ISPCTaskFn,
     /// Data pointer to user params to pass to the function
     data: *mut libc::c_void,
+    /// The group this chunk is running tasks from
+    group: &'a Group,
 }
 
-impl Chunk {
+impl<'a> Chunk<'a> {
     /// Create a new chunk to execute tasks in the group from [start, end)
-    pub fn new(group: &Group, start: i32, end: i32) -> Chunk {
+    pub fn new(group: &'a Group, start: i32, end: i32) -> Chunk {
         Chunk { start: start, end: end, total: group.total,
-                fcn: group.fcn, data: group.data
+                fcn: group.fcn, data: group.data, group: group
         }
     }
     /// Execute all tasks in this chunk
@@ -153,6 +157,10 @@ impl Chunk {
                        id.0 as libc::c_int, id.1 as libc::c_int, id.2 as libc::c_int,
                        self.total.0 as libc::c_int, self.total.1 as libc::c_int,
                        self.total.2 as libc::c_int);
+        }
+        // If this chunk finished the group mark the group as finished
+        if self.is_last() {
+            self.group.mark_finished();
         }
     }
     /// Check if this is the last chunk in the group

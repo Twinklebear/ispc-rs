@@ -409,10 +409,6 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
         for chunk in tg.chunks(4) {
             println!("Running chunk {:?}", chunk);
             chunk.execute(0, 1);
-            // If this chunk finished the group mark the group as finished
-            if chunk.is_last() {
-                tg.finished.store(true, atomic::Ordering::SeqCst);
-            }
         }
     }
     // TODO: Note the free of this must wait until all groups in the context have been finished,
