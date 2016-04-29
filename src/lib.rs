@@ -424,9 +424,6 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     if context.current_tasks_done() {
         println!("All tasks for context id {} are done!", context.id);
     }
-    // TODO: Note the free of this must wait until all groups in the context have been finished,
-    // then run through the mem vec and free everything
-    context.release_memory();
     // Now erase this context from our vector
     TASK_LIST.as_mut().map(|list| {
         let pos = list.iter().position(|c| context.id == c.id).unwrap();

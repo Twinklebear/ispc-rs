@@ -29,6 +29,11 @@ pub type ISPCTaskFn = extern "C" fn(data: *mut libc::c_void, thread_idx: libc::c
 /// **Note:** A Context is done if and only if ISPCSync has been called with
 /// its handle and all of its tasks are finished. Until ISPCSync is called on the
 /// Context's handle more tasks could be launched.
+/// 
+/// Additionally, because we're not really able to associate a call to ISPCAlloc
+/// with a specific Group care must be taken that the Context is not dropped
+/// until ISPCSync has been called on its handle and all Groups within have
+/// completed execution.
 #[derive(Debug)]
 pub struct Context {
     /// Task groups launched by this function
@@ -75,13 +80,6 @@ impl Context {
         mem.push(ptr);
         ptr
     }
-    /// Release memory for all the tasks in this context
-    pub fn release_memory(&self) {
-        let mut mem = self.mem.lock().unwrap();
-        for m in mem.drain(0..) {
-            unsafe { aligned_alloc::aligned_free(m as *mut ()); }
-        }
-    }
     /// An iterator over the **current** groups in the context which have remaining tasks to
     /// run on a thread. If more task groups are added before this iterator has returned
     /// None those will appear as well.
@@ -103,6 +101,21 @@ impl Context {
             }
         }
         None
+    }
+}
+
+impl Drop for Context {
+    /// Release memory for all the tasks in this context
+    ///
+    /// **Note:** that because we're not really able to associate a call to ISPCAlloc
+    /// with a specific Group care must be taken that the Context is not dropped
+    /// until ISPCSync has been called on its handle and all Groups within have
+    /// completed execution.
+    fn drop(&mut self) {
+        let mut mem = self.mem.lock().unwrap();
+        for m in mem.drain(0..) {
+            unsafe { aligned_alloc::aligned_free(m as *mut ()); }
+        }
     }
 }
 
