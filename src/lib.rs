@@ -84,6 +84,8 @@ use std::mem;
 use std::sync::{Once, ONCE_INIT, Arc};
 use std::sync::atomic::{self, AtomicUsize, ATOMIC_USIZE_INIT};
 
+use task::{ISPCTaskFn, Context};
+
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
 /// In addition to building the library with ISPC we use rust-bindgen to generate
@@ -331,7 +333,7 @@ impl Config {
     }
 }
 
-static mut TASK_LIST: Option<&'static mut Vec<Arc<task::Context>>> = None;
+static mut TASK_LIST: Option<&'static mut Vec<Arc<Context>>> = None;
 static TASK_INIT: Once = ONCE_INIT;
 static NEXT_TASK_ID: AtomicUsize = ATOMIC_USIZE_INIT;
 
@@ -344,7 +346,7 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
     TASK_INIT.call_once(|| {
         let mut list = Arc::new(Vec::new());
-        let l: *mut Vec<Arc<task::Context>> = Arc::get_mut(&mut list).unwrap();
+        let l: *mut Vec<Arc<Context>> = Arc::get_mut(&mut list).unwrap();
         mem::forget(list);
         TASK_LIST = Some(&mut *l);
     });
@@ -358,7 +360,7 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
         // unbox it into a raw ptr to get a ptr we can pass back to ISPC through
         // the handle_ptr and then re-box it into our TASK_LIST so it will
         // be free'd properly when we erase it from the vector in ISPCSync
-        let c = Arc::new(task::Context::new(NEXT_TASK_ID.fetch_add(1, atomic::Ordering::SeqCst)));
+        let c = Arc::new(Context::new(NEXT_TASK_ID.fetch_add(1, atomic::Ordering::SeqCst)));
         {
             let h = &*c;
             *handle_ptr = mem::transmute(h);
@@ -369,7 +371,7 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
         }).unwrap()
     } else {
         println!("handle ptr is not null");
-        let handle_ctx: *mut task::Context = mem::transmute(*handle_ptr);
+        let handle_ctx: *mut Context = mem::transmute(*handle_ptr);
         TASK_LIST.as_mut().map(|list| {
             list.iter_mut().find(|c| (*handle_ctx).id == c.id).unwrap()
         }).unwrap()
@@ -384,18 +386,18 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
                                     data: *mut libc::c_void, count0: libc::c_int,
                                     count1: libc::c_int, count2: libc::c_int) {
     // Push the tasks being launched on to the list of task groups for this function
-    let mut context: &mut task::Context = mem::transmute(*handle_ptr);
+    let context: &mut Context = mem::transmute(*handle_ptr);
     // TODO: Launching tasks in parallel
     println!("ISPCLaunch, context.id = {}, counts: [{}, {}, {}]", context.id, count0, count1, count2);
-    let task_fn: task::ISPCTaskFn = mem::transmute(f);
-    context.tasks.push(task::Group::new((count0 as i32, count1 as i32, count2 as i32), data, task_fn));
+    let task_fn: ISPCTaskFn = mem::transmute(f);
+    context.launch((count0 as i32, count1 as i32, count2 as i32), data, task_fn);
 }
 
 #[allow(non_snake_case)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // TODO: Sync tasks
-    let context: &mut task::Context = mem::transmute(handle);
+    let context: &mut Context = mem::transmute(handle);
     // Make sure all tasks are done, and execute them if not for this simple
     // serial version. TODO: In the future we'd wait on each Group's semaphore or atomic bool
     // Maybe the waiting thread could help execute tasks as well, otherwise it might be
@@ -405,7 +407,7 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // so if our tasks aren't done and there's none left to run in our context we should start
     // running tasks from other contexts to help out
     println!("ISPCSync, context.id = {}", context.id);
-    for tg in context.tasks.iter_mut() {
+    for tg in context.iter() {
         for chunk in tg.chunks(4) {
             println!("Running chunk {:?}", chunk);
             chunk.execute(0, 1);

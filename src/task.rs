@@ -6,7 +6,7 @@ use aligned_alloc;
 
 use std::cmp;
 use std::iter::Iterator;
-use std::sync::{Mutex, RwLock};
+use std::sync::{Mutex, RwLock, Arc};
 use std::sync::atomic::{self, AtomicBool, ATOMIC_BOOL_INIT};
 
 /// A pointer to an ISPC task function.
@@ -39,7 +39,7 @@ pub struct Context {
     /// tasks finish because they'll have a read lock on the vec to access the Group safely.
     /// I guess an easy fix would be to push groups behind Arcs? But then how would the
     /// Chunk get the Arc?
-    pub tasks: Vec<Group>,
+    tasks: RwLock<Vec<Arc<Group>>>,
     /// The memory allocated for the various task group's parameters
     mem: Mutex<Vec<*mut libc::c_void>>,
     pub id: usize,
@@ -48,7 +48,11 @@ pub struct Context {
 impl Context {
     /// Create a new list of tasks for some function with id `id`
     pub fn new(id: usize) -> Context {
-        Context { tasks: Vec::new(), mem: Mutex::new(Vec::new()), id: id }
+        Context { tasks: RwLock::new(Vec::new()), mem: Mutex::new(Vec::new()), id: id }
+    }
+    /// Add a task group for execution that was launched in this context
+    pub fn launch(&self, total: (i32, i32, i32), data: *mut libc::c_void, fcn: ISPCTaskFn) {
+        self.tasks.write().unwrap().push(Arc::new(Group::new(total, data, fcn)));
     }
     /// Check if all tasks currently in the task list are completed
     ///
@@ -58,7 +62,8 @@ impl Context {
     /// TODO: With this design we're essentially requiring the thread waiting on the context
     /// to busy wait since we provide no condition variable to block on.
     pub fn current_tasks_done(&self) -> bool {
-        self.tasks.iter().fold(true, |done, t| {
+        self.tasks.read().unwrap()
+            .iter().fold(true, |done, t| {
             done && t.finished.load(atomic::Ordering::SeqCst)
         })
     }
@@ -77,6 +82,50 @@ impl Context {
             unsafe { aligned_alloc::aligned_free(m as *mut ()); }
         }
     }
+    /// An iterator over the **current** groups in the context which have remaining tasks to
+    /// run on a thread. If more task groups are added before this iterator has returned
+    /// None those will appear as well.
+    pub fn iter(&self) -> ContextIter {
+        ContextIter { context: self }
+    }
+    /// Get a Group with tasks remaining to be executed, returns None if there
+    /// are no groups left to run in this context.
+    ///
+    /// Note that you can't assume that the Group you get back is guaranteed
+    /// to have tasks remaining since between the time of checking that the
+    /// group has outstanding tasks and getting the group back to call `chunks`
+    /// those remaining tasks may have been taken by another threaad.
+    fn get_unscheduled_group(&self) -> Option<Arc<Group>> {
+        let tasks = self.tasks.read().unwrap();
+        for group in tasks.iter() {
+            if group.has_tasks() {
+                return Some(group.clone());
+            }
+        }
+        None
+    }
+}
+
+/// An iterator over the **current** groups in the context which have remaining tasks to
+/// run on a thread. If more task groups are added before this iterator has returned
+/// None those will appear as well.
+pub struct ContextIter<'a> {
+    context: &'a Context,
+}
+
+impl<'a> Iterator for ContextIter<'a> {
+    type Item = Arc<Group>;
+
+    /// Get a Group with tasks remaining to be executed, returns None if there
+    /// are no groups left to run in this context.
+    ///
+    /// Note that you can't assume that the Group you get back is guaranteed
+    /// to have tasks remaining since between the time of checking that the
+    /// group has outstanding tasks and getting the group back to call `chunks`
+    /// those remaining tasks may have been taken by another threaad.
+    fn next(&mut self) -> Option<Arc<Group>> {
+        self.context.get_unscheduled_group()
+    }
 }
 
 /// A group of tasks spawned by a call to `launch` in ISPC
@@ -89,7 +138,7 @@ pub struct Group {
     /// would expose next() and behave like an iterator to go through the chunk of tasks
     /// and run them. Right now we just schedule tasks like in a nested for loop,
     /// would some tiled scheduling be better?
-    pub start: Mutex<i32>,
+    pub start: RwLock<i32>,
     /// Total number of tasks scheduled in this group
     pub total: (i32, i32, i32),
     /// Function to run for this task
@@ -107,7 +156,7 @@ pub struct Group {
 impl Group {
     /// Create a new task group for execution of the function
     pub fn new(total: (i32, i32, i32), data: *mut libc::c_void, fcn: ISPCTaskFn) -> Group {
-        Group { start: Mutex::new(0), total: total, data: data, fcn: fcn, finished: ATOMIC_BOOL_INIT }
+        Group { start: RwLock::new(0), total: total, data: data, fcn: fcn, finished: ATOMIC_BOOL_INIT }
     }
     pub fn chunks(&self, chunk_size: i32) -> GroupChunks {
         GroupChunks { group: self, chunk_size: chunk_size }
@@ -118,6 +167,12 @@ impl Group {
     fn mark_finished(&self) {
         self.finished.store(true, atomic::Ordering::SeqCst)
     }
+    /// Check if this group has tasks left to execute
+    fn has_tasks(&self) -> bool {
+        let end = self.total.0 * self.total.1 * self.total.2;
+        let start = self.start.read().unwrap();
+        *start < end
+    }
     /// Get a chunk of tasks from the group to run if there are any tasks left to run
     ///
     /// `desired_tasks` specifies the number of tasks we'd like the chunk to contain,
@@ -126,7 +181,7 @@ impl Group {
     /// you must mark this group as finished upon completing execution of the chunk
     fn get_chunk(&self, desired_tasks: i32) -> Option<Chunk> {
         let end = self.total.0 * self.total.1 * self.total.2;
-        let mut start = self.start.lock().unwrap();
+        let mut start = self.start.write().unwrap();
         if *start < end {
             // Give the chunk 4 tasks or whatever remain
             let c = Some(Chunk::new(self, *start, cmp::min(*start + desired_tasks, end)));
