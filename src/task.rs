@@ -93,7 +93,7 @@ impl Context {
     /// to have tasks remaining since between the time of checking that the
     /// group has outstanding tasks and getting the group back to call `chunks`
     /// those remaining tasks may have been taken by another threaad.
-    fn get_unscheduled_group(&self) -> Option<Arc<Group>> {
+    fn get_active_group(&self) -> Option<Arc<Group>> {
         let tasks = self.tasks.read().unwrap();
         for group in tasks.iter() {
             if group.has_tasks() {
@@ -137,7 +137,7 @@ impl<'a> Iterator for ContextIter<'a> {
     /// group has outstanding tasks and getting the group back to call `chunks`
     /// those remaining tasks may have been taken by another threaad.
     fn next(&mut self) -> Option<Arc<Group>> {
-        self.context.get_unscheduled_group()
+        self.context.get_active_group()
     }
 }
 
