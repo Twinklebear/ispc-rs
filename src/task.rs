@@ -2,10 +2,11 @@
 //! of a task to be scheduled on to threads
 
 use libc;
+use aligned_alloc;
 
 use std::cmp;
 use std::iter::Iterator;
-use std::sync::{Mutex};
+use std::sync::{Mutex, RwLock};
 use std::sync::atomic::{self, AtomicBool, ATOMIC_BOOL_INIT};
 
 /// A pointer to an ISPC task function.
@@ -33,17 +34,21 @@ pub struct Context {
     /// Task groups launched by this function
     /// TODO: Must be protected by a Reader-Writer lock, though I don't think we'd want to
     /// protect each Group, it'd be an RwLock<Vec<Group>>
+    /// PROBLEM: If we're accessing this from multiple threads and have other threads
+    /// working on the group when we want to push a new group on we'll get stuck until those
+    /// tasks finish because they'll have a read lock on the vec to access the Group safely.
+    /// I guess an easy fix would be to push groups behind Arcs? But then how would the
+    /// Chunk get the Arc?
     pub tasks: Vec<Group>,
     /// The memory allocated for the various task group's parameters
-    /// TODO: Must be protected by a Reader-Writer lock
-    pub mem: Vec<*mut libc::c_void>,
+    mem: Mutex<Vec<*mut libc::c_void>>,
     pub id: usize,
 }
 
 impl Context {
     /// Create a new list of tasks for some function with id `id`
     pub fn new(id: usize) -> Context {
-        Context { tasks: Vec::new(), mem: Vec::new(), id: id }
+        Context { tasks: Vec::new(), mem: Mutex::new(Vec::new()), id: id }
     }
     /// Check if all tasks currently in the task list are completed
     ///
@@ -56,6 +61,21 @@ impl Context {
         self.tasks.iter().fold(true, |done, t| {
             done && t.finished.load(atomic::Ordering::SeqCst)
         })
+    }
+    /// Allocate some memory for this Context's task groups, returns a pointer to the allocated memory.
+    pub unsafe fn alloc(&self, size: usize, align: usize) -> *mut libc::c_void {
+        // TODO: The README for this lib mentions it may be slow. Maybe use some other allocator?
+        let ptr = aligned_alloc::aligned_alloc(size as usize, align as usize) as *mut libc::c_void;
+        let mut mem = self.mem.lock().unwrap();
+        mem.push(ptr);
+        ptr
+    }
+    /// Release memory for all the tasks in this context
+    pub fn release_memory(&self) {
+        let mut mem = self.mem.lock().unwrap();
+        for m in mem.drain(0..) {
+            unsafe { aligned_alloc::aligned_free(m as *mut ()); }
+        }
     }
 }
 

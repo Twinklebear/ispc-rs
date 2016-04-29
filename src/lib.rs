@@ -81,7 +81,7 @@ use std::io::Write;
 use std::process::{Command, ExitStatus};
 use std::env;
 use std::mem;
-use std::sync::{Once, ONCE_INIT};
+use std::sync::{Once, ONCE_INIT, Arc};
 use std::sync::atomic::{self, AtomicUsize, ATOMIC_USIZE_INIT};
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
@@ -331,7 +331,7 @@ impl Config {
     }
 }
 
-static mut TASK_LIST: Option<&'static mut Vec<Box<task::Context>>> = None;
+static mut TASK_LIST: Option<&'static mut Vec<Arc<task::Context>>> = None;
 static TASK_INIT: Once = ONCE_INIT;
 static NEXT_TASK_ID: AtomicUsize = ATOMIC_USIZE_INIT;
 
@@ -343,8 +343,8 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
     // would let the user register the desired (or default) task system? But if
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
     TASK_INIT.call_once(|| {
-        let mut list = Box::new(Vec::new());
-        let l: *mut Vec<Box<task::Context>> = &mut *list;
+        let mut list = Arc::new(Vec::new());
+        let l: *mut Vec<Arc<task::Context>> = Arc::get_mut(&mut list).unwrap();
         mem::forget(list);
         TASK_LIST = Some(&mut *l);
     });
@@ -352,30 +352,30 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
     // If the handle is null this is the first time this function has spawned tasks
     // and we should create a new Context structure in the TASK_LIST for it, otherwise
     // it's the pointer to where we should append the new Group
-    let mut tasks = if (*handle_ptr).is_null() {
+    let context = if (*handle_ptr).is_null() {
         println!("handle ptr is null");
         // This is a bit hairy. We allocate the new task context in a box, then
         // unbox it into a raw ptr to get a ptr we can pass back to ISPC through
         // the handle_ptr and then re-box it into our TASK_LIST so it will
         // be free'd properly when we erase it from the vector in ISPCSync
-        let t = Box::new(task::Context::new(NEXT_TASK_ID.fetch_add(1, atomic::Ordering::SeqCst)));
-        let h = Box::into_raw(t);
-        *handle_ptr = mem::transmute(h);
+        let c = Arc::new(task::Context::new(NEXT_TASK_ID.fetch_add(1, atomic::Ordering::SeqCst)));
+        {
+            let h = &*c;
+            *handle_ptr = mem::transmute(h);
+        }
         TASK_LIST.as_mut().map(|list| {
-            list.push(Box::from_raw(h));
+            list.push(c);
             list.last_mut().unwrap()
         }).unwrap()
     } else {
         println!("handle ptr is not null");
-        let handle_task: *mut task::Context = mem::transmute(*handle_ptr);
+        let handle_ctx: *mut task::Context = mem::transmute(*handle_ptr);
         TASK_LIST.as_mut().map(|list| {
-            list.iter_mut().find(|t| (*handle_task).id == t.id).unwrap()
+            list.iter_mut().find(|c| (*handle_ctx).id == c.id).unwrap()
         }).unwrap()
     };
-    // TODO: The README for this lib mentions it may be slow. Maybe use some other allocator?
-    tasks.mem.push(aligned_alloc::aligned_alloc(size as usize, align as usize) as *mut libc::c_void);
-    println!("tasks.id = {}", tasks.id);
-    tasks.mem[tasks.mem.len() - 1]
+    println!("context.id = {}", context.id);
+    context.alloc(size as usize, align as usize)
 }
 
 #[allow(non_snake_case)]
@@ -384,18 +384,18 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
                                     data: *mut libc::c_void, count0: libc::c_int,
                                     count1: libc::c_int, count2: libc::c_int) {
     // Push the tasks being launched on to the list of task groups for this function
-    let mut tasks: &mut task::Context = mem::transmute(*handle_ptr);
+    let mut context: &mut task::Context = mem::transmute(*handle_ptr);
     // TODO: Launching tasks in parallel
-    println!("ISPCLaunch, tasks.id = {}, counts: [{}, {}, {}]", tasks.id, count0, count1, count2);
+    println!("ISPCLaunch, context.id = {}, counts: [{}, {}, {}]", context.id, count0, count1, count2);
     let task_fn: task::ISPCTaskFn = mem::transmute(f);
-    tasks.tasks.push(task::Group::new((count0 as i32, count1 as i32, count2 as i32), data, task_fn));
+    context.tasks.push(task::Group::new((count0 as i32, count1 as i32, count2 as i32), data, task_fn));
 }
 
 #[allow(non_snake_case)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // TODO: Sync tasks
-    let tasks: &mut task::Context = mem::transmute(handle);
+    let context: &mut task::Context = mem::transmute(handle);
     // Make sure all tasks are done, and execute them if not for this simple
     // serial version. TODO: In the future we'd wait on each Group's semaphore or atomic bool
     // Maybe the waiting thread could help execute tasks as well, otherwise it might be
@@ -404,8 +404,8 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // to prevent deadlock actually, because those tasks could in turn launch & sync and get stuck
     // so if our tasks aren't done and there's none left to run in our context we should start
     // running tasks from other contexts to help out
-    println!("ISPCSync, tasks.id = {}", tasks.id);
-    for tg in tasks.tasks.iter_mut() {
+    println!("ISPCSync, context.id = {}", context.id);
+    for tg in context.tasks.iter_mut() {
         for chunk in tg.chunks(4) {
             println!("Running chunk {:?}", chunk);
             chunk.execute(0, 1);
@@ -419,17 +419,15 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     // and running them to at least ensure global forward progress, which will eventually get
     // the stuff we're waiting on to finish. After each chunk execution we should check if
     // our sync'ing context is done and break
-    if tasks.current_tasks_done() {
-        println!("All tasks for context id {} are done!", tasks.id);
+    if context.current_tasks_done() {
+        println!("All tasks for context id {} are done!", context.id);
     }
     // TODO: Note the free of this must wait until all groups in the context have been finished,
     // then run through the mem vec and free everything
-    for m in tasks.mem.drain(0..) {
-        aligned_alloc::aligned_free(m as *mut ());
-    }
-    // Now erase this task list from our vector
+    context.release_memory();
+    // Now erase this context from our vector
     TASK_LIST.as_mut().map(|list| {
-        let pos = list.iter().position(|t| tasks.id == t.id).unwrap();
+        let pos = list.iter().position(|c| context.id == c.id).unwrap();
         list.remove(pos);
     }).unwrap();
 }
