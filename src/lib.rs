@@ -18,7 +18,7 @@
 //!
 //! Now you can use `ispc` to compile your code into a static library:
 //!
-//! ```no_compile
+//! ```ignore
 //! extern crate ispc;
 //!
 //! fn main() {
@@ -40,7 +40,7 @@
 //! into a module of the same name. Note that all the functions imported will be unsafe as they're
 //! the raw C bindings to your lib.
 //!
-//! ```no_compile
+//! ```ignore
 //! #[macro_use]
 //! extern crate ispc;
 //!
@@ -73,8 +73,8 @@ extern crate gcc;
 extern crate libc;
 extern crate aligned_alloc;
 
-mod task;
-mod exec;
+pub mod task;
+pub mod exec;
 
 use std::path::{Path, PathBuf};
 use std::fs::File;
@@ -95,7 +95,7 @@ use exec::{TaskSystem, Serial};
 ///
 /// # Example
 ///
-/// ```no_compile
+/// ```ignore
 /// #[macro_use]
 /// extern crate ispc;
 ///
@@ -338,6 +338,7 @@ static mut TASK_SYSTEM: Option<&'static mut TaskSystem> = None;
 static TASK_INIT: Once = ONCE_INIT;
 
 #[allow(non_snake_case)]
+#[doc(hidden)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: libc::int64_t,
                                    align: libc::int32_t) -> *mut libc::c_void {
@@ -354,6 +355,7 @@ pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: lib
 }
 
 #[allow(non_snake_case)]
+#[doc(hidden)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut libc::c_void,
                                     data: *mut libc::c_void, count0: libc::c_int,
@@ -364,6 +366,7 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
 }
 
 #[allow(non_snake_case)]
+#[doc(hidden)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     TASK_SYSTEM.as_mut().map(|s| s.sync(handle)).unwrap();

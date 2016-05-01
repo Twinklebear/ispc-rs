@@ -32,7 +32,7 @@ pub trait TaskSystem {
     /// should be executed `count0 * count1 * count2` times and indices passed to the function
     /// should be as if running in a nested for loop:
     ///
-    /// ```no_compile
+    /// ```ignore
     /// let total_tasks = count0 * count1 * count2;
     /// for z in 0..count2 {
     ///     for y in 0..count1 {
