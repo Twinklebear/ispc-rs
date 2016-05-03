@@ -80,7 +80,7 @@ impl Parallel {
         let par = Parallel { context_list: RwLock::new(Vec::new()),
                              next_context_id: AtomicUsize::new(0),
                              threads: Mutex::new(Vec::new()),
-                             chunk_size: 16 };
+                             chunk_size: 4 };
         {
             let mut threads = par.threads.lock().unwrap();
             let num_threads = num_cpus::get();
@@ -171,17 +171,21 @@ impl TaskSystem for Parallel {
             println!("Not all tasks for context {} are done, thread {} helping out!", context.id, thread);
             // Get a task group to run
             while let Some(c) = get_context() {
-                //println!("syncing thread {} got a context {:?}", thread, c);
+                println!("syncing thread {} got a context {:?}", thread, c);
+                let mut ran_some = false;
                 for tg in c.iter() {
-                    //println!("syncing thread {} looking at task group {:?}", thread, tg);
+                    println!("syncing thread {} looking at task group {:?}", thread, tg);
                     for chunk in tg.chunks(self.chunk_size) {
+                        ran_some = true;
                         println!("syncing thread {} running nonlocal chunk {:?}", thread, chunk);
                         chunk.execute(thread as i32, total_threads as i32);
                     }
                 }
+                if !ran_some {
+                    println!("Syncing thread ran nothing, waiting a bit");
+                    thread::sleep(Duration::from_millis(50));
+                }
             }
-            println!("Syncing thread didn't get a context, waiting a bit");
-            thread::sleep(Duration::from_millis(50));
         }
         // Now erase this context from our vector
         let mut context_list = self.context_list.write().unwrap();
