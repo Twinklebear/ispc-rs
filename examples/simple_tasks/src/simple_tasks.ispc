@@ -28,7 +28,7 @@ export void run_tasks(){
 	sync;
 	// The next launch after an explicit sync will pass a null handle_ptr again
 	// since it's a new context again
-	//launch[4] hello_task();
+	launch[8] hello_task();
 	launch[2, 2, 2] goodbye_task();
 }
 
