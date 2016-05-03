@@ -134,7 +134,54 @@ float ambient_occlusion(const Isect &isect, const uniform Sphere *uniform sphere
 	occlusion = (NUM_AO_SAMPLES * NUM_AO_SAMPLES - occlusion) / (NUM_AO_SAMPLES * NUM_AO_SAMPLES);
 	return occlusion;
 }
+task void scanline(const uniform int w, const uniform int h, const uniform int n_samples, const uniform int seed,
+		uniform float img[], const uniform Plane &plane, const uniform Sphere spheres[]){
+	RNGState rng_state;
+	// Make the seed sort of scanline dependent
+	seed_rng(&rng_state, seed * (programIndex + taskIndex0 + 1));
+	const float inv_samples = 1.f / n_samples;
+	foreach (i = 0 ... w){
+		for (int v = 0; v < n_samples; ++v){
+			for (int u = 0; u < n_samples; ++u){
+				const float px = (i + (u * inv_samples) - w / 2.f) / (w / 2.f);
+				const float py = -(taskIndex0 + (v * inv_samples) - h / 2.f) / (h / 2.f);
 
+				Ray ray;
+				ray.origin = 0.f;
+				ray.dir.x = px;
+				ray.dir.y = py;
+				ray.dir.z = -1.f;
+				ray.dir = normalized(ray.dir);
+
+				Isect isect;
+				isect.t = 1e17f;
+				isect.hit = 0;
+
+				sphere_intersect(isect, ray, spheres[0]);
+				sphere_intersect(isect, ray, spheres[1]);
+				sphere_intersect(isect, ray, spheres[2]);
+				plane_intersect(isect, ray, plane);
+				if (isect.hit){
+					const float col = ambient_occlusion(isect, spheres, plane, rng_state);
+					// It's just a grayscale image
+					img[taskIndex0 * w + i] += col;
+				}
+			}
+		}
+		img[taskIndex0 * w + i] *= inv_samples * inv_samples;
+	}
+}
+export void aobench_parallel(const uniform int w, const uniform int h, const uniform int n_samples, const uniform int seed,
+		uniform float img[]){
+	const uniform Plane plane = {{0.f, -0.5f, 0.f}, {0.f, 1.f, 0.f}};
+	const uniform Sphere spheres[3] = {
+		{{-2.f, 0.f, -3.5f}, 0.5f},
+		{{-0.5f, 0.f, -3.f}, 0.5f},
+		{{1.f, 0.f, -2.2f}, 0.5f}
+	};
+	// For the parallel implementation we just render each scanline in parallel
+	launch[h] scanline(w, h, n_samples, seed, img, plane, spheres);
+}
 export void aobench(const uniform int w, const uniform int h, const uniform int n_samples, const uniform int seed,
 		uniform float img[]){
 	const uniform Plane plane = {{0.f, -0.5f, 0.f}, {0.f, 1.f, 0.f}};

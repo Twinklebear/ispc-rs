@@ -15,6 +15,7 @@ fn main() {
     let mut rng = rand::thread_rng();
     unsafe {
         ao::aobench(width as i32, height as i32, n_samples, rng.gen::<i32>(), fimg.as_mut_ptr());
+        //ao::aobench_parallel(width as i32, height as i32, n_samples, rng.gen::<i32>(), fimg.as_mut_ptr());
     }
     // Convert the image to grey scale u8 to save
     let img = fimg.iter().map(|x| {
