@@ -7,7 +7,7 @@ use aligned_alloc;
 use std::cmp;
 use std::iter::Iterator;
 use std::sync::{Mutex, RwLock, Arc};
-use std::sync::atomic::{self, AtomicBool, ATOMIC_BOOL_INIT};
+use std::sync::atomic::{self, AtomicBool, ATOMIC_BOOL_INIT, AtomicPtr};
 
 /// A pointer to an ISPC task function.
 ///
@@ -46,7 +46,7 @@ pub struct Context {
     /// Chunk get the Arc?
     tasks: RwLock<Vec<Arc<Group>>>,
     /// The memory allocated for the various task group's parameters
-    mem: Mutex<Vec<*mut libc::c_void>>,
+    mem: Mutex<Vec<AtomicPtr<libc::c_void>>>,
     pub id: usize,
 }
 
@@ -57,7 +57,7 @@ impl Context {
     }
     /// Add a task group for execution that was launched in this context
     pub fn launch(&self, total: (i32, i32, i32), data: *mut libc::c_void, fcn: ISPCTaskFn) {
-        self.tasks.write().unwrap().push(Arc::new(Group::new(total, data, fcn)));
+        self.tasks.write().unwrap().push(Arc::new(Group::new(total, AtomicPtr::new(data), fcn)));
     }
     /// Check if all tasks currently in the task list are completed
     ///
@@ -77,7 +77,7 @@ impl Context {
         // TODO: The README for this lib mentions it may be slow. Maybe use some other allocator?
         let ptr = aligned_alloc::aligned_alloc(size as usize, align as usize) as *mut libc::c_void;
         let mut mem = self.mem.lock().unwrap();
-        mem.push(ptr);
+        mem.push(AtomicPtr::new(ptr));
         ptr
     }
     /// An iterator over the **current** groups in the context which have remaining tasks to
@@ -113,7 +113,8 @@ impl Drop for Context {
     /// completed execution.
     fn drop(&mut self) {
         let mut mem = self.mem.lock().unwrap();
-        for m in mem.drain(0..) {
+        for ptr in mem.drain(0..) {
+            let m = ptr.load(atomic::Ordering::SeqCst);
             unsafe { aligned_alloc::aligned_free(m as *mut ()); }
         }
     }
@@ -157,7 +158,7 @@ pub struct Group {
     /// Function to run for this task
     pub fcn: ISPCTaskFn,
     /// Data pointer to user params to pass to the function
-    pub data: *mut libc::c_void,
+    pub data: AtomicPtr<libc::c_void>,
     /// Whether all tasks have been completed or not, TODO: should become
     /// an atomic or semaphore
     /// I'm unsure whether an atomic or semaphore would be the better choice here
@@ -168,7 +169,7 @@ pub struct Group {
 
 impl Group {
     /// Create a new task group for execution of the function
-    pub fn new(total: (i32, i32, i32), data: *mut libc::c_void, fcn: ISPCTaskFn) -> Group {
+    pub fn new(total: (i32, i32, i32), data: AtomicPtr<libc::c_void>, fcn: ISPCTaskFn) -> Group {
         Group { start: RwLock::new(0), total: total, data: data, fcn: fcn, finished: ATOMIC_BOOL_INIT }
     }
     pub fn chunks(&self, chunk_size: i32) -> GroupChunks {
@@ -235,7 +236,7 @@ pub struct Chunk<'a> {
     /// Function to run for this task
     fcn: ISPCTaskFn,
     /// Data pointer to user params to pass to the function
-    data: *mut libc::c_void,
+    data: AtomicPtr<libc::c_void>,
     /// The group this chunk is running tasks from
     group: &'a Group,
 }
@@ -243,16 +244,18 @@ pub struct Chunk<'a> {
 impl<'a> Chunk<'a> {
     /// Create a new chunk to execute tasks in the group from [start, end)
     pub fn new(group: &'a Group, start: i32, end: i32) -> Chunk {
+        let d = AtomicPtr::new(group.data.load(atomic::Ordering::SeqCst));
         Chunk { start: start, end: end, total: group.total,
-                fcn: group.fcn, data: group.data, group: group
+                fcn: group.fcn, data: d, group: group
         }
     }
     /// Execute all tasks in this chunk
     pub fn execute(&self, thread_id: i32, total_threads: i32) {
         let total_tasks = self.total.0 * self.total.1 * self.total.2;
+        let data = self.data.load(atomic::Ordering::SeqCst);
         for t in self.start..self.end {
             let id = self.task_indices(t);
-            (self.fcn)(self.data, thread_id as libc::c_int, total_threads as libc::c_int,
+            (self.fcn)(data, thread_id as libc::c_int, total_threads as libc::c_int,
                        t as libc::c_int, total_tasks as libc::c_int,
                        id.0 as libc::c_int, id.1 as libc::c_int, id.2 as libc::c_int,
                        self.total.0 as libc::c_int, self.total.1 as libc::c_int,

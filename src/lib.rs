@@ -72,6 +72,7 @@ extern crate bindgen;
 extern crate gcc;
 extern crate libc;
 extern crate aligned_alloc;
+extern crate num_cpus;
 
 pub mod task;
 pub mod exec;
@@ -85,7 +86,7 @@ use std::mem;
 use std::sync::{Once, ONCE_INIT, Arc};
 
 use task::ISPCTaskFn;
-use exec::{TaskSystem, Serial};
+use exec::{TaskSystem, Parallel};
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
@@ -334,24 +335,32 @@ impl Config {
     }
 }
 
-static mut TASK_SYSTEM: Option<&'static mut TaskSystem> = None;
+static mut TASK_SYSTEM: Option<&'static Parallel> = None;
 static TASK_INIT: Once = ONCE_INIT;
+
+pub fn get_task_system() -> &'static Parallel {
+    // TODO: This is a bit nasty, but I'm not sure on a nicer solution. Maybe something that
+    // would let the user register the desired (or default) task system? But if
+    // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
+    TASK_INIT.call_once(|| {
+        unsafe {
+            let task_sys = Arc::new(Parallel::new());
+            // TODO: Casting to a TaskSystem is now casting to incompatible types with mem transmute?
+            // How could we support user-provided task systems then?
+            let s: *const Parallel = mem::transmute(&*task_sys);
+            mem::forget(task_sys);
+            TASK_SYSTEM = Some(&*s);
+        }
+    });
+    unsafe { TASK_SYSTEM.unwrap() }
+}
 
 #[allow(non_snake_case)]
 #[doc(hidden)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: libc::int64_t,
                                    align: libc::int32_t) -> *mut libc::c_void {
-    // TODO: This is a bit nasty, but I'm not sure on a nicer solution. Maybe something that
-    // would let the user register the desired (or default) task system? But if
-    // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
-    TASK_INIT.call_once(|| {
-        let mut task_sys = Arc::new(Serial::new());
-        let s: *mut TaskSystem = Arc::get_mut(&mut task_sys).unwrap();
-        mem::forget(task_sys);
-        TASK_SYSTEM = Some(&mut *s);
-    });
-    TASK_SYSTEM.as_mut().map(|s| s.alloc(handle_ptr, size, align)).unwrap()
+    get_task_system().alloc(handle_ptr, size, align)
 }
 
 #[allow(non_snake_case)]
@@ -361,14 +370,13 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
                                     data: *mut libc::c_void, count0: libc::c_int,
                                     count1: libc::c_int, count2: libc::c_int) {
     let task_fn: ISPCTaskFn = mem::transmute(f);
-    TASK_SYSTEM.as_mut().map(|s| s.launch(handle_ptr, task_fn, data, count0 as i32,
-                                          count1 as i32, count2 as i32)).unwrap();
+    get_task_system().launch(handle_ptr, task_fn, data, count0 as i32, count1 as i32, count2 as i32);
 }
 
 #[allow(non_snake_case)]
 #[doc(hidden)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
-    TASK_SYSTEM.as_mut().map(|s| s.sync(handle)).unwrap();
+    get_task_system().sync(handle);
 }
 
