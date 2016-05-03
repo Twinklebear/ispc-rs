@@ -191,6 +191,7 @@ impl TaskSystem for Parallel {
 
 fn worker_thread(thread: usize, total_threads: usize) {
     THREAD_ID.with(|f| *f.borrow_mut() = thread);
+    let task_system = ::get_task_system();
     println!("thread {} is spawned", thread);
     loop {
         thread::park();
@@ -198,7 +199,7 @@ fn worker_thread(thread: usize, total_threads: usize) {
         // Get a task group to run
         let ctx = {
             // Do it in a block to limit the scope of the lock
-            ::get_task_system().context_list.read().unwrap().iter()
+            task_system.context_list.read().unwrap().iter()
                 .find(|c| !c.current_tasks_done()).map(|c| c.clone())
         };
         if let Some(c) = ctx {
