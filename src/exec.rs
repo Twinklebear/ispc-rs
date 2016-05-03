@@ -197,8 +197,6 @@ fn worker_thread(thread: usize, total_threads: usize, chunk_size: i32) {
     let task_system = ::get_task_system();
     println!("thread {} is spawned", thread);
     loop {
-        thread::park();
-        println!("thread {} was woken up to work!", thread);
         // Get a task group to run
         let ctx = {
             // Do it in a block to limit the scope of the lock
@@ -212,6 +210,9 @@ fn worker_thread(thread: usize, total_threads: usize, chunk_size: i32) {
                     chunk.execute(thread as i32, total_threads as i32);
                 }
             }
+        } else {
+            thread::park();
+            println!("thread {} was woken up to work!", thread);
         }
     }
 }
