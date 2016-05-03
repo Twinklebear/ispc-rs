@@ -5,6 +5,7 @@ use libc;
 use num_cpus;
 
 use std::mem;
+use std::time::Duration;
 use std::cell::RefCell;
 use std::sync::{Arc, RwLock, Mutex};
 use std::sync::atomic::{self, AtomicUsize};
@@ -79,7 +80,7 @@ impl Parallel {
         let par = Parallel { context_list: RwLock::new(Vec::new()),
                              next_context_id: AtomicUsize::new(0),
                              threads: Mutex::new(Vec::new()),
-                             chunk_size: 8 };
+                             chunk_size: 16 };
         {
             let mut threads = par.threads.lock().unwrap();
             let num_threads = num_cpus::get();
@@ -100,8 +101,8 @@ impl TaskSystem for Parallel {
         // If the handle is null this is the first time this function has spawned tasks
         // and we should create a new Context structure in the TASK_LIST for it, otherwise
         // it's the pointer to where we should append the new Group
-        let mut context_list = self.context_list.write().unwrap();
-        let context = if (*handle_ptr).is_null() {
+        if (*handle_ptr).is_null() {
+            let mut context_list = self.context_list.write().unwrap();
             println!("handle ptr is null");
             // This is a bit hairy. We allocate the new task context in a box, then
             // unbox it into a raw ptr to get a ptr we can pass back to ISPC through
@@ -113,15 +114,17 @@ impl TaskSystem for Parallel {
                 *handle_ptr = mem::transmute(h);
             }
             context_list.push(c);
-            context_list.last_mut().unwrap()
+            let ctx = context_list.last().unwrap();
+            println!("context.id = {}", ctx.id);
+            ctx.alloc(size as usize, align as usize)
         } else {
-            // TODO: I'm not sure if it'd be worth optimizing this path to just require a read lock
+            let context_list = self.context_list.read().unwrap();
             println!("handle ptr is not null");
             let handle_ctx: *mut Context = mem::transmute(*handle_ptr);
-            context_list.iter_mut().find(|c| (*handle_ctx).id == c.id).unwrap()
-        };
-        println!("context.id = {}", context.id);
-        context.alloc(size as usize, align as usize)
+            let ctx = context_list.iter().find(|c| (*handle_ctx).id == c.id).unwrap();
+            println!("context.id = {}", ctx.id);
+            ctx.alloc(size as usize, align as usize)
+        }
     }
     unsafe fn launch(&self, handle_ptr: *mut *mut libc::c_void, f: ISPCTaskFn, data: *mut libc::c_void,
                      count0: i32, count1: i32, count2: i32) {
@@ -167,23 +170,18 @@ impl TaskSystem for Parallel {
         while !context.current_tasks_done() {
             println!("Not all tasks for context {} are done, thread {} helping out!", context.id, thread);
             // Get a task group to run
-            let ctx = {
-                // Do it in a block to limit the scope of the lock
-                ::get_task_system().context_list.read().unwrap().iter()
-                    .find(|c| !c.current_tasks_done()).map(|c| c.clone())
-            };
-            if let Some(c) = ctx {
-                println!("syncing thread {} got a context {:?}", thread, c);
+            while let Some(c) = get_context() {
+                //println!("syncing thread {} got a context {:?}", thread, c);
                 for tg in c.iter() {
-                    println!("syncing thread {} looking at task group {:?}", thread, tg);
+                    //println!("syncing thread {} looking at task group {:?}", thread, tg);
                     for chunk in tg.chunks(self.chunk_size) {
                         println!("syncing thread {} running nonlocal chunk {:?}", thread, chunk);
                         chunk.execute(thread as i32, total_threads as i32);
                     }
                 }
-            } else {
-                println!("Syncing thread didn't get a context");
             }
+            println!("Syncing thread didn't get a context, waiting a bit");
+            thread::sleep(Duration::from_millis(50));
         }
         // Now erase this context from our vector
         let mut context_list = self.context_list.write().unwrap();
@@ -192,28 +190,31 @@ impl TaskSystem for Parallel {
     }
 }
 
+/// Get a context that may have some tasks left to be executed. Returns None if
+/// all current contexts current tasks are finished
+fn get_context() -> Option<Arc<Context>> {
+    ::get_task_system().context_list.read().unwrap().iter()
+        .find(|c| !c.current_tasks_done()).map(|c| c.clone())
+}
+
 fn worker_thread(thread: usize, total_threads: usize, chunk_size: i32) {
     THREAD_ID.with(|f| *f.borrow_mut() = thread);
-    let task_system = ::get_task_system();
     println!("thread {} is spawned", thread);
     loop {
         // Get a task group to run
-        let ctx = {
-            // Do it in a block to limit the scope of the lock
-            task_system.context_list.read().unwrap().iter()
-                .find(|c| !c.current_tasks_done()).map(|c| c.clone())
-        };
-        if let Some(c) = ctx {
+        while let Some(c) = get_context() {
             for tg in c.iter() {
+                println!("thread checking task group {:?}", tg);
                 for chunk in tg.chunks(chunk_size) {
                     println!("thread {} running chunk {:?}", thread, chunk);
                     chunk.execute(thread as i32, total_threads as i32);
                 }
             }
-        } else {
-            thread::park();
-            println!("thread {} was woken up to work!", thread);
         }
+        // We ran out of contexts to get, so wait a bit for a new group to get
+        // launched
+        thread::park();
+        println!("thread {} was woken up to work!", thread);
     }
 }
 
