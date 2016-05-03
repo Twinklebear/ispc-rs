@@ -71,20 +71,23 @@ pub struct Parallel {
     context_list: RwLock<Vec<Arc<Context>>>,
     next_context_id: AtomicUsize,
     threads: Mutex<Vec<JoinHandle<()>>>,
+    chunk_size: i32,
 }
 
 impl Parallel {
     pub fn new() -> Parallel {
         let par = Parallel { context_list: RwLock::new(Vec::new()),
                              next_context_id: AtomicUsize::new(0),
-                             threads: Mutex::new(Vec::new()) };
+                             threads: Mutex::new(Vec::new()),
+                             chunk_size: 8 };
         {
             let mut threads = par.threads.lock().unwrap();
             let num_threads = num_cpus::get();
+            let chunk_size = par.chunk_size;
             println!("Launching {} threads", num_threads);
             for i in 0..num_threads {
                 // Note that the spawned thread ids start at 1 since the main thread is 0
-                threads.push(thread::spawn(move || worker_thread(i + 1, num_threads + 1)));
+                threads.push(thread::spawn(move || worker_thread(i + 1, num_threads + 1, chunk_size)));
             }
         }
         par
@@ -147,7 +150,7 @@ impl TaskSystem for Parallel {
         // running tasks from other contexts to help out
         println!("ISPCSync, context.id = {}", context.id);
         for tg in context.iter() {
-            for chunk in tg.chunks(1) {
+            for chunk in tg.chunks(self.chunk_size) {
                 println!("syncing thread {} running local chunk {:?}", thread, chunk);
                 // TODO: We need to figure out which thread we are
                 chunk.execute(thread as i32, total_threads as i32);
@@ -173,7 +176,7 @@ impl TaskSystem for Parallel {
                 println!("syncing thread {} got a context {:?}", thread, c);
                 for tg in c.iter() {
                     println!("syncing thread {} looking at task group {:?}", thread, tg);
-                    for chunk in tg.chunks(1) {
+                    for chunk in tg.chunks(self.chunk_size) {
                         println!("syncing thread {} running nonlocal chunk {:?}", thread, chunk);
                         chunk.execute(thread as i32, total_threads as i32);
                     }
@@ -189,7 +192,7 @@ impl TaskSystem for Parallel {
     }
 }
 
-fn worker_thread(thread: usize, total_threads: usize) {
+fn worker_thread(thread: usize, total_threads: usize, chunk_size: i32) {
     THREAD_ID.with(|f| *f.borrow_mut() = thread);
     let task_system = ::get_task_system();
     println!("thread {} is spawned", thread);
@@ -204,7 +207,7 @@ fn worker_thread(thread: usize, total_threads: usize) {
         };
         if let Some(c) = ctx {
             for tg in c.iter() {
-                for chunk in tg.chunks(1) {
+                for chunk in tg.chunks(chunk_size) {
                     println!("thread {} running chunk {:?}", thread, chunk);
                     chunk.execute(thread as i32, total_threads as i32);
                 }
