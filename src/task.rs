@@ -7,7 +7,7 @@ use aligned_alloc;
 use std::cmp;
 use std::iter::Iterator;
 use std::sync::{Mutex, RwLock, Arc};
-use std::sync::atomic::{self, AtomicBool, ATOMIC_BOOL_INIT, AtomicPtr};
+use std::sync::atomic::{self, AtomicUsize, AtomicPtr};
 
 /// A pointer to an ISPC task function.
 ///
@@ -67,10 +67,7 @@ impl Context {
     /// TODO: With this design we're essentially requiring the thread waiting on the context
     /// to busy wait since we provide no condition variable to block on.
     pub fn current_tasks_done(&self) -> bool {
-        self.tasks.read().unwrap()
-            .iter().fold(true, |done, t| {
-            done && t.finished.load(atomic::Ordering::SeqCst)
-        })
+        self.tasks.read().unwrap().iter().fold(true, |done, t| done && t.is_finished())
     }
     /// Allocate some memory for this Context's task groups, returns a pointer to the allocated memory.
     pub unsafe fn alloc(&self, size: usize, align: usize) -> *mut libc::c_void {
@@ -152,43 +149,49 @@ pub struct Group {
     /// would expose next() and behave like an iterator to go through the chunk of tasks
     /// and run them. Right now we just schedule tasks like in a nested for loop,
     /// would some tiled scheduling be better?
-    pub start: RwLock<i32>,
+    start: AtomicUsize,
+    end: usize,
     /// Total number of tasks scheduled in this group
     pub total: (i32, i32, i32),
     /// Function to run for this task
     pub fcn: ISPCTaskFn,
     /// Data pointer to user params to pass to the function
     pub data: AtomicPtr<libc::c_void>,
-    /// Whether all tasks have been completed or not, TODO: should become
-    /// an atomic or semaphore
-    /// I'm unsure whether an atomic or semaphore would be the better choice here
+    /// Tracks how many chunks we've given out so far to threads
+    chunks_launched: AtomicUsize,
+    /// Tracks how many of the chunks we gave out are completed. A group is finished
+    /// only when all chunks are done and start >= total tasks, call `is_finished` to check.
+    ///
+    /// I'm unsure whether or semaphore/condvar would be the better choice here
     /// The TASK_LIST would want to send an alert when new tasks are pushed so in
     /// Sync we could wait on the context to finish?
     /// TODO: We can't just have the last chunk executed mark the group as done
     /// because earlier chunks might still be running! We need to mark ourselves
-    /// finished **only** when all chunks are done **and** start >= total tasks
-    finished: AtomicBool,
+    chunks_finished: AtomicUsize,
 }
 
 impl Group {
     /// Create a new task group for execution of the function
     pub fn new(total: (i32, i32, i32), data: AtomicPtr<libc::c_void>, fcn: ISPCTaskFn) -> Group {
-        Group { start: RwLock::new(0), total: total, data: data, fcn: fcn, finished: ATOMIC_BOOL_INIT }
+        Group { start: AtomicUsize::new(0), end: (total.0 * total.1 * total.2) as usize,
+                total: total, data: data, fcn: fcn,
+                chunks_launched: AtomicUsize::new(0), chunks_finished: AtomicUsize::new(0) }
     }
-    pub fn chunks(&self, chunk_size: i32) -> GroupChunks {
+    pub fn chunks(&self, chunk_size: usize) -> GroupChunks {
         GroupChunks { group: self, chunk_size: chunk_size }
     }
     pub fn is_finished(&self) -> bool {
-        self.finished.load(atomic::Ordering::SeqCst)
-    }
-    fn mark_finished(&self) {
-        self.finished.store(true, atomic::Ordering::SeqCst)
+        let finished = self.chunks_finished.load(atomic::Ordering::SeqCst);
+        let launched = self.chunks_launched.load(atomic::Ordering::SeqCst);
+        let start = self.start.load(atomic::Ordering::SeqCst);
+        // This shouldn't happen, if it does some bad threading voodoo is afoot
+        assert!(finished <= launched);
+        finished == launched && start >= self.end
     }
     /// Check if this group has tasks left to execute
     fn has_tasks(&self) -> bool {
-        let end = self.total.0 * self.total.1 * self.total.2;
-        let start = self.start.read().unwrap();
-        *start < end
+        let start = self.start.load(atomic::Ordering::SeqCst);
+        start < self.end
     }
     /// Get a chunk of tasks from the group to run if there are any tasks left to run
     ///
@@ -196,13 +199,12 @@ impl Group {
     /// though you may get fewer if there aren't that many tasks left. If the chunk
     /// you get is the last chunk to be executed (`chunk.end == total.0 * total.1 * total.2`)
     /// you must mark this group as finished upon completing execution of the chunk
-    fn get_chunk(&self, desired_tasks: i32) -> Option<Chunk> {
-        let end = self.total.0 * self.total.1 * self.total.2;
-        let mut start = self.start.write().unwrap();
-        if *start < end {
+    fn get_chunk(&self, desired_tasks: usize) -> Option<Chunk> {
+        let start = self.start.fetch_add(desired_tasks, atomic::Ordering::SeqCst);
+        if start < self.end {
             // Give the chunk 4 tasks or whatever remain
-            let c = Some(Chunk::new(self, *start, cmp::min(*start + desired_tasks, end)));
-            *start += desired_tasks;
+            let c = Some(Chunk::new(self, start, cmp::min(start + desired_tasks, self.end)));
+            self.chunks_launched.fetch_add(1, atomic::Ordering::SeqCst);
             c
         } else {
             None
@@ -213,7 +215,7 @@ impl Group {
 /// An iterator over chunks of tasks to be executed in a Group
 pub struct GroupChunks<'a> {
     group: &'a Group,
-    chunk_size: i32,
+    chunk_size: usize,
 }
 
 impl<'a> Iterator for GroupChunks<'a> {
@@ -246,9 +248,9 @@ pub struct Chunk<'a> {
 
 impl<'a> Chunk<'a> {
     /// Create a new chunk to execute tasks in the group from [start, end)
-    pub fn new(group: &'a Group, start: i32, end: i32) -> Chunk {
+    pub fn new(group: &'a Group, start: usize, end: usize) -> Chunk {
         let d = AtomicPtr::new(group.data.load(atomic::Ordering::SeqCst));
-        Chunk { start: start, end: end, total: group.total,
+        Chunk { start: start as i32, end: end as i32, total: group.total,
                 fcn: group.fcn, data: d, group: group
         }
     }
@@ -264,14 +266,8 @@ impl<'a> Chunk<'a> {
                        self.total.0 as libc::c_int, self.total.1 as libc::c_int,
                        self.total.2 as libc::c_int);
         }
-        // If this chunk finished the group mark the group as finished
-        if self.is_last() {
-            self.group.mark_finished();
-        }
-    }
-    /// Check if this is the last chunk in the group
-    pub fn is_last(&self) -> bool {
-        self.end == self.total.0 * self.total.1 * self.total.2
+        // Tell the group this chunk is done
+        self.group.chunks_finished.fetch_add(1, atomic::Ordering::SeqCst);
     }
     /// Get the global task id for the task index
     fn task_indices(&self, id: i32) -> (i32, i32, i32) {
