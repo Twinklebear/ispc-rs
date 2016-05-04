@@ -3,7 +3,6 @@
  */
 
 #define NUM_AO_SAMPLES 8
-#define M_PI 3.1415926535f
 
 typedef float<3> Vec3f;
 
@@ -104,7 +103,7 @@ float ambient_occlusion(const Isect &isect, const uniform Sphere *uniform sphere
 	for (int j = 0; j < NUM_AO_SAMPLES; ++j){
 		for (int i = 0; i < NUM_AO_SAMPLES; ++i){
 			const float theta = sqrt(frandom(&rng_state));
-			const float phi = 2.0f * M_PI * frandom(&rng_state);
+			const float phi = 2.0f * PI * frandom(&rng_state);
 
 			const float x = cos(phi) * theta;
 			const float y = sin(phi) * theta;
@@ -171,8 +170,8 @@ task void scanline(const uniform int w, const uniform int h, const uniform int n
 		img[taskIndex0 * w + i] *= inv_samples * inv_samples;
 	}
 }
-export void aobench_parallel(const uniform int w, const uniform int h, const uniform int n_samples, const uniform int seed,
-		uniform float img[]){
+export void aobench_parallel(const uniform int w, const uniform int h, const uniform int n_samples,
+		const uniform int seed, uniform float img[]){
 	const uniform Plane plane = {{0.f, -0.5f, 0.f}, {0.f, 1.f, 0.f}};
 	const uniform Sphere spheres[3] = {
 		{{-2.f, 0.f, -3.5f}, 0.5f},

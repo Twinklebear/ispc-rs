@@ -164,6 +164,9 @@ pub struct Group {
     /// I'm unsure whether an atomic or semaphore would be the better choice here
     /// The TASK_LIST would want to send an alert when new tasks are pushed so in
     /// Sync we could wait on the context to finish?
+    /// TODO: We can't just have the last chunk executed mark the group as done
+    /// because earlier chunks might still be running! We need to mark ourselves
+    /// finished **only** when all chunks are done **and** start >= total tasks
     finished: AtomicBool,
 }
 

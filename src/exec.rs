@@ -80,7 +80,7 @@ impl Parallel {
         let par = Parallel { context_list: RwLock::new(Vec::new()),
                              next_context_id: AtomicUsize::new(0),
                              threads: Mutex::new(Vec::new()),
-                             chunk_size: 4 };
+                             chunk_size: 5 };
         {
             let mut threads = par.threads.lock().unwrap();
             let num_threads = num_cpus::get();
