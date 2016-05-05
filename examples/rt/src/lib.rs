@@ -4,6 +4,9 @@
 #[macro_use]
 extern crate ispc;
 extern crate image;
+extern crate rand;
+
+use rand::Rng;
 
 ispc_module!(rt);
 
@@ -16,14 +19,15 @@ pub mod camera;
 pub mod sphere;
 
 pub fn render() {
-    let width = 256;
-    let height = 256;
+    let width = 512;
+    let height = 512;
     let camera = Camera::new(Vec3f::new(0.0, 0.0, 2.0), Vec3f::new(0.0, 0.0, -1.0),
-                             Vec3f::new(0.0, 1.0, 0.0), 70.0, width, height);
+                             Vec3f::new(0.0, 1.0, 0.0), 65.0, width, height);
     let sphere = Sphere::new(Vec3f::new(0.0, 0.0, 0.0), 0.5);
-    let mut img_buf = vec![0.2; width * height * 3];
+    let mut img_buf = vec![0.0; width * height * 3];
+    let mut rng = rand::thread_rng();
     unsafe {
-        rt::render(&camera as *const Camera, &sphere as *const Sphere,
+        rt::render(&camera as *const Camera, &sphere as *const Sphere, rng.gen::<i32>(),
                    width as i32, height as i32, img_buf.as_mut_ptr());
     }
     // Convert the image to RGB u8 to save

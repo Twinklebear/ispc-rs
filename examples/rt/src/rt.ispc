@@ -111,19 +111,29 @@ Ray camera_ray(const uniform Camera * uniform cam, const float x, const float y,
 }
 
 export void render(const uniform Camera * uniform camera, const uniform Sphere * uniform sphere,
-		const uniform int32 width, const uniform int32 height, uniform float img[])
+		const uniform int32 seed, const uniform int32 width, const uniform int32 height, uniform float img[])
 {
+	RNGState rng_state;
+	seed_rng(&rng_state, seed * (programIndex + 1));
 	for (uniform int j = 0; j < height; ++j){
-		foreach (i = 0 ... width){
-			const float samples[2] = {0.5, 0.5};
-			Ray ray = camera_ray(camera, i, j, samples);
+		for (uniform int i = 0; i < width; ++i){
 			Isect isect;
 			isect.t = 1e30f;
 			isect.hit = 0;
-			sphere_intersect(isect, ray, *sphere);
-			if (isect.hit){
-				for (int c = 0; c < 3; ++c){
-					img[j * width * 3 + i * 3 + c] = 1.0;
+			// Take programCount samples per pixel
+			foreach (s = 0 ... programCount){
+				const float samples[2] = {frandom(&rng_state), frandom(&rng_state)};
+				Ray ray = camera_ray(camera, i, j, samples);
+				sphere_intersect(isect, ray, *sphere);
+			}
+			cif (any(isect.hit != 0)){
+				// TODO: this would become a reduce add on each shaded color value
+				// TODO: Is the anti-aliasing correct?
+				uniform int total_hits = reduce_add(isect.hit);
+				if (programIndex == 0){
+					for (int c = 0; c < 3; ++c){
+						img[(j * width + i) * 3 + c] = ((float)total_hits) / programCount;
+					}
 				}
 			}
 		}
