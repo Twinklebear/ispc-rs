@@ -18,6 +18,28 @@ inline int mandel(float c_real, float c_imag, int max_iters){
 	}
 	return i;
 }
+task void mandelbrot_scanline(const uniform float x0, const uniform float x1,
+		const uniform float y0, const uniform float y1,
+		const uniform int width, const uniform int height,
+		const uniform int max_iters, uniform int counts[])
+{
+	// Width and height of a pixel in the space
+	const uniform float dx = (x1 - x0) / width;
+	const uniform float dy = (y1 - y0) / height;
+	// Loop through the scanline in parallel
+	foreach (i = 0 ... width){
+		float x = x0 + i * dx;
+		float y = y0 + taskIndex0 * dy;
+		counts[taskIndex0 * width + i] = mandel(x, y, max_iters);
+	}
+}
+export void mandelbrot_tasks(const uniform float x0, const uniform float x1,
+		const uniform float y0, const uniform float y1,
+		const uniform int width, const uniform int height,
+		const uniform int max_iters, uniform int counts[])
+{
+	launch[height] mandelbrot_scanline(x0, x1, y0, y1, width, height, max_iters, counts);
+}
 // Compute the Mandelbrot set on the real axis from [x0, x1] and imaginary
 // axis from [y0, y1] to produce a width x height image. The number of iterations
 // spent before finding a point is not in the set is written to counts
@@ -27,8 +49,8 @@ export void mandelbrot(const uniform float x0, const uniform float x1,
 		const uniform int max_iters, uniform int counts[])
 {
 	// Width and height of a pixel in the space
-	float dx = (x1 - x0) / width;
-	float dy = (y1 - y0) / height;
+	const uniform float dx = (x1 - x0) / width;
+	const uniform float dy = (y1 - y0) / height;
 	for (uniform int j = 0; j < height; ++j){
 		// Loop through each scanline in parallel
 		foreach (i = 0 ... width){
