@@ -10,13 +10,15 @@ impl Camera {
         let dz = dir.normalized();
         let dx = -dz.cross(&up).normalized();
         let dy = dx.cross(&dz).normalized();
-        let dim_y = 2.0 * f32::sin((fovy / 2.0) * f32::consts::PI / 180.0);
+        let dim_y = 2.0 * f32::tan((fovy / 2.0) * f32::consts::PI / 180.0);
         let aspect_ratio = width as f32 / height as f32;
         let dim_x = dim_y * aspect_ratio;
-        let dir_top_left = dz - 0.5 * dim_x * dx - 0.5 * dim_y * dy;
+        let screen_du = dx * dim_x;
+        let screen_dv = dy * dim_y;
+        let dir_top_left = dz - 0.5 * screen_du - 0.5 * screen_dv;
         Camera { pos: pos, dir: dir.normalized(), up: up.normalized(),
-                 dir_top_left: dir_top_left, screen_du: dx * dim_x,
-                 screen_dv: dy * dim_y, width: width as i32, height: height as i32 }
+                 dir_top_left: dir_top_left, screen_du: screen_du,
+                 screen_dv: screen_dv, width: width as i32, height: height as i32 }
     }
 }
 

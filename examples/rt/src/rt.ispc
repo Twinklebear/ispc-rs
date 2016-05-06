@@ -76,9 +76,9 @@ inline void sphere_intersect(Isect &isect, const Ray &ray, const uniform Sphere 
 	const float c = dot(rs, rs) - sphere.radius * sphere.radius;
 	const float discrim = b * b - c;
 	if (discrim > 0.f){
-		float t = -b - sqrt(discrim);
-		if (t < 0.f){
-			t = -b + sqrt(discrim);
+		float t = 0.5f * (-b - sqrt(discrim));
+		if (t <= 0.f || t >= isect.t){
+			t = 0.5f * (-b + sqrt(discrim));
 		}
 		if (t > 0.f && t < isect.t){
 			isect.t = t;
@@ -115,26 +115,27 @@ export void render(const uniform Camera * uniform camera, const uniform Sphere *
 {
 	RNGState rng_state;
 	seed_rng(&rng_state, seed * (programIndex + 1));
+	const uniform int n_samples = 256;
+	const uniform float inv_samples = 1.f / n_samples;
 	for (uniform int j = 0; j < height; ++j){
-		for (uniform int i = 0; i < width; ++i){
-			Isect isect;
-			isect.t = 1e30f;
-			isect.hit = 0;
-			// Take programCount samples per pixel
-			foreach (s = 0 ... programCount){
+		// TODO: Should switch and go parallel on each pixel and do n * programCount samples
+		foreach (i = 0 ... width){
+			for (int s = 0; s < n_samples; ++s){
+				Isect isect;
+				isect.t = 1e30f;
+				isect.hit = 0;
 				const float samples[2] = {frandom(&rng_state), frandom(&rng_state)};
+
 				Ray ray = camera_ray(camera, i, j, samples);
 				sphere_intersect(isect, ray, *sphere);
-			}
-			cif (any(isect.hit != 0)){
-				// TODO: this would become a reduce add on each shaded color value
-				// TODO: Is the anti-aliasing correct?
-				uniform int total_hits = reduce_add(isect.hit);
-				if (programIndex == 0){
+				if (isect.hit){
 					for (int c = 0; c < 3; ++c){
-						img[(j * width + i) * 3 + c] = ((float)total_hits) / programCount;
+						img[(j * width + i) * 3 + c] += 1.f;
 					}
 				}
+			}
+			for (int c = 0; c < 3; ++c){
+				img[(j * width + i) * 3 + c] *= inv_samples;
 			}
 		}
 	}
