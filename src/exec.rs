@@ -60,6 +60,12 @@ pub trait TaskSystem {
     /// synchronized with have been completed. You can use the `handle` to determine which context
     /// is being synchronized with and thus which tasks must be completed before returning.
     unsafe fn sync(&self, handle: *mut libc::c_void);
+    /// Return a context that has remaining tasks left to be executed by a thread, returns None
+    /// if no contexts have remaining tasks.
+    ///
+    /// Note that due to threading issues you shouldn't assume the context returned actually has
+    /// outstanding tasks by the time it's returned to the caller and a chunk is requested.
+    fn get_context(&self) -> Option<Arc<Context>>;
 }
 
 // Thread local storage to store the thread's id, otherwise we don't know
@@ -76,6 +82,8 @@ pub struct Parallel {
 }
 
 impl Parallel {
+    /// Create a parallel task execution environment that will use `num_cpus` threads
+    /// to run tasks
     pub fn new() -> Parallel {
         let par = Parallel { context_list: RwLock::new(Vec::new()),
                              next_context_id: AtomicUsize::new(0),
@@ -90,6 +98,27 @@ impl Parallel {
                 // Note that the spawned thread ids start at 1 since the main thread is 0
                 threads.push(thread::spawn(move || worker_thread(i + 1, num_threads + 1, chunk_size)));
             }
+        }
+        par
+    }
+    /// Create an oversubscribued parallel task execution environment that will use
+    /// `oversubscribe * num_cpus` threads to run tasks.
+    pub fn oversubscribed(oversubscribe: f32) -> Parallel {
+        assert!(oversubscribe >= 1.0);
+        let par = Parallel { context_list: RwLock::new(Vec::new()),
+                             next_context_id: AtomicUsize::new(0),
+                             threads: Mutex::new(Vec::new()),
+                             chunk_size: 16 };
+        {
+            let mut threads = par.threads.lock().unwrap();
+            let num_threads = (oversubscribe * num_cpus::get() as f32) as usize;
+            let chunk_size = par.chunk_size;
+            //println!("Launching {} threads", num_threads);
+            for i in 0..num_threads {
+                // Note that the spawned thread ids start at 1 since the main thread is 0
+                threads.push(thread::spawn(move || worker_thread(i + 1, num_threads + 1, chunk_size)));
+            }
+            println!("have {} threads", num_threads);
         }
         par
     }
@@ -170,7 +199,7 @@ impl TaskSystem for Parallel {
         while !context.current_tasks_done() {
             //println!("Not all tasks for context {} are done, thread {} helping out!", context.id, thread);
             // Get a task group to run
-            while let Some(c) = get_context() {
+            while let Some(c) = self.get_context() {
                 //println!("syncing thread {} got a context {:?}", thread, c);
                 let mut ran_some = false;
                 for tg in c.iter() {
@@ -192,21 +221,19 @@ impl TaskSystem for Parallel {
         let pos = context_list.iter().position(|c| context.id == c.id).unwrap();
         context_list.remove(pos);
     }
-}
-
-/// Get a context that may have some tasks left to be executed. Returns None if
-/// all current contexts current tasks are finished
-fn get_context() -> Option<Arc<Context>> {
-    ::get_task_system().context_list.read().unwrap().iter()
-        .find(|c| !c.current_tasks_done()).map(|c| c.clone())
+    fn get_context(&self) -> Option<Arc<Context>> {
+        self.context_list.read().unwrap().iter()
+            .find(|c| !c.current_tasks_done()).map(|c| c.clone())
+    }
 }
 
 fn worker_thread(thread: usize, total_threads: usize, chunk_size: usize) {
     THREAD_ID.with(|f| *f.borrow_mut() = thread);
+    let task_sys = ::get_task_system();
     //println!("thread {} is spawned", thread);
     loop {
         // Get a task group to run
-        while let Some(c) = get_context() {
+        while let Some(c) = task_sys.get_context() {
             for tg in c.iter() {
                 //println!("thread checking task group {:?}", tg);
                 for chunk in tg.chunks(chunk_size) {

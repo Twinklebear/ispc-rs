@@ -335,19 +335,35 @@ impl Config {
     }
 }
 
-static mut TASK_SYSTEM: Option<&'static Parallel> = None;
+static mut TASK_SYSTEM: Option<&'static TaskSystem> = None;
 static TASK_INIT: Once = ONCE_INIT;
 
-pub fn get_task_system() -> &'static Parallel {
+/// If you have implemented your own task system you can provide it for use instead
+/// of the default threaded one. This must be done prior to calling ISPC code which
+/// spawns tasks otherwise the task system will have already been initialized.
+///
+/// Use the function to do any extra initialization for your task system. Note that
+/// the task system will be leaked and not destroyed until the program exits and the
+/// memory space is cleaned up.
+pub fn set_task_system<F: FnOnce() -> Arc<TaskSystem>>(f: F) {
+    TASK_INIT.call_once(|| {
+        let task_sys = f();
+        unsafe {
+            let s: *const TaskSystem = mem::transmute(&*task_sys);
+            mem::forget(task_sys);
+            TASK_SYSTEM = Some(&*s);
+        }
+    });
+}
+
+fn get_task_system() -> &'static TaskSystem {
     // TODO: This is a bit nasty, but I'm not sure on a nicer solution. Maybe something that
     // would let the user register the desired (or default) task system? But if
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
     TASK_INIT.call_once(|| {
         unsafe {
-            let task_sys = Arc::new(Parallel::new());
-            // TODO: Casting to a TaskSystem is now casting to incompatible types with mem transmute?
-            // How could we support user-provided task systems then?
-            let s: *const Parallel = mem::transmute(&*task_sys);
+            let task_sys = Arc::new(Parallel::new()) as Arc<TaskSystem>;
+            let s: *const TaskSystem = mem::transmute(&*task_sys);
             mem::forget(task_sys);
             TASK_SYSTEM = Some(&*s);
         }
