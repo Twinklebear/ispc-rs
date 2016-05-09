@@ -88,7 +88,7 @@ impl Parallel {
         let par = Parallel { context_list: RwLock::new(Vec::new()),
                              next_context_id: AtomicUsize::new(0),
                              threads: Mutex::new(Vec::new()),
-                             chunk_size: 16 };
+                             chunk_size: 8 };
         {
             let mut threads = par.threads.lock().unwrap();
             let num_threads = num_cpus::get();
@@ -108,7 +108,7 @@ impl Parallel {
         let par = Parallel { context_list: RwLock::new(Vec::new()),
                              next_context_id: AtomicUsize::new(0),
                              threads: Mutex::new(Vec::new()),
-                             chunk_size: 16 };
+                             chunk_size: 8 };
         {
             let mut threads = par.threads.lock().unwrap();
             let num_threads = (oversubscribe * num_cpus::get() as f32) as usize;
