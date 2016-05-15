@@ -109,22 +109,18 @@ macro_rules! ispc_module {
 }
 
 /// Compile the list of ISPC files into a static library and generate bindings
-/// using bindgen.
+/// using bindgen. The library name should not contain a lib prefix or a lib
+/// extension like '.a' or '.lib', the appropriate prefix and suffix will be
+/// added based on the compilation target.
 ///
-/// Returns true if compilation and binding generation
-/// succeeded, will panic or return false depending on what operations failed.
-/// If compilation fails your build script would likely want to panic to show the
-/// compilation errors.
-///
-/// The library name should not contain a lib prefix or a lib extension like
-/// '.a' or '.lib', the appropriate prefix and suffix wil be added based on
-/// the compilation target.
+/// This function will panic if any stage of compiling the library and generating
+/// bindings for it fails resulting in stderr being logged to the terminal.
 ///
 /// # Example
 /// ```no_run
 /// ispc::compile_library("foo", &["src/foo.ispc", "src/bar.ispc"]);
 /// ```
-pub fn compile_library(lib: &str, files: &[&str]) -> bool {
+pub fn compile_library(lib: &str, files: &[&str]) {
     let mut cfg = Config::new();
     for f in &files[..] {
         cfg.file(*f);
@@ -200,7 +196,7 @@ impl Config {
     ///
     /// The library name should not have any prefix or suffix, e.g. instead of
     /// `libexample.a` or `example.lib` simply pass `example`
-    pub fn compile(&mut self, lib: &str) -> bool {
+    pub fn compile(&mut self, lib: &str) {
         let dst = self.get_out_dir();
         println!("dst = {}", dst.display());
         let default_args = self.default_args();
@@ -216,13 +212,13 @@ impl Config {
                 .status().unwrap();
 
             if !status.success() {
-                return false;
+                panic!("Failed to compile ISPC source file {}", s.display());
             }
             self.objects.push(object);
             self.headers.push(header);
         }
         if !self.assemble(lib).success() {
-            return false;
+            panic!("Failed to assemble ISPC objects into library {}", lib);
         }
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
@@ -233,12 +229,11 @@ impl Config {
         let bindgen_file = dst.join(lib).with_extension("rs");
         match bindings.generate() {
             Ok(b) => b.write_to_file(bindgen_file).unwrap(),
-            Err(_) => return false,
+            Err(_) => panic!("Failed to generating Rust bindings to {}", lib),
         };
         // Tell cargo where to find the library we just built if we're running
         // in a build script
         self.print(&format!("cargo:rustc-link-search=native={}", dst.display()));
-        true
     }
     /// Link the ISPC code into a static library on Unix using `ar`
     #[cfg(unix)]
