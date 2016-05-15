@@ -65,7 +65,21 @@ struct Isect {
 	int hit;
 };
 
+struct PointLight {
+	Vec3f emission;
+	Vec3f pos;
+};
+
+enum GEOM_TYPE {
+	SPHERE
+};
+
+struct Geometry {
+	GEOM_TYPE geom_type;
+};
+
 struct Sphere {
+	uniform Geometry geom;
 	Vec3f center;
 	float radius;
 };
@@ -110,7 +124,7 @@ Ray camera_ray(const uniform Camera * uniform cam, const float x, const float y,
 	return ray;
 }
 
-export void render(const uniform Camera * uniform camera, const uniform Sphere * uniform sphere,
+export void render(const uniform Camera * uniform camera, const uniform Geometry * uniform geom,
 		const uniform int32 seed, const uniform int32 width, const uniform int32 height, uniform float img[])
 {
 	RNGState rng_state;
@@ -127,7 +141,10 @@ export void render(const uniform Camera * uniform camera, const uniform Sphere *
 				const float samples[2] = {frandom(&rng_state), frandom(&rng_state)};
 
 				Ray ray = camera_ray(camera, i, j, samples);
-				sphere_intersect(isect, ray, *sphere);
+				if (geom->geom_type == SPHERE){
+					const uniform Sphere * uniform sphere = (uniform Sphere * uniform)geom;
+					sphere_intersect(isect, ray, *sphere);
+				}
 				if (isect.hit){
 					for (int c = 0; c < 3; ++c){
 						img[(j * width + i) * 3 + c] += 1.f;

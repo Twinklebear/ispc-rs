@@ -13,10 +13,12 @@ ispc_module!(rt);
 pub use vec3f::Vec3f;
 pub use camera::Camera;
 pub use sphere::Sphere;
+use geom::Geometry;
 
 pub mod vec3f;
 pub mod camera;
 pub mod sphere;
+pub mod geom;
 
 pub fn render() {
     let width = 512;
@@ -27,7 +29,7 @@ pub fn render() {
     let mut img_buf = vec![0.0; width * height * 3];
     let mut rng = rand::thread_rng();
     unsafe {
-        rt::render(&camera as *const Camera, &sphere as *const Sphere, rng.gen::<i32>(),
+        rt::render(&camera as *const Camera, &sphere as *const Geometry, rng.gen::<i32>(),
                    width as i32, height as i32, img_buf.as_mut_ptr());
     }
     // Convert the image to RGB u8 to save
