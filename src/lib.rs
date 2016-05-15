@@ -99,6 +99,12 @@ macro_rules! ispc_module {
         mod $lib {
             include!(concat!(env!("OUT_DIR"), "/", stringify!($lib), ".rs"));
         }
+    );
+    (pub $lib:ident) => (
+        #[allow(dead_code, non_camel_case_types)]
+        pub mod $lib {
+            include!(concat!(env!("OUT_DIR"), "/", stringify!($lib), ".rs"));
+        }
     )
 }
 
