@@ -6,8 +6,6 @@ fn main() {
     for s in &ispc_files[..] {
         println!("cargo:rerun-if-changed={}", s);
     }
-    if !ispc::compile_library("simple", &ispc_files[..]) {
-        panic!("Failed to compile ISPC library 'simple'");
-    }
+    ispc::compile_library("simple", &ispc_files[..]);
 }
 
