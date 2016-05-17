@@ -79,10 +79,27 @@ struct Geometry {
 };
 
 struct Sphere {
-	uniform Geometry geom;
+	Geometry geom;
 	Vec3f center;
 	float radius;
 };
+
+// Allocate and construct a new ISPC-side sphere, the pointer passed will be set to point to
+// the newly allocated sphere
+export void make_sphere(uniform const Geometry * uniform * uniform out, uniform const Vec3f * uniform center,
+		uniform float radius)
+{
+	uniform Sphere * uniform sphere = uniform new uniform Sphere;
+	sphere->geom.geom_type = SPHERE;
+	sphere->center = *center;
+	sphere->radius = radius;
+	*out = (uniform Geometry * uniform)sphere;
+}
+// Release the ISPC-side sphere
+export void drop_sphere(const uniform Geometry * uniform geom){
+	uniform Sphere * uniform sphere = (uniform Sphere * uniform)geom;
+	delete sphere;
+}
 
 inline void sphere_intersect(Isect &isect, const Ray &ray, const uniform Sphere &sphere){
 	Vec3f rs = ray.origin - sphere.center;

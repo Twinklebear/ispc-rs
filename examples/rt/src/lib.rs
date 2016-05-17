@@ -29,7 +29,7 @@ pub fn render() {
     let mut img_buf = vec![0.0; width * height * 3];
     let mut rng = rand::thread_rng();
     unsafe {
-        rt::render(&camera as *const Camera, &sphere as *const Geometry, rng.gen::<i32>(),
+        rt::render(&camera as *const Camera, sphere.ispc_equiv(), rng.gen::<i32>(),
                    width as i32, height as i32, img_buf.as_mut_ptr());
     }
     // Convert the image to RGB u8 to save

@@ -1,3 +1,6 @@
+use std::ptr;
+
+use rt;
 use vec3f::Vec3f;
 use geom::{Geometry, GeomType};
 
@@ -5,18 +8,30 @@ use geom::{Geometry, GeomType};
 pub struct Sphere {
     center: Vec3f,
     radius: f32,
-    ispc_geom: Geometry,
+    ispc_geom: *const Geometry,
 }
 
 impl Sphere {
     pub fn new(center: Vec3f, radius: f32) -> Sphere {
-        // TODO: Want to do something like ospray where we build the ISPC side geometry
-        // but would this mean the sphere member must be a *const Geometry? Or could it be
-        // a &Geometry? But then what lifetime would we assign it?
-        // Having a *const Geometry would make the interop with ISPC easy but a lot of the Sphere
-        // operations become unsafe, though they kind of would be either way? We will also need
-        // a custom Drop for the Sphere to call the corresponding deletion on the ISPC side,
-        // again like what ospray does.
+        // Currently acting exactly like ospray, and I think this is probably the way to go
+        // we maintain a separate ISPC and Rust side geometry potentially with the ISPC side
+        // pointing back to data on the Rust side. Thus we're free to do C-style polymorphism
+        // in ISPC and whatever we want in Rust however it does make writing new geometries or
+        // whatever a bit awkward.
+        let mut geom: *const Geometry = ptr::null();
+        unsafe {
+            rt::make_sphere(&mut geom as *mut *const Geometry, &center as *const Vec3f, radius);
+        }
+        Sphere { center: center, radius: radius, ispc_geom: geom }
+    }
+    pub fn ispc_equiv(&self) -> *const Geometry {
+        self.ispc_geom
+    }
+}
+
+impl Drop for Sphere {
+    fn drop(&mut self) {
+        unsafe { rt::drop_sphere(self.ispc_geom); }
     }
 }
 
