@@ -13,24 +13,29 @@ ispc_module!(rt);
 pub use vec3f::Vec3f;
 pub use camera::Camera;
 pub use sphere::Sphere;
-use geom::Geometry;
+pub use lights::PointLight;
+
+/// Type alias for the Geometry base struct in ISPC
+pub type Geometry = ::rt::Struct_Geometry;
 
 pub mod vec3f;
 pub mod camera;
 pub mod sphere;
-pub mod geom;
+pub mod lights;
 
 pub fn render() {
     let width = 512;
     let height = 512;
-    let camera = Camera::new(Vec3f::new(0.0, 0.0, 2.0), Vec3f::new(0.0, 0.0, -1.0),
+    // TODO: X is flipped
+    let camera = Camera::new(Vec3f::new(0.0, 0.0, 1.0), Vec3f::new(0.0, 0.0, -1.0),
                              Vec3f::new(0.0, 1.0, 0.0), 65.0, width, height);
     let sphere = Sphere::new(Vec3f::new(0.0, 0.0, 0.0), 0.5);
+    let light = PointLight::new(Vec3f::new(1.0, 0.0, 1.0), Vec3f::broadcast(2.0));
     let mut img_buf = vec![0.0; width * height * 3];
     let mut rng = rand::thread_rng();
     unsafe {
-        rt::render(&camera as *const Camera, sphere.ispc_equiv(), rng.gen::<i32>(),
-                   width as i32, height as i32, img_buf.as_mut_ptr());
+        rt::render(&camera as *const Camera, sphere.ispc_equiv(), light.ispc_equiv(),
+                   rng.gen::<i32>(), width as i32, height as i32, img_buf.as_mut_ptr());
     }
     // Convert the image to RGB u8 to save
     let img = img_buf.iter().map(|x| {

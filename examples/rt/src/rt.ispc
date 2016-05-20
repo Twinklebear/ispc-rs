@@ -2,6 +2,8 @@
  * interopability with structs in Rust and ISPC.
  */
 
+#define M_1_PI 0.31830988618379067154
+
 struct Vec3f {
 	float x, y, z;
 };
@@ -26,6 +28,13 @@ inline Vec3f operator*(Vec3f v, float s){
 	res.z = v.z * s;
 	return res;
 }
+inline Vec3f operator/(Vec3f v, float s){
+	Vec3f res;
+	res.x = v.x / s;
+	res.y = v.y / s;
+	res.z = v.z / s;
+	return res;
+}
 inline Vec3f operator+(Vec3f a, Vec3f b){
 	Vec3f res;
 	res.x = a.x + b.x;
@@ -42,6 +51,9 @@ inline Vec3f operator-(Vec3f a, Vec3f b){
 }
 inline float dot(Vec3f a, Vec3f b){
 	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+inline float length(Vec3f a){
+	return sqrt(dot(a, a));
 }
 inline Vec3f cross(Vec3f a, Vec3f b){
 	Vec3f c;
@@ -65,17 +77,50 @@ struct Isect {
 	int hit;
 };
 
-struct PointLight {
-	Vec3f emission;
-	Vec3f pos;
+enum LIGHT_TYPE {
+	POINT
 };
+
+struct Light {
+	LIGHT_TYPE type;
+};
+
+struct PointLight {
+	Light light;
+	Vec3f position;
+	Vec3f emission;
+};
+
+export void make_point_light(uniform const Light * uniform * uniform out, uniform const Vec3f * uniform position,
+		uniform const Vec3f * uniform emission)
+{
+	uniform PointLight * uniform light = uniform new PointLight;
+	light->light.type = POINT;
+	light->position = *position;
+	light->emission = *emission;
+	*out = (uniform Light * uniform)light;
+}
+// Sample the light emitted from this point light incident on the position `pos`. The emission is the
+// light's strength at pos, light dir is the direction to the light from `pos`
+void point_light_incident(uniform const Light * uniform light, const Vec3f pos, Vec3f &emission,
+		Vec3f &light_dir)
+{
+	uniform PointLight * uniform point = (uniform PointLight * uniform)light;
+	light_dir = point->position - pos;
+	emission = point->emission / dot(light_dir, light_dir);
+	light_dir = normalize(light_dir);
+}
+export void drop_point_light(const uniform Light * uniform light){
+	uniform PointLight * uniform point = (uniform PointLight * uniform)light;
+	delete point;
+}
 
 enum GEOM_TYPE {
 	SPHERE
 };
 
 struct Geometry {
-	GEOM_TYPE geom_type;
+	GEOM_TYPE type;
 };
 
 struct Sphere {
@@ -90,7 +135,7 @@ export void make_sphere(uniform const Geometry * uniform * uniform out, uniform 
 		uniform float radius)
 {
 	uniform Sphere * uniform sphere = uniform new uniform Sphere;
-	sphere->geom.geom_type = SPHERE;
+	sphere->geom.type = SPHERE;
 	sphere->center = *center;
 	sphere->radius = radius;
 	*out = (uniform Geometry * uniform)sphere;
@@ -101,10 +146,11 @@ export void drop_sphere(const uniform Geometry * uniform geom){
 	delete sphere;
 }
 
-inline void sphere_intersect(Isect &isect, const Ray &ray, const uniform Sphere &sphere){
-	Vec3f rs = ray.origin - sphere.center;
+inline void sphere_intersect(Isect &isect, const Ray &ray, const uniform Geometry * uniform geom){
+	uniform Sphere * uniform sphere = (uniform Sphere * uniform)geom;
+	Vec3f rs = ray.origin - sphere->center;
 	const float b = dot(rs, ray.dir);
-	const float c = dot(rs, rs) - sphere.radius * sphere.radius;
+	const float c = dot(rs, rs) - sphere->radius * sphere->radius;
 	const float discrim = b * b - c;
 	if (discrim > 0.f){
 		float t = 0.5f * (-b - sqrt(discrim));
@@ -115,7 +161,7 @@ inline void sphere_intersect(Isect &isect, const Ray &ray, const uniform Sphere 
 			isect.t = t;
 			isect.hit = 1;
 			isect.p = ray.origin + ray.dir * t;
-			isect.n = normalize(isect.p - sphere.center);
+			isect.n = normalize(isect.p - sphere->center);
 		}
 	}
 }
@@ -142,7 +188,8 @@ Ray camera_ray(const uniform Camera * uniform cam, const float x, const float y,
 }
 
 export void render(const uniform Camera * uniform camera, const uniform Geometry * uniform geom,
-		const uniform int32 seed, const uniform int32 width, const uniform int32 height, uniform float img[])
+		const uniform Light * uniform light, const uniform int32 seed, const uniform int32 width,
+		const uniform int32 height, uniform float img[])
 {
 	RNGState rng_state;
 	seed_rng(&rng_state, seed * (programIndex + 1));
@@ -158,14 +205,43 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 				const float samples[2] = {frandom(&rng_state), frandom(&rng_state)};
 
 				Ray ray = camera_ray(camera, i, j, samples);
-				if (geom->geom_type == SPHERE){
-					const uniform Sphere * uniform sphere = (uniform Sphere * uniform)geom;
-					sphere_intersect(isect, ray, *sphere);
+				if (geom->type == SPHERE){
+					sphere_intersect(isect, ray, geom);
 				}
+				Vec3f ambient_light = make_vec3f(0.01, 0.01, 0.01);
 				if (isect.hit){
-					for (int c = 0; c < 3; ++c){
-						img[(j * width + i) * 3 + c] += 1.f;
+					// Super simple Lambertian material for now
+					Vec3f emission, light_dir;
+					point_light_incident(light, isect.p, emission, light_dir);
+
+					Ray shadow;
+					shadow.origin = isect.p + 0.0001 * isect.n;
+					shadow.dir = light_dir;
+					Isect shadow_hit;
+					shadow_hit.t = 1e30f;
+					shadow_hit.hit = 0;
+					sphere_intersect(shadow_hit, shadow, geom);
+#if 0
+					Vec3f color = light_dir * 0.5 + make_vec3f(0.5, 0.5, 0.5);
+					img[(j * width + i) * 3] += color.x;
+					img[(j * width + i) * 3 + 1] += color.y;
+					img[(j * width + i) * 3 + 2] += color.z;
+#else
+					float geom_term = dot(isect.n, light_dir);
+					// We don't seem to be able to intersect ourself? It seems like the light direction
+					// is wrong!?
+					if (!shadow_hit.hit){
+						Vec3f color = emission * geom_term * M_1_PI;
+						img[(j * width + i) * 3] += 1.0;//color.x + ambient_light.x;
+						img[(j * width + i) * 3 + 1] += color.y + ambient_light.y;
+						img[(j * width + i) * 3 + 2] += color.z + ambient_light.z;
+					} else {
+						// Some ambient lighting
+						img[(j * width + i) * 3] += ambient_light.x;
+						img[(j * width + i) * 3 + 1] += ambient_light.y;
+						img[(j * width + i) * 3 + 2] += ambient_light.z;
 					}
+#endif
 				}
 			}
 			for (int c = 0; c < 3; ++c){

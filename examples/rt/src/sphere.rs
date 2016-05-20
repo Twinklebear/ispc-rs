@@ -1,8 +1,10 @@
+//! Provides the Rust-side interface to the Sphere geometry
+
 use std::ptr;
 
 use rt;
 use vec3f::Vec3f;
-use geom::{Geometry, GeomType};
+use ::Geometry;
 
 /// A simple sphere with some radius located at `center`
 pub struct Sphere {
