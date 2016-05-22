@@ -116,7 +116,8 @@ export void drop_point_light(const uniform Light * uniform light){
 }
 
 enum GEOM_TYPE {
-	SPHERE
+	SPHERE,
+	PLANE
 };
 
 struct Geometry {
@@ -127,6 +128,13 @@ struct Sphere {
 	Geometry geom;
 	Vec3f center;
 	float radius;
+};
+
+// An infinite plane centered at some point
+struct Plane {
+	Geometry geom;
+	Vec3f center;
+	Vec3f normal;
 };
 
 // Allocate and construct a new ISPC-side sphere, the pointer passed will be set to point to
@@ -145,8 +153,7 @@ export void drop_sphere(const uniform Geometry * uniform geom){
 	uniform Sphere * uniform sphere = (uniform Sphere * uniform)geom;
 	delete sphere;
 }
-
-inline void sphere_intersect(Isect &isect, const Ray &ray, const uniform Geometry * uniform geom){
+inline bool sphere_intersect(Isect &isect, const Ray &ray, const uniform Geometry * uniform geom){
 	uniform Sphere * uniform sphere = (uniform Sphere * uniform)geom;
 	Vec3f rs = ray.origin - sphere->center;
 	const float b = dot(rs, ray.dir);
@@ -159,11 +166,40 @@ inline void sphere_intersect(Isect &isect, const Ray &ray, const uniform Geometr
 		}
 		if (t > 0.f && t < isect.t){
 			isect.t = t;
-			isect.hit = 1;
 			isect.p = ray.origin + ray.dir * t;
 			isect.n = normalize(isect.p - sphere->center);
+			return true;
 		}
 	}
+	return false;
+}
+
+// Allocate and construct a new ISPC-side plane, the pointer passed will be set to point to
+// the newly allocated sphere
+export void make_plane(uniform const Geometry * uniform * uniform out, uniform const Vec3f * uniform center,
+		uniform const Vec3f * uniform normal)
+{
+	uniform Plane * uniform plane = uniform new uniform Plane;
+	plane->geom.type = PLANE;
+	plane->center = *center;
+	plane->normal = *normal;
+	*out = (uniform Geometry * uniform)plane;
+}
+// Release the ISPC-side sphere
+export void drop_plane(const uniform Geometry * uniform geom){
+	uniform Plane * uniform plane = (uniform Plane * uniform)geom;
+	delete plane;
+}
+inline bool plane_intersect(Isect &isect, const Ray &ray, const uniform Geometry * uniform geom){
+	uniform Plane * uniform plane = (uniform Plane * uniform)geom;
+	float t = dot(plane->center - ray.origin, plane->normal) / dot(ray.dir, plane->normal);
+	if (t > 0.f && t < isect.t){
+		isect.t = t;
+		isect.p = ray.origin + ray.dir * t;
+		isect.n = plane->normal;
+		return true;
+	}
+	return false;
 }
 
 struct Camera {
@@ -186,10 +222,24 @@ Ray camera_ray(const uniform Camera * uniform cam, const float x, const float y,
 	ray.dir = normalize(ray.dir);
 	return ray;
 }
-
-export void render(const uniform Camera * uniform camera, const uniform Geometry * uniform geom,
-		const uniform Light * uniform light, const uniform int32 seed, const uniform int32 width,
-		const uniform int32 height, uniform float img[])
+void intersect_scene(Isect &isect, const Ray &ray, const uniform Geometry * const uniform * uniform geom,
+		const uniform int32 n_geom)
+{
+	for (uniform int i = 0; i < n_geom; ++i){
+		if (geom[i]->type == SPHERE){
+			if (sphere_intersect(isect, ray, geom[i])){
+				isect.hit = i + 1;
+			}
+		} else if (geom[i]->type == PLANE){
+			if (plane_intersect(isect, ray, geom[i])){
+				isect.hit = i + 1;
+			}
+		}
+	}
+}
+export void render(const uniform Camera * uniform camera, const uniform Geometry * const uniform * uniform geom,
+		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 seed,
+		const uniform int32 width, const uniform int32 height, uniform float img[])
 {
 	RNGState rng_state;
 	seed_rng(&rng_state, seed * (programIndex + 1));
@@ -205,12 +255,9 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 				const float samples[2] = {frandom(&rng_state), frandom(&rng_state)};
 
 				Ray ray = camera_ray(camera, i, j, samples);
-				if (geom->type == SPHERE){
-					sphere_intersect(isect, ray, geom);
-				}
-				Vec3f ambient_light = make_vec3f(0.08, 0.08, 0.08);
+				intersect_scene(isect, ray, geom, n_geom);
+				Vec3f ambient_light = make_vec3f(0.1, 0.1, 0.1);
 				if (isect.hit){
-					// Super simple Lambertian material for now
 					Vec3f emission, light_dir;
 					point_light_incident(light, isect.p, emission, light_dir);
 
@@ -220,11 +267,12 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 					Isect shadow_hit;
 					shadow_hit.t = 1e30f;
 					shadow_hit.hit = 0;
-					sphere_intersect(shadow_hit, shadow, geom);
-					float geom_term = abs(dot(isect.n, light_dir));
-					// We don't seem to be able to intersect ourself? It seems like the light direction
-					// is wrong!?
-					if (!shadow_hit.hit){
+					intersect_scene(shadow_hit, shadow, geom, n_geom);
+
+					float geom_term = dot(isect.n, light_dir);
+					// TODO: Different materials for different objects
+					if (!shadow_hit.hit && geom_term > 0.0){
+						// Super simple Lambertian material for now
 						Vec3f color = emission * geom_term * M_1_PI;
 						img[(j * width + i) * 3] += color.x + ambient_light.x;
 						img[(j * width + i) * 3 + 1] += color.y + ambient_light.y;
