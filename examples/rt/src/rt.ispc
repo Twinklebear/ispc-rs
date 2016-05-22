@@ -153,9 +153,9 @@ inline void sphere_intersect(Isect &isect, const Ray &ray, const uniform Geometr
 	const float c = dot(rs, rs) - sphere->radius * sphere->radius;
 	const float discrim = b * b - c;
 	if (discrim > 0.f){
-		float t = 0.5f * (-b - sqrt(discrim));
+		float t = -b - sqrt(discrim);
 		if (t <= 0.f || t >= isect.t){
-			t = 0.5f * (-b + sqrt(discrim));
+			t = -b + sqrt(discrim);
 		}
 		if (t > 0.f && t < isect.t){
 			isect.t = t;
@@ -227,12 +227,13 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 					img[(j * width + i) * 3 + 1] += color.y;
 					img[(j * width + i) * 3 + 2] += color.z;
 #else
-					float geom_term = dot(isect.n, light_dir);
+					float geom_term = abs(dot(isect.n, light_dir));
 					// We don't seem to be able to intersect ourself? It seems like the light direction
 					// is wrong!?
 					if (!shadow_hit.hit){
-						Vec3f color = emission * geom_term * M_1_PI;
-						img[(j * width + i) * 3] += 1.0;//color.x + ambient_light.x;
+						emission = make_vec3f(1.0, 1.0, 1.0);
+						Vec3f color = emission * geom_term;// * M_1_PI;
+						img[(j * width + i) * 3] += color.x + ambient_light.x;
 						img[(j * width + i) * 3 + 1] += color.y + ambient_light.y;
 						img[(j * width + i) * 3 + 2] += color.z + ambient_light.z;
 					} else {
