@@ -208,7 +208,7 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 				if (geom->type == SPHERE){
 					sphere_intersect(isect, ray, geom);
 				}
-				Vec3f ambient_light = make_vec3f(0.01, 0.01, 0.01);
+				Vec3f ambient_light = make_vec3f(0.08, 0.08, 0.08);
 				if (isect.hit){
 					// Super simple Lambertian material for now
 					Vec3f emission, light_dir;
@@ -221,18 +221,11 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 					shadow_hit.t = 1e30f;
 					shadow_hit.hit = 0;
 					sphere_intersect(shadow_hit, shadow, geom);
-#if 0
-					Vec3f color = light_dir * 0.5 + make_vec3f(0.5, 0.5, 0.5);
-					img[(j * width + i) * 3] += color.x;
-					img[(j * width + i) * 3 + 1] += color.y;
-					img[(j * width + i) * 3 + 2] += color.z;
-#else
 					float geom_term = abs(dot(isect.n, light_dir));
 					// We don't seem to be able to intersect ourself? It seems like the light direction
 					// is wrong!?
 					if (!shadow_hit.hit){
-						emission = make_vec3f(1.0, 1.0, 1.0);
-						Vec3f color = emission * geom_term;// * M_1_PI;
+						Vec3f color = emission * geom_term * M_1_PI;
 						img[(j * width + i) * 3] += color.x + ambient_light.x;
 						img[(j * width + i) * 3 + 1] += color.y + ambient_light.y;
 						img[(j * width + i) * 3 + 2] += color.z + ambient_light.z;
@@ -242,7 +235,6 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 						img[(j * width + i) * 3 + 1] += ambient_light.y;
 						img[(j * width + i) * 3 + 2] += ambient_light.z;
 					}
-#endif
 				}
 			}
 			for (int c = 0; c < 3; ++c){

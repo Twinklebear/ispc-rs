@@ -26,11 +26,10 @@ pub mod lights;
 pub fn render() {
     let width = 512;
     let height = 512;
-    // TODO: X is flipped
-    let camera = Camera::new(Vec3f::new(0.0, 0.0, 1.0), Vec3f::new(0.0, 0.0, -1.0),
+    let camera = Camera::new(Vec3f::new(0.0, 0.0, -2.0), Vec3f::new(0.0, 0.0, 1.0),
                              Vec3f::new(0.0, 1.0, 0.0), 65.0, width, height);
     let sphere = Sphere::new(Vec3f::new(0.0, 0.0, 0.0), 0.5);
-    let light = PointLight::new(Vec3f::new(1.0, 0.0, 1.0), Vec3f::broadcast(2.0));
+    let light = PointLight::new(Vec3f::new(0.5, 0.5, -1.0), Vec3f::broadcast(1.0));
     let mut img_buf = vec![0.0; width * height * 3];
     let mut rng = rand::thread_rng();
     unsafe {
