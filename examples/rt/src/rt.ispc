@@ -14,6 +14,13 @@ inline Vec3f make_vec3f(float x, float y, float z){
 	v.z = z;
 	return v;
 }
+inline Vec3f operator*(Vec3f a, Vec3f b){
+	Vec3f res;
+	res.x = a.x * b.x;
+	res.y = a.y * b.y;
+	res.z = a.z * b.z;
+	return res;
+}
 inline Vec3f operator*(float s, Vec3f v){
 	Vec3f res;
 	res.x = v.x * s;
@@ -66,6 +73,13 @@ inline Vec3f normalize(Vec3f a){
 	float inv_len = rsqrt(dot(a, a));
 	return a * inv_len;
 }
+inline Vec3f negate(Vec3f a){
+	Vec3f res;
+	res.x = -a.x;
+	res.y = -a.y;
+	res.z = -a.z;
+	return res;
+}
 
 struct Ray {
 	Vec3f origin, dir;
@@ -115,6 +129,34 @@ export void drop_point_light(const uniform Light * uniform light){
 	delete point;
 }
 
+enum MATERIAL_TYPE {
+	LAMBERTIAN
+};
+
+struct Material {
+	MATERIAL_TYPE type;
+	Vec3f albedo;
+};
+
+struct Lambertian {
+	Material mat;
+};
+
+export void make_lambertian(uniform const Material * uniform * uniform out, uniform const Vec3f * uniform albedo){
+	uniform Lambertian * uniform lambertian = uniform new Lambertian;
+	lambertian->mat.type = LAMBERTIAN;
+	lambertian->mat.albedo = *albedo;
+	*out = (uniform Material * uniform)lambertian;
+}
+Vec3f shade_lambertian(uniform const Material *mat, const Vec3f w_o, const Vec3f w_i){
+	uniform Lambertian *lambertian = (uniform Lambertian *)mat;
+	return lambertian->mat.albedo * M_1_PI;
+}
+export void drop_lambertian(uniform const Material * uniform mat){
+	uniform Lambertian * uniform lambertian = (uniform Lambertian * uniform)mat;
+	delete lambertian;
+}
+
 enum GEOM_TYPE {
 	SPHERE,
 	PLANE
@@ -122,6 +164,7 @@ enum GEOM_TYPE {
 
 struct Geometry {
 	GEOM_TYPE type;
+	const Material *material;
 };
 
 struct Sphere {
@@ -140,10 +183,11 @@ struct Plane {
 // Allocate and construct a new ISPC-side sphere, the pointer passed will be set to point to
 // the newly allocated sphere
 export void make_sphere(uniform const Geometry * uniform * uniform out, uniform const Vec3f * uniform center,
-		uniform float radius)
+		uniform float radius, uniform const Material * uniform mat)
 {
 	uniform Sphere * uniform sphere = uniform new uniform Sphere;
 	sphere->geom.type = SPHERE;
+	sphere->geom.material = mat;
 	sphere->center = *center;
 	sphere->radius = radius;
 	*out = (uniform Geometry * uniform)sphere;
@@ -177,10 +221,11 @@ inline bool sphere_intersect(Isect &isect, const Ray &ray, const uniform Geometr
 // Allocate and construct a new ISPC-side plane, the pointer passed will be set to point to
 // the newly allocated sphere
 export void make_plane(uniform const Geometry * uniform * uniform out, uniform const Vec3f * uniform center,
-		uniform const Vec3f * uniform normal)
+		uniform const Vec3f * uniform normal, uniform const Material * uniform mat)
 {
 	uniform Plane * uniform plane = uniform new uniform Plane;
 	plane->geom.type = PLANE;
+	plane->geom.material = mat;
 	plane->center = *center;
 	plane->normal = *normal;
 	*out = (uniform Geometry * uniform)plane;
@@ -256,7 +301,7 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 
 				Ray ray = camera_ray(camera, i, j, samples);
 				intersect_scene(isect, ray, geom, n_geom);
-				Vec3f ambient_light = make_vec3f(0.1, 0.1, 0.1);
+				Vec3f ambient_light = make_vec3f(0.07, 0.07, 0.07);
 				if (isect.hit){
 					Vec3f emission, light_dir;
 					point_light_incident(light, isect.p, emission, light_dir);
@@ -270,19 +315,17 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 					intersect_scene(shadow_hit, shadow, geom, n_geom);
 
 					float geom_term = dot(isect.n, light_dir);
-					// TODO: Different materials for different objects
+					// Some base ambient lighting
+					Vec3f color = ambient_light * geom[isect.hit - 1]->material->albedo;
 					if (!shadow_hit.hit && geom_term > 0.0){
-						// Super simple Lambertian material for now
-						Vec3f color = emission * geom_term * M_1_PI;
-						img[(j * width + i) * 3] += color.x + ambient_light.x;
-						img[(j * width + i) * 3 + 1] += color.y + ambient_light.y;
-						img[(j * width + i) * 3 + 2] += color.z + ambient_light.z;
-					} else {
-						// Some ambient lighting
-						img[(j * width + i) * 3] += ambient_light.x;
-						img[(j * width + i) * 3 + 1] += ambient_light.y;
-						img[(j * width + i) * 3 + 2] += ambient_light.z;
+						Vec3f w_o = negate(ray.dir);
+						// Just the Lambertian material for now
+						Vec3f bsdf_f = shade_lambertian(geom[isect.hit - 1]->material, w_o, light_dir);
+						color = color + emission * geom_term * bsdf_f;
 					}
+					img[(j * width + i) * 3] += color.x;
+					img[(j * width + i) * 3 + 1] += color.y;
+					img[(j * width + i) * 3 + 2] += color.z;
 				}
 			}
 			for (int c = 0; c < 3; ++c){

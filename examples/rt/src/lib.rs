@@ -12,27 +12,26 @@ ispc_module!(rt);
 
 pub use vec3f::Vec3f;
 pub use camera::Camera;
-pub use sphere::Sphere;
-pub use plane::Plane;
+pub use geom::{Sphere, Plane, Geometry};
 pub use lights::PointLight;
-
-/// Type alias for the Geometry base struct in ISPC
-pub type Geometry = ::rt::Struct_Geometry;
+pub use material::Lambertian;
 
 pub mod vec3f;
 pub mod camera;
-pub mod sphere;
-pub mod plane;
+pub mod geom;
 pub mod lights;
+pub mod material;
 
 pub fn render() {
     let width = 512;
     let height = 512;
     let camera = Camera::new(Vec3f::new(0.0, 0.0, -2.0), Vec3f::new(0.0, 0.0, 1.0),
                              Vec3f::new(0.0, 1.0, 0.0), 65.0, width, height);
-    let sphere = Sphere::new(Vec3f::new(0.0, 0.0, 0.0), 0.5);
-    let plane = Plane::new(Vec3f::new(0.0, -0.5, 0.0), Vec3f::new(0.0, 1.0, 0.0));
-    let light = PointLight::new(Vec3f::new(0.5, 0.5, -1.0), Vec3f::broadcast(1.0));
+    let white_mat = Lambertian::new(Vec3f::broadcast(1.0));
+    let red_mat = Lambertian::new(Vec3f::new(1.0, 0.2, 0.2));
+    let sphere = Sphere::new(Vec3f::new(0.0, 0.0, 0.0), 0.5, white_mat);
+    let plane = Plane::new(Vec3f::new(0.0, -0.5, 0.0), Vec3f::new(0.0, 1.0, 0.0), red_mat);
+    let light = PointLight::new(Vec3f::new(0.5, 0.5, -1.0), Vec3f::broadcast(1.25));
     let mut img_buf = vec![0.0; width * height * 3];
     let mut rng = rand::thread_rng();
     unsafe {
