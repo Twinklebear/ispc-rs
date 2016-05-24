@@ -6,7 +6,8 @@ pub type Camera = ::rt::Struct_Camera;
 
 impl Camera {
     /// Create a new camera at some orientation in the world
-    pub fn new(pos: Vec3f, dir: Vec3f, up: Vec3f, fovy: f32, width: usize, height: usize) -> Camera {
+    pub fn new(pos: Vec3f, target: Vec3f, up: Vec3f, fovy: f32, width: usize, height: usize) -> Camera {
+        let dir = target - pos;
         let dz = dir.normalized();
         let dx = -dz.cross(&up).normalized();
         let dy = dx.cross(&dz).normalized();

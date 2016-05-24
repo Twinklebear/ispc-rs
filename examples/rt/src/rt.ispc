@@ -301,7 +301,7 @@ export void render(const uniform Camera * uniform camera, const uniform Geometry
 
 				Ray ray = camera_ray(camera, i, j, samples);
 				intersect_scene(isect, ray, geom, n_geom);
-				Vec3f ambient_light = make_vec3f(0.07, 0.07, 0.07);
+				Vec3f ambient_light = make_vec3f(0.1, 0.1, 0.1);
 				if (isect.hit){
 					Vec3f emission, light_dir;
 					point_light_incident(light, isect.p, emission, light_dir);
