@@ -27,10 +27,8 @@
 //!     for s in &ispc_files[..] {
 //!         println!("cargo:rerun-if-changed={}", s);
 //!     }
-//! 	// Compile our ISPC library and make sure it went ok
-//!     if !ispc::compile_library("simple", &ispc_files[..]) {
-//!         panic!("Failed to compile ISPC library 'simple'");
-//!     }
+//! 	// Compile our ISPC library, this call will panic if building fails
+//!     ispc::compile_library("simple", &ispc_files[..]);
 //! }
 //! ```
 //!
@@ -46,6 +44,8 @@
 //!
 //! // Functions exported from simple will be callable under simple::*
 //! ispc_module!(simple);
+//! // Alternatively if the module should be public:
+//! // ispc_module!(pub simple);
 //! ```
 //!
 //! Some more complete examples can be found in the
@@ -102,6 +102,8 @@ use exec::{TaskSystem, Parallel};
 ///
 /// // Functions exported from foo will be callable under foo::*
 /// ispc_module!(foo);
+/// // Alternatively if the module should be public:
+/// // ispc_module!(pub simple);
 /// ```
 #[macro_export]
 macro_rules! ispc_module {

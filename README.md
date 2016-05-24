@@ -22,7 +22,7 @@ as a build dependency.
 build = "build.rs"
 
 [build-dependencies]
-ispc = "0.0.1"
+ispc = "0.1.0"
 ```
 
 Now you can use `ispc` to compile your code into a static library:
@@ -36,10 +36,8 @@ fn main() {
     for s in &ispc_files[..] {
         println!("cargo:rerun-if-changed={}", s);
     }
-	// Compile our ISPC library and make sure it went ok
-    if !ispc::compile_library("simple", &ispc_files[..]) {
-        panic!("Failed to compile ISPC library 'simple'");
-    }
+	// Compile our ISPC library, this call will panic if building fails
+	ispc::compile_library("simple", &ispc_files[..]);
 }
 ```
 
@@ -55,6 +53,8 @@ extern crate ispc;
 
 // Functions exported from simple will be callable under simple::*
 ispc_module!(simple);
+// Alternatively if the module should be public:
+//ispc_module!(pub simple);
 ```
 
 Some more complete examples can be found in the [examples/](examples/) folder.

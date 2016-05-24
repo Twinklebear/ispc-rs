@@ -1,6 +1,6 @@
 [package]
 name = "ispc"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["Will Usher <willusher.life@gmail.com>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "http://www.willusher.io/ispc-rs/ispc/"
@@ -22,8 +22,8 @@ exclude = [
 
 [dependencies]
 bindgen = "0.16.0"
-gcc = "0.3"
-libc = "0.2.10"
+gcc = "0.3.28"
+libc = "0.2.11"
 aligned_alloc = "0.1.2"
-num_cpus = "0.2.11"
+num_cpus = "0.2.12"
 
