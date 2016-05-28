@@ -238,7 +238,7 @@ impl Config {
         let mut bindings = bindgen::builder();
         bindings.forbid_unknown_types()
             .header(self.bindgen_header.to_str().unwrap())
-            .link_static(lib);
+            .link(lib, bindgen::LinkType::Static);
         let bindgen_file = dst.join(lib).with_extension("rs");
         match bindings.generate() {
             Ok(b) => b.write_to_file(bindgen_file).unwrap(),
