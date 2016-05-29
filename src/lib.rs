@@ -373,7 +373,7 @@ fn get_task_system() -> &'static TaskSystem {
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
     TASK_INIT.call_once(|| {
         unsafe {
-            let task_sys = Arc::new(Parallel::new()) as Arc<TaskSystem>;
+            let task_sys = Parallel::new() as Arc<TaskSystem>;
             let s: *const TaskSystem = mem::transmute(&*task_sys);
             mem::forget(task_sys);
             TASK_SYSTEM = Some(&*s);
