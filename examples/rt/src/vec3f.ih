@@ -79,6 +79,22 @@ inline Vec3f negate(Vec3f a){
 	res.z = -a.z;
 	return res;
 }
+inline void ortho_basis(Vec3f basis[3], const Vec3f n){
+	basis[2] = n;
+	basis[1] = make_vec3f(0.f, 0.f, 0.);
+
+	if (n.x < 0.6f && n.x > -0.6f){
+		basis[1].x = 1.f;
+	} else if (n.y < 0.6f && n.y > -0.6f){
+		basis[1].y = 1.f;
+	} else if (n.z < 0.6f && n.z > -0.6f){
+		basis[1].z = 1.f;
+	} else {
+		basis[1].x = 1.f;
+	}
+	basis[0] = normalize(cross(basis[1], basis[2]));
+	basis[1] = normalize(cross(basis[2], basis[0]));
+}
 
 struct Ray {
 	Vec3f origin, dir;

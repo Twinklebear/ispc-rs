@@ -32,24 +32,14 @@ pub fn render() {
     let sphere = Sphere::new(Vec3f::new(0.0, 0.0, 0.0), 0.5, red_mat);
     let plane = Plane::new(Vec3f::new(0.0, -0.5, 0.0), Vec3f::new(0.0, 1.0, 0.0), blue_mat);
     let light = PointLight::new(Vec3f::new(0.75, 0.75, -2.0), Vec3f::broadcast(10.0));
-    let mut img_buf = vec![0.0; width * height * 3];
+    let mut img_buf = vec![0u8; width * height * 3];
     let mut rng = rand::thread_rng();
     unsafe {
         let geom = vec![sphere.ispc_equiv(), plane.ispc_equiv()];
         rt::render(&camera as *const Camera, geom.as_ptr(), geom.len() as i32, light.ispc_equiv(),
                    rng.gen::<i32>(), width as i32, height as i32, img_buf.as_mut_ptr());
     }
-    // Convert the image to RGB u8 to save
-    let img = img_buf.iter().map(|x| {
-        if *x >= 1.0 {
-            255
-        } else if *x <= 0.0 {
-            0
-        } else {
-            (*x * 255.0) as u8
-        }
-    }).collect::<Vec<u8>>();
-    match image::save_buffer("rt.png", &img[..], width as u32, height as u32, image::RGB(8)) {
+    match image::save_buffer("rt.png", &img_buf[..], width as u32, height as u32, image::RGB(8)) {
         Ok(_) => println!("Rendered image saved to rt.png"),
         Err(e) => panic!("Error saving image: {}", e),
     };
