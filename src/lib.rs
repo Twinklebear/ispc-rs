@@ -298,6 +298,12 @@ impl Config {
         if cfg!(unix) {
             ispc_args.push(String::from("--pic"));
         }
+        let target = self.get_target();
+        if target.starts_with("i686") {
+            ispc_args.push(String::from("--arch=x86"));
+        } else if target.starts_with("x86_64") {
+            ispc_args.push(String::from("--arch=x86-64"));
+        }
         ispc_args
     }
     /// Returns the user-set output directory if they've set one, otherwise
