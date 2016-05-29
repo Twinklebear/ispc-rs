@@ -1,0 +1,95 @@
+#ifndef VEC3F_ISPC_H
+#define VEC3F_ISPC_H
+
+#define M_1_PI 0.31830988618379067154
+
+struct Vec3f {
+	float x, y, z;
+};
+inline Vec3f make_vec3f(float x, float y, float z){
+	Vec3f v;
+	v.x = x;
+	v.y = y;
+	v.z = z;
+	return v;
+}
+inline Vec3f operator*(Vec3f a, Vec3f b){
+	Vec3f res;
+	res.x = a.x * b.x;
+	res.y = a.y * b.y;
+	res.z = a.z * b.z;
+	return res;
+}
+inline Vec3f operator*(float s, Vec3f v){
+	Vec3f res;
+	res.x = v.x * s;
+	res.y = v.y * s;
+	res.z = v.z * s;
+	return res;
+}
+inline Vec3f operator*(Vec3f v, float s){
+	Vec3f res;
+	res.x = v.x * s;
+	res.y = v.y * s;
+	res.z = v.z * s;
+	return res;
+}
+inline Vec3f operator/(Vec3f v, float s){
+	Vec3f res;
+	res.x = v.x / s;
+	res.y = v.y / s;
+	res.z = v.z / s;
+	return res;
+}
+inline Vec3f operator+(Vec3f a, Vec3f b){
+	Vec3f res;
+	res.x = a.x + b.x;
+	res.y = a.y + b.y;
+	res.z = a.z + b.z;
+	return res;
+}
+inline Vec3f operator-(Vec3f a, Vec3f b){
+	Vec3f res;
+	res.x = a.x - b.x;
+	res.y = a.y - b.y;
+	res.z = a.z - b.z;
+	return res;
+}
+inline float dot(Vec3f a, Vec3f b){
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+inline float length(Vec3f a){
+	return sqrt(dot(a, a));
+}
+inline Vec3f cross(Vec3f a, Vec3f b){
+	Vec3f c;
+	c.x = a.y * b.z - a.z * b.y;
+	c.y = a.z * b.x - a.x * b.z;
+	c.z = a.x * b.y - a.y * b.x;
+	return c;
+}
+inline Vec3f normalize(Vec3f a){
+	float inv_len = rsqrt(dot(a, a));
+	return a * inv_len;
+}
+inline Vec3f negate(Vec3f a){
+	Vec3f res;
+	res.x = -a.x;
+	res.y = -a.y;
+	res.z = -a.z;
+	return res;
+}
+
+struct Ray {
+	Vec3f origin, dir;
+};
+
+struct Isect {
+	float t;
+	Vec3f p, n;
+	int hit;
+};
+
+#endif
+
+
