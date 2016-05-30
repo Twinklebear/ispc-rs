@@ -47,6 +47,7 @@ pub struct Context {
     tasks: RwLock<Vec<Arc<Group>>>,
     /// The memory allocated for the various task group's parameters
     mem: Mutex<Vec<AtomicPtr<libc::c_void>>>,
+    /// A unique identifier for this context
     pub id: usize,
 }
 
@@ -177,9 +178,11 @@ impl Group {
                 total: total, data: data, fcn: fcn,
                 chunks_launched: AtomicUsize::new(0), chunks_finished: AtomicUsize::new(0) }
     }
+    /// Get an iterator over `chunk_size` chunks of tasks to be executed for this group
     pub fn chunks(&self, chunk_size: usize) -> GroupChunks {
         GroupChunks { group: self, chunk_size: chunk_size }
     }
+    /// Check if all tasks for this group have been completed
     pub fn is_finished(&self) -> bool {
         let finished = self.chunks_finished.load(atomic::Ordering::SeqCst);
         let launched = self.chunks_launched.load(atomic::Ordering::SeqCst);

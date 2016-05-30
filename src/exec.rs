@@ -122,6 +122,10 @@ impl Parallel {
                 }
             }
             // We ran out of contexts to get, so wait a bit for a new group to get launched
+            // TODO: This could result in some threads remaining parked even if new contexts
+            // have been launched if they're unparked then immediately park. Would be better to
+            // set up a condition var or something that the workers can wait on to be signaled
+            // when new work arrives.
             thread::park();
         }
     }
