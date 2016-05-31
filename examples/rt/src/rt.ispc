@@ -45,46 +45,10 @@ void intersect_scene(Isect &isect, const Ray &ray, const uniform Geometry * cons
 		}
 	}
 }
-float ambient_occlusion(const uniform Geometry * const uniform * uniform geom, const uniform int32 n_geom,
-		const Isect &isect, RNGState &rng_state)
-{
-	const Vec3f p = isect.p + 0.0001f * isect.n;
-	Vec3f basis[3];
-	ortho_basis(basis, isect.n);
-	float occlusion = 0.f;
-
-	for (int j = 0; j < NUM_AO_SAMPLES; ++j){
-		for (int i = 0; i < NUM_AO_SAMPLES; ++i){
-			const float theta = sqrt(frandom(&rng_state));
-			const float phi = 2.0f * PI * frandom(&rng_state);
-
-			const float x = cos(phi) * theta;
-			const float y = sin(phi) * theta;
-			const float z = sqrt(1.f - theta * theta);
-
-			// Transform from object space to world space
-			Ray ray;
-			ray.origin = p;
-			ray.dir.x = x * basis[0].x + y * basis[1].x + z * basis[2].x;
-			ray.dir.y = x * basis[0].y + y * basis[1].y + z * basis[2].y;
-			ray.dir.z = x * basis[0].z + y * basis[1].z + z * basis[2].z;
-
-			Isect occluded;
-			occluded.t = 1e17f;
-			occluded.hit = 0;
-			intersect_scene(occluded, ray, geom, n_geom);
-			if (occluded.hit){
-				occlusion += 1.f;
-			}
-		}
-	}
-	occlusion = (NUM_AO_SAMPLES * NUM_AO_SAMPLES - occlusion) / (NUM_AO_SAMPLES * NUM_AO_SAMPLES);
-	return occlusion;
-}
 task void render_scanline(const uniform Camera * uniform camera,
 		const uniform Geometry * const uniform * uniform geom,
 		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 seed,
-		const uniform int32 width, const uniform int32 height, uniform unsigned int8 img[])
+		const uniform int32 width, const uniform int32 height, uniform float img[])
 {
 	RNGState rng_state;
 	// Make the seed sort of scanline dependent
@@ -124,30 +88,41 @@ task void render_scanline(const uniform Camera * uniform camera,
 					Vec3f bsdf_f = shade_lambertian(geom[isect.hit - 1]->material, w_o, light_dir);
 					color = color + emission * geom_term * bsdf_f;
 				}
-				color = color * ambient_occlusion(geom, n_geom, isect, rng_state);
-				pixel_color[0] += color.x;
-				pixel_color[1] += color.y;
-				pixel_color[2] += color.z;
+				img[(taskIndex0 * width + i) * 3] += color.x;
+				img[(taskIndex0 * width + i) * 3 + 1] += color.y;
+				img[(taskIndex0 * width + i) * 3 + 2] += color.z;
 			}
 		}
 		for (int c = 0; c < 3; ++c){
-			pixel_color[c] *= inv_samples;
-			if (pixel_color[c] > 1.f){
-				pixel_color[c] = 1.f;
-			} else if (pixel_color[c] < 0.f){
-				pixel_color[c] = 0.f;
-			}
-			// Convert the pixel to sRGB and write the final values to the framebuffer, since no reconstruction
-			// filtering is done we don't need to maintain a linear RGB framebuffer and convert to sRGB at the end.
-			img[(taskIndex0 * width + i) * 3 + c] = (unsigned int8)float_to_srgb8(pixel_color[c]);
+			img[(taskIndex0 * width + i) * 3 + c] *= inv_samples;
 		}
 	}
 }
 // Render the scene with Whitted raytracing + AO to an sRGB image
 export void render(const uniform Camera * uniform camera, const uniform Geometry * const uniform * uniform geom,
 		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 seed,
-		const uniform int32 width, const uniform int32 height, uniform unsigned int8 img[])
+		const uniform int32 width, const uniform int32 height, uniform float img[])
 {
 	launch[height] render_scanline(camera, geom, n_geom, light, seed, width, height, img);
+}
+task void scanline_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[], const uniform int32 width){
+	foreach (i = 0 ... width){
+		for (int c = 0; c < 3; ++c){
+			float val = fb[(taskIndex0 * width + i) * 3 + c];
+			if (val >= 1.f){
+				srgb[(taskIndex0 * width + i) * 3 + c] = 255;
+			} else if (val <= 0.f){
+				srgb[(taskIndex0 * width + i) * 3 + c] = 0;
+			} else {
+				srgb[(taskIndex0 * width + i) * 3 + c] = float_to_srgb8(val);
+			}
+		}
+	}
+}
+// Convert the linear RGB framebuffer we render to to sRGB8 for saving out to an image
+export void framebuffer_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[],
+		const uniform int32 width, const uniform int32 height)
+{
+	launch[height] scanline_to_srgb(fb, srgb, width);
 }
 
