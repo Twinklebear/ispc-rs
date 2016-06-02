@@ -16,7 +16,7 @@ use task::{ISPCTaskFn, Context};
 /// Trait to be implemented to provide ISPC task execution functionality.
 ///
 /// The runtime [required functions](http://ispc.github.io/ispc.html#task-parallelism-runtime-requirements)
-/// will be forwarded directly to your struct, making this interface unsafe.
+/// for the ISPC task runtime will be forwarded directly to your struct, making this interface unsafe.
 pub trait TaskSystem {
     /// Alloc is called when memory must be allocated to store parameters to pass to a task
     /// and must return a pointer to an allocation of `size` bytes aligned to `align`.
@@ -55,7 +55,7 @@ pub trait TaskSystem {
     unsafe fn launch(&self, handle_ptr: *mut *mut libc::c_void, f: ISPCTaskFn, data: *mut libc::c_void,
                      count0: i32, count1: i32, count2: i32);
     /// Synchronize an execution context with the tasks it's launched. Use `handle` to determine
-    /// the task context being synchronized.
+    /// the task context that's being synchronized.
     ///
     /// This function should not return until all tasks launched within the context being
     /// synchronized with have been completed. You can use the `handle` to determine which context
@@ -68,7 +68,7 @@ pub trait TaskSystem {
 // upon thread launch
 thread_local!(static THREAD_ID: RefCell<usize> = RefCell::new(0));
 
-/// A multithreaded execution environment for the tasks.
+/// A multithreaded execution environment for the tasks launched in ISPC
 pub struct Parallel {
     context_list: RwLock<Vec<Arc<Context>>>,
     next_context_id: AtomicUsize,
@@ -78,7 +78,7 @@ pub struct Parallel {
 
 impl Parallel {
     /// Create a parallel task execution environment that will use `num_cpus` threads
-    /// to run tasks
+    /// to run tasks.
     pub fn new() -> Arc<Parallel> { Parallel::oversubscribed(1.0) }
     /// Create an oversubscribued parallel task execution environment that will use
     /// `oversubscribe * num_cpus` threads to run tasks.

@@ -1,6 +1,6 @@
 [package]
 name = "ispc"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Will Usher <willusher.life@gmail.com>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "http://www.willusher.io/ispc-rs/ispc/"

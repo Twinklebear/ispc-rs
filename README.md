@@ -8,12 +8,14 @@ integrating [ISPC](https://ispc.github.io/) code into Rust projects.
 
 ## Documentation
 
-Rust doc can be found [here](http://www.willusher.io/ispc-rs/ispc)
+Rust doc can be found [here](http://www.willusher.io/ispc-rs/ispc), ISPC documentation can
+be found [here](https://ispc.github.io).
 
 ## Using ispc-rs
 
 You'll want to add a build script to your crate (`build.rs`), tell Cargo about it and add this crate
-as a build dependency.
+as a build dependency and optionally as a runtime dependency if you plan to use the `ispc_module` macro
+or ISPC tasks.
 
 ```toml
 # Cargo.toml
@@ -21,8 +23,11 @@ as a build dependency.
 # ...
 build = "build.rs"
 
+[dependencies]
+ispc = "0.1.1"
+
 [build-dependencies]
-ispc = "0.1.0"
+ispc = "0.1.1"
 ```
 
 Now you can use `ispc` to compile your code into a static library:
@@ -31,13 +36,8 @@ Now you can use `ispc` to compile your code into a static library:
 extern crate ispc;
 
 fn main() {
-    let ispc_files = vec!["src/simple.ispc"];
-    // Optional: Only re-run the build script if the ISPC files have been changed
-    for s in &ispc_files[..] {
-        println!("cargo:rerun-if-changed={}", s);
-    }
 	// Compile our ISPC library, this call will panic if building fails
-	ispc::compile_library("simple", &ispc_files[..]);
+	ispc::compile_library("simple", &["src/simple.ispc"]);
 }
 ```
 

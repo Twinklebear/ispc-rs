@@ -4,7 +4,8 @@
 //! # Using ispc-rs
 //!
 //! You'll want to add a build script to your crate (`build.rs`), tell Cargo about it and add this crate
-//! as a build dependency.
+//! as a build dependency and optionally as a runtime dependency if you plan to use the `ispc_module` macro
+//! or ISPC tasks.
 //!
 //! ```toml
 //! # Cargo.toml
@@ -12,8 +13,11 @@
 //! # ...
 //! build = "build.rs"
 //!
+//! [dependencies]
+//! ispc = "0.1.1"
+//!
 //! [build-dependencies]
-//! ispc = "0.0.1"
+//! ispc = "0.1.1"
 //! ```
 //!
 //! Now you can use `ispc` to compile your code into a static library:
@@ -22,13 +26,8 @@
 //! extern crate ispc;
 //!
 //! fn main() {
-//!     let ispc_files = vec!["src/simple.ispc"];
-//!     // Optional: Only re-run the build script if the ISPC files have been changed
-//!     for s in &ispc_files[..] {
-//!         println!("cargo:rerun-if-changed={}", s);
-//!     }
 //! 	// Compile our ISPC library, this call will panic if building fails
-//!     ispc::compile_library("simple", &ispc_files[..]);
+//!     ispc::compile_library("simple", &["src/simple.ispc"]);
 //! }
 //! ```
 //!
@@ -361,7 +360,9 @@ static TASK_INIT: Once = ONCE_INIT;
 
 /// If you have implemented your own task system you can provide it for use instead
 /// of the default threaded one. This must be done prior to calling ISPC code which
-/// spawns tasks otherwise the task system will have already been initialized.
+/// spawns tasks otherwise the task system will have already been initialized to
+/// `Parallel`, which you can also see as an example for implementing a task system.
+///
 ///
 /// Use the function to do any extra initialization for your task system. Note that
 /// the task system will be leaked and not destroyed until the program exits and the
