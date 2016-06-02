@@ -81,7 +81,7 @@ pub mod exec;
 
 use std::path::{Path, PathBuf};
 use std::fs::File;
-use std::io::Write;
+use std::io::{Write, BufRead, BufReader};
 use std::process::{Command, ExitStatus};
 use std::env;
 use std::mem;
@@ -218,19 +218,29 @@ impl Config {
         for s in &self.ispc_files[..] {
             let fname = s.file_stem().expect("ISPC source files must be files")
                 .to_str().expect("ISPC source file names must be valid UTF-8");
+            println!("cargo:rerun-if-changed={}", s.display());
 
             let ispc_fname = String::from(fname) + "_ispc";
             let object = dst.join(ispc_fname.clone()).with_extension("o");
-            let header = dst.join(ispc_fname).with_extension("h");
+            let header = dst.join(ispc_fname.clone()).with_extension("h");
+            let deps = dst.join(ispc_fname).with_extension("idep");
             let status = Command::new("ispc").args(&default_args[..])
                 .arg(s).arg("-o").arg(&object).arg("-h").arg(&header)
-                .status().unwrap();
+                .arg("-MMM").arg(&deps).status().unwrap();
 
             if !status.success() {
                 panic!("Failed to compile ISPC source file {}", s.display());
             }
             self.objects.push(object);
             self.headers.push(header);
+
+            // Go this files dependencies and add them to Cargo's watch list
+            let deps_list = File::open(deps)
+                .expect(&format!("Failed to open dependencies list for {}", s.display())[..]);
+            let reader = BufReader::new(deps_list);
+            for d in reader.lines() {
+                println!("cargo:rerun-if-changed={}", d.unwrap());
+            }
         }
         if !self.assemble(lib).success() {
             panic!("Failed to assemble ISPC objects into library {}", lib);
