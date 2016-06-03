@@ -81,7 +81,7 @@ pub mod exec;
 
 use std::path::{Path, PathBuf};
 use std::fs::File;
-use std::io::{Write, BufRead, BufReader};
+use std::io::{self, Write, BufRead, BufReader};
 use std::process::{Command, ExitStatus};
 use std::env;
 use std::mem;
@@ -147,11 +147,11 @@ pub fn compile_library(lib: &str, files: &[&str]) {
 /// then exit with a failure exit code.
 macro_rules! exit_failure {
     ($fmt:expr) => {{
-        println!($fmt);
+        write!(io::stderr(), $fmt).unwrap();
         std::process::exit(libc::EXIT_FAILURE);
     }};
     ($fmt:expr, $($arg:tt)*) => {{
-        println!($fmt, $($arg)*);
+        write!(io::stderr(), $fmt, $($arg)*).unwrap();
         std::process::exit(libc::EXIT_FAILURE);
     }}
 }
