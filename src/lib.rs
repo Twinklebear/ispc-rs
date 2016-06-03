@@ -86,6 +86,7 @@ use std::process::{Command, ExitStatus};
 use std::env;
 use std::mem;
 use std::sync::{Once, ONCE_INIT, Arc};
+use std::fmt::Display;
 
 use task::ISPCTaskFn;
 use exec::{TaskSystem, Parallel};
@@ -170,6 +171,8 @@ pub struct Config {
     opt_level: Option<u32>,
     target: Option<String>,
     cargo_metadata: bool,
+    // Additional ISPC compiler options that the user can set
+    defines: Vec<(String, Option<String>)>
 }
 
 impl Config {
@@ -185,6 +188,7 @@ impl Config {
             opt_level: None,
             target: None,
             cargo_metadata: true,
+            defines: Vec::new(),
         }
     }
     /// Add an ISPC file to be compiled
@@ -218,6 +222,12 @@ impl Config {
         self.cargo_metadata = metadata;
         self
     }
+    /// Add a define to be passed to the ISPC compiler, e.g. `-DFOO`
+    /// or `-DBAR=FOO` if a value should also be set.
+    pub fn add_define(&mut self, define: &str, value: Option<&str>)  -> &mut Config {
+        self.defines.push((define.to_string(), value.map(|s| s.to_string())));
+        self
+    }
     /// Run the compiler, producing the library `lib`. If compilation fails
     /// the process will exit with EXIT_FAILURE to log build errors to the console.
     ///
@@ -225,12 +235,11 @@ impl Config {
     /// `libexample.a` or `example.lib` simply pass `example`
     pub fn compile(&mut self, lib: &str) {
         let dst = self.get_out_dir();
-        println!("dst = {}", dst.display());
         let default_args = self.default_args();
         for s in &self.ispc_files[..] {
             let fname = s.file_stem().expect("ISPC source files must be files")
                 .to_str().expect("ISPC source file names must be valid UTF-8");
-            println!("cargo:rerun-if-changed={}", s.display());
+            self.print(&format!("cargo:rerun-if-changed={}", s.display()));
 
             let ispc_fname = String::from(fname) + "_ispc";
             let object = dst.join(ispc_fname.clone()).with_extension("o");
@@ -251,7 +260,7 @@ impl Config {
                 .expect(&format!("Failed to open dependencies list for {}", s.display())[..]);
             let reader = BufReader::new(deps_list);
             for d in reader.lines() {
-                println!("cargo:rerun-if-changed={}", d.unwrap());
+                self.print(&format!("cargo:rerun-if-changed={}", d.unwrap()));
             }
         }
         if !self.assemble(lib).success() {
@@ -328,6 +337,12 @@ impl Config {
         } else if target.starts_with("x86_64") {
             ispc_args.push(String::from("--arch=x86-64"));
         }
+        for d in self.defines.iter() {
+            match d.1 {
+                Some(ref v) => ispc_args.push(format!("-D{}={}", d.0, v)),
+                None => ispc_args.push(format!("-D{}", d.0)),
+            }
+        }
         ispc_args
     }
     /// Returns the user-set output directory if they've set one, otherwise
@@ -361,7 +376,7 @@ impl Config {
         })
     }
     /// Print out cargo metadata if enabled
-    fn print(&self, s: &str) {
+    fn print<T: Display>(&self, s: &T) {
         if self.cargo_metadata {
             println!("{}", s);
         }
