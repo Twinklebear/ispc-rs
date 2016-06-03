@@ -36,7 +36,8 @@ Now you can use `ispc` to compile your code into a static library:
 extern crate ispc;
 
 fn main() {
-	// Compile our ISPC library, this call will panic if building fails
+	// Compile our ISPC library, this call will exit with EXIT_FAILURE if
+	// compilation fails
 	ispc::compile_library("simple", &["src/simple.ispc"]);
 }
 ```

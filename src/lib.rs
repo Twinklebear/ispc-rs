@@ -26,7 +26,8 @@
 //! extern crate ispc;
 //!
 //! fn main() {
-//! 	// Compile our ISPC library, this call will panic if building fails
+//! 	// Compile our ISPC library, this call will exit with EXIT_FAILURE if
+//! 	// compilation fails.
 //!     ispc::compile_library("simple", &["src/simple.ispc"]);
 //! }
 //! ```
@@ -127,8 +128,8 @@ macro_rules! ispc_module {
 /// extension like '.a' or '.lib', the appropriate prefix and suffix will be
 /// added based on the compilation target.
 ///
-/// This function will panic if any stage of compiling the library and generating
-/// bindings for it fails resulting in stderr being logged to the terminal.
+/// This function will exit the process with EXIT_FAILURE if any stage of
+/// compilation or linking fails.
 ///
 /// # Example
 /// ```no_run
@@ -140,6 +141,19 @@ pub fn compile_library(lib: &str, files: &[&str]) {
         cfg.file(*f);
     }
     cfg.compile(lib)
+}
+
+/// Handy wrapper around calling exit that will log the message passed first
+/// then exit with a failure exit code.
+macro_rules! exit_failure {
+    ($fmt:expr) => {{
+        println!($fmt);
+        std::process::exit(libc::EXIT_FAILURE);
+    }};
+    ($fmt:expr, $($arg:tt)*) => {{
+        println!($fmt, $($arg)*);
+        std::process::exit(libc::EXIT_FAILURE);
+    }}
 }
 
 /// Extra configuration to be passed to ISPC
@@ -204,9 +218,8 @@ impl Config {
         self.cargo_metadata = metadata;
         self
     }
-    /// Run the compiler, producing the library `lib`. Returns false
-    /// if compilation fails, in a build script to see ISPC compilation
-    /// errors the caller should panic in this case as they'll be logged to stderr
+    /// Run the compiler, producing the library `lib`. If compilation fails
+    /// the process will exit with EXIT_FAILURE to log build errors to the console.
     ///
     /// The library name should not have any prefix or suffix, e.g. instead of
     /// `libexample.a` or `example.lib` simply pass `example`
@@ -228,7 +241,7 @@ impl Config {
                 .arg("-MMM").arg(&deps).status().unwrap();
 
             if !status.success() {
-                panic!("Failed to compile ISPC source file {}", s.display());
+                exit_failure!("Failed to compile ISPC source file {}", s.display());
             }
             self.objects.push(object);
             self.headers.push(header);
@@ -242,7 +255,7 @@ impl Config {
             }
         }
         if !self.assemble(lib).success() {
-            panic!("Failed to assemble ISPC objects into library {}", lib);
+            exit_failure!("Failed to assemble ISPC objects into library {}", lib);
         }
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
@@ -253,7 +266,7 @@ impl Config {
         let bindgen_file = dst.join(lib).with_extension("rs");
         match bindings.generate() {
             Ok(b) => b.write_to_file(bindgen_file).unwrap(),
-            Err(_) => panic!("Failed to generating Rust bindings to {}", lib),
+            Err(_) => exit_failure!("Failed to generating Rust bindings to {}", lib),
         };
         // Tell cargo where to find the library we just built if we're running
         // in a build script
