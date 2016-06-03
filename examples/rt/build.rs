@@ -13,6 +13,6 @@ fn main() {
     for s in &ispc_files[..] {
         cfg.file(*s);
     }
-    cfg.compile("rt")
+    cfg.compile("rt");
 }
 

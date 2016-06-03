@@ -91,6 +91,18 @@ use std::fmt::Display;
 use task::ISPCTaskFn;
 use exec::{TaskSystem, Parallel};
 
+/// Different math libraries that ISPC can use for computations.
+pub enum MathLib {
+    /// Use ispc's built-in math functions (the default).
+    ISPCDefault,
+    /// Use high-performance but lower-accuracy math functions.
+    Fast,
+    /// Use the Intel(r) SVML math libraries.
+    SVML,
+    /// Use the system's math library (**may be quite slow**).
+    System,
+}
+
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
 /// In addition to building the library with ISPC we use rust-bindgen to generate
@@ -172,7 +184,9 @@ pub struct Config {
     target: Option<String>,
     cargo_metadata: bool,
     // Additional ISPC compiler options that the user can set
-    defines: Vec<(String, Option<String>)>
+    defines: Vec<(String, Option<String>)>,
+    math_lib: MathLib,
+    werror: bool,
 }
 
 impl Config {
@@ -189,6 +203,8 @@ impl Config {
             target: None,
             cargo_metadata: true,
             defines: Vec::new(),
+            math_lib: MathLib::ISPCDefault,
+            werror: false,
         }
     }
     /// Add an ISPC file to be compiled
@@ -226,6 +242,16 @@ impl Config {
     /// or `-DBAR=FOO` if a value should also be set.
     pub fn add_define(&mut self, define: &str, value: Option<&str>)  -> &mut Config {
         self.defines.push((define.to_string(), value.map(|s| s.to_string())));
+        self
+    }
+    /// Set the math library used by ISPC code, defaults to the ISPC math library.
+    pub fn math_lib(&mut self, math_lib: MathLib) -> &mut Config {
+        self.math_lib = math_lib;
+        self
+    }
+    /// Toggle warnings as errors on/off, defaults to off.
+    pub fn werror(&mut self, on: bool) -> &mut Config {
+        self.werror = on;
         self
     }
     /// Run the compiler, producing the library `lib`. If compilation fails
@@ -342,6 +368,17 @@ impl Config {
                 Some(ref v) => ispc_args.push(format!("-D{}={}", d.0, v)),
                 None => ispc_args.push(format!("-D{}", d.0)),
             }
+        }
+        // TODO: Maybe some self-printing trait for args? To go from MathLib::Fast
+        // to --math-lib=fast
+        match self.math_lib {
+            MathLib::ISPCDefault => ispc_args.push(String::from("--math-lib=default")),
+            MathLib::Fast => ispc_args.push(String::from("--math-lib=fast")),
+            MathLib::SVML => ispc_args.push(String::from("--math-lib=svml")),
+            MathLib::System => ispc_args.push(String::from("--math-lib=system")),
+        }
+        if self.werror {
+            ispc_args.push(String::from("--werror"));
         }
         ispc_args
     }
