@@ -103,6 +103,23 @@ pub enum MathLib {
     System,
 }
 
+/// Select 32 or 64 bit addressing to be used by ISPC. Note: 32-bit
+/// addressing calculations are done by default, even on 64 bit target
+/// architectures.
+pub enum Addressing {
+    /// Select 32 bit addressing calculations.
+    A32,
+    /// Select 64 bit addressing calculations.
+    A64,
+}
+
+/// Different architectures that ISPC can target
+#[allow(non_camel_case_types)]
+pub enum Architecture {
+    X86,
+    X86_64,
+}
+
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
 /// In addition to building the library with ISPC we use rust-bindgen to generate
@@ -187,6 +204,8 @@ pub struct Config {
     defines: Vec<(String, Option<String>)>,
     math_lib: MathLib,
     werror: bool,
+    addressing: Option<Addressing>,
+    target_arch: Option<Architecture>
 }
 
 impl Config {
@@ -205,6 +224,8 @@ impl Config {
             defines: Vec::new(),
             math_lib: MathLib::ISPCDefault,
             werror: false,
+            addressing: None,
+            target_arch: None,
         }
     }
     /// Add an ISPC file to be compiled
@@ -231,6 +252,7 @@ impl Config {
     /// Set the target triple to compile for, overriding the default of `env!("TARGET")`
     pub fn target(&mut self, target: &str) -> &mut Config {
         self.target = Some(target.to_string());
+        // TODO WILL: We should also parse the target architecture from this string and set it
         self
     }
     /// Set whether Cargo metadata should be emitted to link to the compiled library
@@ -242,6 +264,16 @@ impl Config {
     /// or `-DBAR=FOO` if a value should also be set.
     pub fn add_define(&mut self, define: &str, value: Option<&str>)  -> &mut Config {
         self.defines.push((define.to_string(), value.map(|s| s.to_string())));
+        self
+    }
+    /// Set the target architecture for the ISPC compiler.
+    pub fn architecture(&mut self, arch: Architecture) -> &mut Config {
+        self.target_arch = Some(arch);
+        self
+    }
+    /// Select the 32 or 64 bit addressing calculations for addressing calculations in ISPC.
+    pub fn addressing(&mut self, addressing: Addressing) -> &mut Config {
+        self.addressing = Some(addressing);
         self
     }
     /// Set the math library used by ISPC code, defaults to the ISPC math library.
@@ -380,6 +412,18 @@ impl Config {
         if self.werror {
             ispc_args.push(String::from("--werror"));
         }
+        self.addressing.as_ref().map(|s| {
+            match *s {
+                Addressing::A32 => ispc_args.push(String::from("--addressing=32")),
+                Addressing::A64 => ispc_args.push(String::from("--addressing=64")),
+            }
+        });
+        self.target_arch.as_ref().map(|s| {
+            match *s {
+                Architecture::X86 => ispc_args.push(String::from("--arch=x86")),
+                Architecture::X86_64 => ispc_args.push(String::from("--arch=x86-64")),
+            }
+        });
         ispc_args
     }
     /// Returns the user-set output directory if they've set one, otherwise
