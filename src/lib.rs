@@ -87,6 +87,7 @@ use std::env;
 use std::mem;
 use std::sync::{Once, ONCE_INIT, Arc};
 use std::fmt::Display;
+use std::collections::BTreeSet;
 
 use task::ISPCTaskFn;
 use exec::{TaskSystem, Parallel};
@@ -111,6 +112,23 @@ pub enum Addressing {
     A32,
     /// Select 64 bit addressing calculations.
     A64,
+}
+
+/// ISPC optimization options.
+#[derive(Ord, PartialOrd, Eq, PartialEq)]
+pub enum OptimizationOpt {
+    /// Remove assertion statements from final code.
+    DisableAssertions,
+    /// Disable 'fused multiply-add' instructions (on targets that support them).
+    DisableFMA,
+    /// Disable loop unrolling.
+    DisableLoopUnroll,
+    /// Faster masked vector loads on SSE (may go past end of array).
+    FastMaskedVload,
+    /// Perform non-IEEE-compliant optimizations of numeric expressions.
+    FastMath,
+    /// Always issue aligned vector load and store instructions.
+    ForceAlignedMemory,
 }
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
@@ -198,6 +216,7 @@ pub struct Config {
     math_lib: MathLib,
     werror: bool,
     addressing: Option<Addressing>,
+    optimization_opts: BTreeSet<OptimizationOpt>,
 }
 
 impl Config {
@@ -217,6 +236,7 @@ impl Config {
             math_lib: MathLib::ISPCDefault,
             werror: false,
             addressing: None,
+            optimization_opts: BTreeSet::new(),
         }
     }
     /// Add an ISPC file to be compiled
@@ -270,6 +290,11 @@ impl Config {
     /// Toggle warnings as errors on/off, defaults to off.
     pub fn werror(&mut self, on: bool) -> &mut Config {
         self.werror = on;
+        self
+    }
+    /// Set an optimization option.
+    pub fn optimization_opt(&mut self, opt: OptimizationOpt) -> &mut Config {
+        self.optimization_opts.insert(opt);
         self
     }
     /// Run the compiler, producing the library `lib`. If compilation fails
@@ -404,6 +429,22 @@ impl Config {
                 Addressing::A64 => ispc_args.push(String::from("--addressing=64")),
             }
         });
+        for o in self.optimization_opts.iter() {
+            match *o {
+                OptimizationOpt::DisableAssertions =>
+                    ispc_args.push(String::from("--opt=disable-assertions")),
+                OptimizationOpt::DisableFMA =>
+                    ispc_args.push(String::from("--opt=disable-fma")),
+                OptimizationOpt::DisableLoopUnroll =>
+                    ispc_args.push(String::from("--opt=disable-loop-unroll")),
+                OptimizationOpt::FastMaskedVload =>
+                    ispc_args.push(String::from("--opt=fast-masked-vload")),
+                OptimizationOpt::FastMath =>
+                    ispc_args.push(String::from("--opt=fast-math")),
+                OptimizationOpt::ForceAlignedMemory =>
+                    ispc_args.push(String::from("--opt=force-aligned-memory")),
+            }
+        }
         ispc_args
     }
     /// Returns the user-set output directory if they've set one, otherwise
