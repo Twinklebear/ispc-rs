@@ -27,10 +27,10 @@ pub fn render() {
     let height = 512;
     let camera = Camera::new(Vec3f::new(0.0, 0.0, -3.0), Vec3f::new(0.0, 0.0, 0.0),
                              Vec3f::new(0.0, 1.0, 0.0), 60.0, width, height);
-    let blue_mat = Lambertian::new(Vec3f::new(0.0, 0.0, 1.0));
-    let red_mat = Lambertian::new(Vec3f::new(1.0, 0.0, 0.0));
+    let white_mat = Lambertian::new(Vec3f::new(1.0, 1.0, 1.0));
+    let red_mat = Lambertian::new(Vec3f::new(1.0, 0.1, 0.1));
     let sphere = Sphere::new(Vec3f::new(0.0, 0.0, 0.0), 0.5, red_mat);
-    let plane = Plane::new(Vec3f::new(0.0, -0.5, 0.0), Vec3f::new(0.0, 1.0, 0.0), blue_mat);
+    let plane = Plane::new(Vec3f::new(0.0, -0.5, 0.0), Vec3f::new(0.0, 1.0, 0.0), white_mat);
     let light = PointLight::new(Vec3f::new(0.75, 0.75, -2.0), Vec3f::broadcast(10.0));
     let mut framebuffer = vec![0.0; width * height * 3];
     let mut srgb_img_buf = vec![0u8; width * height * 3];

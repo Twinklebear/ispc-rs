@@ -1,0 +1,20 @@
+// Various Monte-Carlo sampling utilities
+
+#include "vec3f.ih"
+
+/* Sample a hemisphere using a cosine distribution to produce cosine weighted samples
+ * u0,u1 should be two random samples in range [0, 1). Directions returned will be
+ * in the hemisphere around (0, 0, 1)
+ */
+Vec3f cos_sample_hemisphere(const float u0, const float u1);
+// Compute the PDF of the cosine weighted hemisphere sampling
+inline float cos_hemisphere_pdf(const float cos_theta){
+	return cos_theta * M_1_PI;
+}
+/* Compute concentric sample positions on a unit disk mapping input from range [0, 1)
+ * to sample positions on a disk. u0,u1 should be two random samples in range [0, 1).
+ * The sampled positions are returned through u and v
+ * See: https://mediatech.aalto.fi/~jaakko/T111-5310/K2013/JGT-97.pdf
+ */
+void concentric_sample_disk(const float u0, const float u1, float &u, float &v);
+

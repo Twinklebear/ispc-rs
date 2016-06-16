@@ -1,7 +1,10 @@
 #ifndef VEC3F_ISPC_H
 #define VEC3F_ISPC_H
 
+// 1.0 / pi
 #define M_1_PI 0.31830988618379067154
+// pi / 4.0
+#define M_PI_4 0.78539816339744830961
 
 struct Vec3f {
 	float x, y, z;

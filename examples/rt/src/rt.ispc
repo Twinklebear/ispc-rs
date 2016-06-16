@@ -6,6 +6,7 @@
 #include "lights.ih"
 #include "material.ih"
 #include "geom.ih"
+#include "mc.ih"
 
 #define NUM_AO_SAMPLES 8
 
@@ -34,6 +35,7 @@ void intersect_scene(Isect &isect, const Ray &ray, const uniform Geometry * cons
 		const uniform int32 n_geom)
 {
 	for (uniform int i = 0; i < n_geom; ++i){
+		// TODO: Do this with function pts since we don't need to share the struct with Rust anymore
 		if (geom[i]->type == SPHERE){
 			if (sphere_intersect(isect, ray, geom[i])){
 				isect.hit = i + 1;
@@ -45,6 +47,59 @@ void intersect_scene(Isect &isect, const Ray &ray, const uniform Geometry * cons
 		}
 	}
 }
+Vec3f pathtracer_li(const Ray &r, const uniform Geometry * const uniform * uniform geom,
+		const uniform int32 n_geom, const uniform Light * uniform light, RNGState rng_state)
+{
+	Vec3f color = make_vec3f(0, 0, 0);
+	Vec3f path_throughput = make_vec3f(1, 1, 1);
+	Ray ray = r;
+	Vec3f basis[3];
+	const int max_depth = 5;
+	for (int i = 0; i < max_depth; ++i){
+		Isect isect;
+		isect.t = 1e30f;
+		isect.hit = 0;
+		intersect_scene(isect, ray, geom, n_geom);
+		if (isect.hit){
+			Vec3f emission, light_dir;
+			point_light_incident(light, isect.p, emission, light_dir);
+
+			Ray shadow;
+			shadow.origin = isect.p + 0.0001 * isect.n;
+			shadow.dir = light_dir;
+			Isect shadow_hit;
+			shadow_hit.t = 1e30f;
+			shadow_hit.hit = 0;
+			intersect_scene(shadow_hit, shadow, geom, n_geom);
+
+			Vec3f hemi_sample = cos_sample_hemisphere(frandom(&rng_state), frandom(&rng_state));
+			ortho_basis(basis, isect.n);
+			Vec3f w_i;
+			w_i.x = hemi_sample.x * basis[0].x + hemi_sample.y * basis[1].x + hemi_sample.z * basis[2].x;
+			w_i.y = hemi_sample.x * basis[0].y + hemi_sample.y * basis[1].y + hemi_sample.z * basis[2].y;
+			w_i.z = hemi_sample.x * basis[0].z + hemi_sample.y * basis[1].z + hemi_sample.z * basis[2].z;
+			w_i = normalize(w_i);
+
+			Vec3f w_o = negate(ray.dir);
+			// Just the Lambertian material for now
+			Vec3f bsdf_f = shade_lambertian(geom[isect.hit - 1]->material, w_o, light_dir);
+			if (!shadow_hit.hit){
+				// TODO: Proper weighting by pdf of the samples we're taking
+				// TODO: We aren't properly accounting for the illumination coming back along the path
+				// e.g. rendering out path throughput seems right but color is wrong.
+				color = color + path_throughput * emission * abs(dot(isect.n, light_dir)) * bsdf_f;
+			}
+			path_throughput = path_throughput * bsdf_f * abs(dot(w_i, isect.n));
+			// Transform from object space to world space
+			ray.origin = shadow.origin;
+			ray.dir = w_i;
+		} else {
+			break;
+		}
+	}
+	return color;
+}
+
 task void render_scanline(const uniform Camera * uniform camera,
 		const uniform Geometry * const uniform * uniform geom,
 		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 seed,
@@ -59,39 +114,13 @@ task void render_scanline(const uniform Camera * uniform camera,
 	foreach (i = 0 ... width){
 		float pixel_color[3] = {0};
 		for (int s = 0; s < n_samples; ++s){
-			Isect isect;
-			isect.t = 1e30f;
-			isect.hit = 0;
 			const float samples[2] = {frandom(&rng_state), frandom(&rng_state)};
 
 			Ray ray = camera_ray(camera, i, taskIndex0, samples);
-			intersect_scene(isect, ray, geom, n_geom);
-			Vec3f ambient_light = make_vec3f(0.1, 0.1, 0.1);
-			if (isect.hit){
-				Vec3f emission, light_dir;
-				point_light_incident(light, isect.p, emission, light_dir);
-
-				Ray shadow;
-				shadow.origin = isect.p + 0.0001 * isect.n;
-				shadow.dir = light_dir;
-				Isect shadow_hit;
-				shadow_hit.t = 1e30f;
-				shadow_hit.hit = 0;
-				intersect_scene(shadow_hit, shadow, geom, n_geom);
-
-				float geom_term = dot(isect.n, light_dir);
-				// Some base ambient lighting
-				Vec3f color = ambient_light * geom[isect.hit - 1]->material->albedo;
-				if (!shadow_hit.hit && geom_term > 0.0){
-					Vec3f w_o = negate(ray.dir);
-					// Just the Lambertian material for now
-					Vec3f bsdf_f = shade_lambertian(geom[isect.hit - 1]->material, w_o, light_dir);
-					color = color + emission * geom_term * bsdf_f;
-				}
-				img[(taskIndex0 * width + i) * 3] += color.x;
-				img[(taskIndex0 * width + i) * 3 + 1] += color.y;
-				img[(taskIndex0 * width + i) * 3 + 2] += color.z;
-			}
+			Vec3f color = pathtracer_li(ray, geom, n_geom, light, rng_state);
+			img[(taskIndex0 * width + i) * 3] += color.x;
+			img[(taskIndex0 * width + i) * 3 + 1] += color.y;
+			img[(taskIndex0 * width + i) * 3 + 2] += color.z;
 		}
 		for (int c = 0; c < 3; ++c){
 			img[(taskIndex0 * width + i) * 3 + c] *= inv_samples;
