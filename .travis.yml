@@ -9,12 +9,12 @@ addons:
     packages:
     - libclang-3.8-dev
     - llvm-3.8-dev
+rust:
+    - stable
 matrix:
     allow_failures:
         - rust: nightly
     include:
-        - rust: stable
-          script: travis-cargo build && travis-cargo doc
         - rust: beta
           script: travis-cargo build
         - rust: nightly
@@ -23,6 +23,9 @@ matrix:
 before_script:
     - export LIBCLANG_PATH=/usr/lib/llvm-${LLVM_VERSION}/lib
     - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+script:
+    - travis-cargo build
+    - travis-cargo doc
 after_success:
     - git config user.name "Travis-CI Doc Bot"
     - git config user.email "willusher.life@gmail.com"
