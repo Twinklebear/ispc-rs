@@ -9,10 +9,6 @@ addons:
     packages:
     - libclang-3.8-dev
     - llvm-3.8-dev
-rust:
-    - stable
-    - beta
-    - nightly
 matrix:
     allow_failures:
         - rust: nightly
