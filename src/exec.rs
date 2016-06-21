@@ -107,8 +107,7 @@ impl Parallel {
     /// Note that due to threading issues you shouldn't assume the context returned actually has
     /// outstanding tasks by the time it's returned to the caller and a chunk is requested.
     fn get_context(&self) -> Option<Arc<Context>> {
-        self.context_list.read().unwrap().iter()
-            .find(|c| !c.current_tasks_done()).map(|c| c.clone())
+        self.context_list.read().unwrap().iter().find(|c| !c.current_tasks_done()).cloned()
     }
     fn worker_thread(task_sys: Arc<Parallel>, thread: usize, total_threads: usize, chunk_size: usize) {
         THREAD_ID.with(|f| *f.borrow_mut() = thread);
@@ -165,7 +164,7 @@ impl TaskSystem for Parallel {
     unsafe fn launch(&self, handle_ptr: *mut *mut libc::c_void, f: ISPCTaskFn, data: *mut libc::c_void,
                      count0: i32, count1: i32, count2: i32) {
         // Push the tasks being launched on to the list of task groups for this function
-        let context: &mut Context = mem::transmute(*handle_ptr);
+        let context: &mut Context = &mut *(*handle_ptr as *mut Context);
         //println!("ISPCLaunch, context.id = {}, counts: [{}, {}, {}]", context.id, count0, count1, count2);
         context.launch((count0, count1, count2), data, f);
         // Unpark any sleeping threads since we have jobs for them
@@ -175,7 +174,8 @@ impl TaskSystem for Parallel {
         }
     }
     unsafe fn sync(&self, handle: *mut libc::c_void) {
-        let context: &mut Context = mem::transmute(handle);
+        //let context: &mut Context = mem::transmute(handle);
+        let context: &mut Context = &mut *(handle as *mut Context);
         let thread = THREAD_ID.with(|f| *f.borrow());
         let total_threads = num_cpus::get();
         //println!("Thread {} is syncing", thread);

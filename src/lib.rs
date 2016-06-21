@@ -172,7 +172,7 @@ macro_rules! ispc_module {
 /// extension like '.a' or '.lib', the appropriate prefix and suffix will be
 /// added based on the compilation target.
 ///
-/// This function will exit the process with EXIT_FAILURE if any stage of
+/// This function will exit the process with `EXIT_FAILURE` if any stage of
 /// compilation or linking fails.
 ///
 /// # Example
@@ -409,7 +409,7 @@ impl Config {
         } else if target.starts_with("x86_64") {
             ispc_args.push(String::from("--arch=x86-64"));
         }
-        for d in self.defines.iter() {
+        for d in &self.defines {
             match d.1 {
                 Some(ref v) => ispc_args.push(format!("-D{}={}", d.0, v)),
                 None => ispc_args.push(format!("-D{}", d.0)),
@@ -432,7 +432,7 @@ impl Config {
                 Addressing::A64 => ispc_args.push(String::from("--addressing=64")),
             }
         });
-        for o in self.optimization_opts.iter() {
+        for o in &self.optimization_opts {
             match *o {
                 OptimizationOpt::DisableAssertions =>
                     ispc_args.push(String::from("--opt=disable-assertions")),
@@ -486,6 +486,10 @@ impl Config {
             println!("{}", s);
         }
     }
+}
+
+impl Default for Config {
+    fn default() -> Config { Config::new() }
 }
 
 static mut TASK_SYSTEM: Option<&'static TaskSystem> = None;
