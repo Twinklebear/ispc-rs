@@ -13,7 +13,7 @@ matrix:
         - rust: beta
           script: travis-cargo build
         - rust: nightly
-          script: travis-cargo --only nightly build --features unstable
+          script: travis-cargo build
 
 before_script:
     - export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04
