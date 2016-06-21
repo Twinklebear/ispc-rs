@@ -13,7 +13,7 @@ matrix:
         - rust: beta
           script: travis-cargo build
         - rust: nightly
-          script: travis-cargo build --features clippy
+          script: travis-cargo --only nightly build --features unstable
 
 before_script:
     - export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04
@@ -21,7 +21,6 @@ before_script:
     - mkdir llvm;
     - tar -xf ${LLVM}.tar.xz -C llvm --strip-components=1;
     - export LIBCLANG_PATH=`pwd`/llvm/lib/
-    - ls ${LIBCLANG_PATH}
     - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 script:
     - travis-cargo build
