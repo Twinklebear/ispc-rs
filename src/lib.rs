@@ -1,3 +1,6 @@
+#![cfg_attr(feature = "unstable", feature(plugin))]
+#![cfg_attr(feature = "unstable", plugin(clippy))]
+
 //! A small library meant to be used as a build dependency with Cargo for easily
 //! integrating [ISPC](https://ispc.github.io/) code into Rust projects.
 //!
