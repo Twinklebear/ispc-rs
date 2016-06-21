@@ -3,12 +3,7 @@ language: rust
 addons:
   apt:
     sources:
-    - llvm-toolchain-precise
-    - llvm-toolchain-precise-3.8
     - ubuntu-toolchain-r-test
-    packages:
-    - libclang-3.8-dev
-    - llvm-3.8-dev
 rust:
     - stable
 matrix:
@@ -21,7 +16,12 @@ matrix:
           script: travis-cargo build --features clippy
 
 before_script:
-    - export LIBCLANG_PATH=/usr/lib/llvm-${LLVM_VERSION}/lib
+    - export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04
+    - wget http://llvm.org/releases/${LLVM_VERSION}/${LLVM}.tar.xz
+    - mkdir llvm;
+    - tar -xf ${LLVM}.tar.xz -C llvm --strip-components=1;
+    - export LIBCLANG_PATH=`pwd`/llvm/lib/
+    - ls ${LIBCLANG_PATH}
     - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 script:
     - travis-cargo build
@@ -32,7 +32,7 @@ after_success:
     - travis-cargo --only stable doc-upload
 env:
   matrix:
-  - LLVM_VERSION=3.8
+  - LLVM_VERSION=3.8.0
   global:
     secure: WwruT8gXkwGD3iojTU2iemzttaAk2c2irIlocge27xSaOKUGzZWV7ZEDQR56VG8Y1fQBA9kEYB+G7yltPwWh8LRHNrKvjB6t+w0hXXIildbj1Wt7D+u5hRsgWYcYBTtlJLyCvNAbJVkeVImJwDaAjwAk0u3ZPLBM9NBkdlQfjj8=
 
