@@ -133,11 +133,12 @@ float ambient_occlusion(const Isect &isect, const uniform Sphere *uniform sphere
 	occlusion = (NUM_AO_SAMPLES * NUM_AO_SAMPLES - occlusion) / (NUM_AO_SAMPLES * NUM_AO_SAMPLES);
 	return occlusion;
 }
-task void scanline(const uniform int w, const uniform int h, const uniform int n_samples, const uniform int seed,
-		uniform float img[], const uniform Plane &plane, const uniform Sphere spheres[]){
+task void scanline(const uniform int w, const uniform int h, const uniform int n_samples,
+		const uniform int * uniform seeds, uniform float img[], const uniform Plane &plane,
+		const uniform Sphere spheres[]){
 	RNGState rng_state;
 	// Make the seed sort of scanline dependent
-	seed_rng(&rng_state, seed * (programIndex + taskIndex0 + 1));
+	seed_rng(&rng_state, seeds[taskIndex0] + programIndex);
 	const float inv_samples = 1.f / n_samples;
 	foreach (i = 0 ... w){
 		for (int v = 0; v < n_samples; ++v){
@@ -171,7 +172,7 @@ task void scanline(const uniform int w, const uniform int h, const uniform int n
 	}
 }
 export void aobench_parallel(const uniform int w, const uniform int h, const uniform int n_samples,
-		const uniform int seed, uniform float img[]){
+		const uniform int * uniform seeds, uniform float img[]){
 	const uniform Plane plane = {{0.f, -0.5f, 0.f}, {0.f, 1.f, 0.f}};
 	const uniform Sphere spheres[3] = {
 		{{-2.f, 0.f, -3.5f}, 0.5f},
@@ -179,10 +180,10 @@ export void aobench_parallel(const uniform int w, const uniform int h, const uni
 		{{1.f, 0.f, -2.2f}, 0.5f}
 	};
 	// For the parallel implementation we just render each scanline in parallel
-	launch[h] scanline(w, h, n_samples, seed, img, plane, spheres);
+	launch[h] scanline(w, h, n_samples, seeds, img, plane, spheres);
 }
-export void aobench(const uniform int w, const uniform int h, const uniform int n_samples, const uniform int seed,
-		uniform float img[]){
+export void aobench(const uniform int w, const uniform int h, const uniform int n_samples,
+		const uniform int * uniform seeds, uniform float img[]){
 	const uniform Plane plane = {{0.f, -0.5f, 0.f}, {0.f, 1.f, 0.f}};
 	const uniform Sphere spheres[3] = {
 		{{-2.f, 0.f, -3.5f}, 0.5f},
@@ -190,7 +191,7 @@ export void aobench(const uniform int w, const uniform int h, const uniform int 
 		{{1.f, 0.f, -2.2f}, 0.5f}
 	};
 	RNGState rng_state;
-	seed_rng(&rng_state, seed * (programIndex + 1));
+	seed_rng(&rng_state, seeds[0] * (programIndex + 1));
 	const float inv_samples = 1.f / n_samples;
 
 	// TODO: Tiled looping?
