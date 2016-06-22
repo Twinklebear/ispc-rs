@@ -10,8 +10,6 @@ use std::time::Instant;
 
 use rand::Rng;
 
-ispc_module!(rt);
-
 pub use vec3f::Vec3f;
 pub use camera::Camera;
 pub use geom::{Sphere, Plane, Geometry};
@@ -23,6 +21,8 @@ pub mod camera;
 pub mod geom;
 pub mod lights;
 pub mod material;
+
+ispc_module!(rt);
 
 pub fn render() {
     let width = 512;

@@ -61,12 +61,12 @@ Vec3f pathtracer_li(const Ray &r, const uniform Geometry * const uniform * unifo
 		intersect_scene(isect, ray, geom, n_geom);
 		if (isect.hit){
 			Vec3f emission, light_dir;
-			point_light_incident(light, isect.p, emission, light_dir);
+			light->incident(light, isect.p, emission, light_dir);
 
 			Ray shadow;
 			Isect shadow_hit;
 			shadow.origin = isect.p + 0.001 * isect.n;
-			point_light_occlusion_test(light, shadow, shadow_hit);
+			light->occlusion_tester(light, shadow, shadow_hit);
 			intersect_scene(shadow_hit, shadow, geom, n_geom);
 
 			Vec3f w_o = negate(ray.dir);
@@ -133,10 +133,11 @@ task void render_scanline(const uniform Camera * uniform camera,
 }
 // Render the scene with Whitted raytracing + AO to an sRGB image
 export void render(const uniform Camera * uniform camera, const uniform Geometry * const uniform * uniform geom,
-		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 * uniform seeds,
+		const uniform int32 n_geom, const void* uniform light, const uniform int32 * uniform seeds,
 		const uniform int32 width, const uniform int32 height, uniform float img[])
 {
-	launch[height] render_scanline(camera, geom, n_geom, light, seeds, width, height, img);
+	launch[height] render_scanline(camera, geom, n_geom, (const uniform Light * uniform)light,
+			seeds, width, height, img);
 }
 float linear_to_srgb(const float f) {
 	if (f <= 0.0031308){

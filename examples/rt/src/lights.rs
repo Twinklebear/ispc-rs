@@ -2,30 +2,28 @@
 //! just a point light though I may add directional lights later
 
 use std::ptr;
+use std::os::raw::c_void;
 
 use rt;
 use vec3f::Vec3f;
-
-/// Type alias for the Light base struct in ISPC
-pub type Light = ::rt::Struct_Light;
 
 /// A simple point light with some emissive color
 pub struct PointLight {
     position: Vec3f,
     emission: Vec3f,
-    ispc_equiv: *const Light,
+    ispc_equiv: *const c_void,
 }
 
 impl PointLight {
     pub fn new(position: Vec3f, emission: Vec3f) -> PointLight {
-        let mut light: *const Light = ptr::null();
+        let mut light: *const c_void = ptr::null();
         unsafe {
-            rt::make_point_light(&mut light as *mut *const Light, &position as *const Vec3f,
+            rt::make_point_light(&mut light as *mut *const c_void, &position as *const Vec3f,
                                  &emission as *const Vec3f);
         }
         PointLight { position: position, emission: emission, ispc_equiv: light }
     }
-    pub fn ispc_equiv(&self) -> *const Light {
+    pub fn ispc_equiv(&self) -> *const c_void {
         self.ispc_equiv
     }
 }
