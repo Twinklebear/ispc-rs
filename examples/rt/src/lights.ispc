@@ -17,6 +17,14 @@ void point_light_incident(uniform const Light * uniform light, const Vec3f pos, 
 	emission = point->emission / dot(light_dir, light_dir);
 	light_dir = normalize(light_dir);
 }
+void point_light_occlusion_test(uniform const Light * uniform light, Ray &ray, Isect &test){
+	uniform PointLight * uniform point = (uniform PointLight * uniform)light;
+	Vec3f light_dir = point->position - ray.origin;
+	ray.dir = light_dir;
+	test.hit = 0;
+	// We shouldn't find hits past the light
+	test.t = 0.999;
+}
 export void drop_point_light(const uniform Light * uniform light){
 	uniform PointLight * uniform point = (uniform PointLight * uniform)light;
 	delete point;

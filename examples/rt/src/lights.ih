@@ -23,6 +23,11 @@ export void make_point_light(uniform const Light * uniform * uniform out, unifor
 // light's strength at pos, light dir is the direction to the light from `pos`
 void point_light_incident(uniform const Light * uniform light, const Vec3f pos, Vec3f &emission,
 		Vec3f &light_dir);
+// Build a partially-filled occlusion testing struct (Isect) for performing a correct shadow
+// test for this light. The ray origin should be set to the start point for the test
+void point_light_occlusion_test(uniform const Light * uniform light, Ray &ray, Isect &test);
+// TODO: Need a way to return a semi-filled Isect for the correct light occlusion test,
+// e.g. a point light should not shadow test to infinity!
 export void drop_point_light(const uniform Light * uniform light);
 
 #endif
