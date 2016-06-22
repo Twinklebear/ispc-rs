@@ -1,6 +1,0 @@
-# rt
-
-This example is a simple pathtracer supporting planes and spheres with Lambertian materials
-illuminated by diffuse light sources. It shows more complicated interoperability with Rust code
-where we have corresponding Rust and ISPC side structs working together in the program.
-
