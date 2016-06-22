@@ -26,7 +26,7 @@ gcc = "0.3.28"
 libc = "0.2.12"
 aligned_alloc = "0.1.2"
 num_cpus = "0.2.13"
-clippy = { version = "0.0.76", optional = true }
+clippy = { version = "0.0.77", optional = true }
 
 [features]
 unstable = ["clippy"]
