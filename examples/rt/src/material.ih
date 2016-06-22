@@ -16,8 +16,12 @@ struct Lambertian {
 	Material mat;
 };
 
+inline bool same_hemisphere(const Vec3f a, const Vec3f b, const Vec3f n){
+	return dot(a, n) * dot(b, n) > 0.0;
+}
 export void make_lambertian(uniform const Material * uniform * uniform out, uniform const Vec3f * uniform albedo);
 Vec3f shade_lambertian(uniform const Material *mat, const Vec3f w_o, const Vec3f w_i);
+float pdf_lambertian(uniform const Material *mat, const Vec3f w_o, const Vec3f w_i, const Vec3f n);
 export void drop_lambertian(uniform const Material * uniform mat);
 
 #endif
