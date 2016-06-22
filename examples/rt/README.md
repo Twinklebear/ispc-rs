@@ -10,7 +10,7 @@ function pointers. Another option is to have the `ispc_equiv` pointers be just v
 so the type and function pointers and such don't need to be bound in Rust and are more opaque.
 
 The scene rendered is shown below, though you can also create your own scene by editing
-[`src/lib.rs`](examples/rt/src/lib.rs).
+[`src/lib.rs`](src/lib.rs).
 
 ![rt example scene](http://i.imgur.com/mFPYqF6.png)
 
