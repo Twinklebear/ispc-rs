@@ -17,13 +17,14 @@ export void drop_sphere(const uniform Geometry * uniform geom){
 bool sphere_intersect(Isect &isect, const Ray &ray, const uniform Geometry * uniform geom){
 	uniform Sphere * uniform sphere = (uniform Sphere * uniform)geom;
 	Vec3f rs = ray.origin - sphere->center;
-	const float b = dot(rs, ray.dir);
+	const float a = dot(ray.dir, ray.dir);
+	const float b = 2.0 * dot(rs, ray.dir);
 	const float c = dot(rs, rs) - sphere->radius * sphere->radius;
-	const float discrim = b * b - c;
+	const float discrim = b * b - 4.0 * a * c;
 	if (discrim > 0.f){
-		float t = -b - sqrt(discrim);
+		float t = (-b - sqrt(discrim)) / (2.0 * a);
 		if (t <= 0.f || t >= isect.t){
-			t = -b + sqrt(discrim);
+			t = (-b + sqrt(discrim)) / (2.0 * a);
 		}
 		if (t > 0.f && t < isect.t){
 			isect.t = t;
