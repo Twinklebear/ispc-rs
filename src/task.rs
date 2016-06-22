@@ -30,7 +30,7 @@ pub type ISPCTaskFn = extern "C" fn(data: *mut libc::c_void, thread_idx: libc::c
 /// its handle and all of its tasks are finished. Until `ISPCSync` is called on the
 /// Context's handle more tasks could be launched.
 ///
-/// Additionally, because we're not really able to associate a call to ISPCAlloc
+/// Additionally, because we're not really able to associate a call to `ISPCAlloc`
 /// with a specific Group care must be taken that the Context is not dropped
 /// until `ISPCSync` has been called on its handle and all Groups within have
 /// completed execution.
