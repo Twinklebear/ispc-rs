@@ -54,7 +54,7 @@ Vec3f pathtracer_li(const Ray &r, const uniform Geometry * const uniform * unifo
 	Vec3f path_throughput = make_vec3f(1, 1, 1);
 	Ray ray = r;
 	Vec3f basis[3];
-	const int max_depth = 5;
+	const int max_depth = 10;
 	for (int i = 0; i < max_depth; ++i){
 		Isect isect;
 		isect.t = 1e30f;
@@ -65,13 +65,17 @@ Vec3f pathtracer_li(const Ray &r, const uniform Geometry * const uniform * unifo
 			point_light_incident(light, isect.p, emission, light_dir);
 
 			Ray shadow;
-			shadow.origin = isect.p + 0.0001 * isect.n;
-			shadow.dir = light_dir;
 			Isect shadow_hit;
-			shadow_hit.t = 1e30f;
-			shadow_hit.hit = 0;
+			shadow.origin = isect.p + 0.001 * isect.n;
+			point_light_occlusion_test(light, shadow, shadow_hit);
 			intersect_scene(shadow_hit, shadow, geom, n_geom);
 
+			Vec3f w_o = negate(ray.dir);
+			// Just the Lambertian material for now
+			Vec3f bsdf_f = shade_lambertian(geom[isect.hit - 1]->material, w_o, light_dir);
+			if (!shadow_hit.hit){
+				color = color + path_throughput * emission * abs(dot(isect.n, light_dir)) * bsdf_f;
+			}
 			Vec3f hemi_sample = cos_sample_hemisphere(frandom(&rng_state), frandom(&rng_state));
 			ortho_basis(basis, isect.n);
 			Vec3f w_i;
@@ -79,17 +83,11 @@ Vec3f pathtracer_li(const Ray &r, const uniform Geometry * const uniform * unifo
 			w_i.y = hemi_sample.x * basis[0].y + hemi_sample.y * basis[1].y + hemi_sample.z * basis[2].y;
 			w_i.z = hemi_sample.x * basis[0].z + hemi_sample.y * basis[1].z + hemi_sample.z * basis[2].z;
 			w_i = normalize(w_i);
-
-			Vec3f w_o = negate(ray.dir);
-			// Just the Lambertian material for now
-			Vec3f bsdf_f = shade_lambertian(geom[isect.hit - 1]->material, w_o, light_dir);
-			if (!shadow_hit.hit){
-				// TODO: Proper weighting by pdf of the samples we're taking
-				// TODO: We aren't properly accounting for the illumination coming back along the path
-				// e.g. rendering out path throughput seems right but color is wrong.
-				color = color + path_throughput * emission * abs(dot(isect.n, light_dir)) * bsdf_f;
+			float bsdf_pdf = pdf_lambertian(geom[isect.hit - 1]->material, w_o, w_i, isect.n);
+			if (length(bsdf_f) == 0.0 || bsdf_pdf == 0.0){
+				break;
 			}
-			path_throughput = path_throughput * bsdf_f * abs(dot(w_i, isect.n));
+			path_throughput = path_throughput * bsdf_f * abs(dot(w_i, isect.n)) / bsdf_pdf;
 			// Transform from object space to world space
 			ray.origin = shadow.origin;
 			ray.dir = w_i;
@@ -102,20 +100,27 @@ Vec3f pathtracer_li(const Ray &r, const uniform Geometry * const uniform * unifo
 
 task void render_scanline(const uniform Camera * uniform camera,
 		const uniform Geometry * const uniform * uniform geom,
-		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 seed,
+		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 * uniform seeds,
 		const uniform int32 width, const uniform int32 height, uniform float img[])
 {
 	RNGState rng_state;
-	// Make the seed sort of scanline dependent
-	seed_rng(&rng_state, seed * (programIndex + taskIndex0 + 1));
+	// On AVX1.1 and up we can use hardware randomness to improve seed quality
+#if defined(ISPC_TARGET_AVX11) || defined(ISPC_TARGET_AVX2) || defined(ISPC_TARGET_AVX2) \
+	|| defined(ISPC_TARGET_AVX512KNL)
+	{
+		int rand_val = 0;
+		while (!rdrand(&rand_val));
+		seed_rng(&rng_state, seeds[taskIndex0] + rand_val);
+	}
+#else
+	seed_rng(&rng_state, seeds[taskIndex0] + programIndex);
+#endif
 	const uniform int n_samples = 64;
 	const uniform float inv_samples = 1.f / n_samples;
 	// TODO: Should switch and go parallel on each pixel and do n * programCount samples
 	foreach (i = 0 ... width){
-		float pixel_color[3] = {0};
 		for (int s = 0; s < n_samples; ++s){
 			const float samples[2] = {frandom(&rng_state), frandom(&rng_state)};
-
 			Ray ray = camera_ray(camera, i, taskIndex0, samples);
 			Vec3f color = pathtracer_li(ray, geom, n_geom, light, rng_state);
 			img[(taskIndex0 * width + i) * 3] += color.x;
@@ -129,22 +134,23 @@ task void render_scanline(const uniform Camera * uniform camera,
 }
 // Render the scene with Whitted raytracing + AO to an sRGB image
 export void render(const uniform Camera * uniform camera, const uniform Geometry * const uniform * uniform geom,
-		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 seed,
+		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 * uniform seeds,
 		const uniform int32 width, const uniform int32 height, uniform float img[])
 {
-	launch[height] render_scanline(camera, geom, n_geom, light, seed, width, height, img);
+	launch[height] render_scanline(camera, geom, n_geom, light, seeds, width, height, img);
+}
+float linear_to_srgb(const float f) {
+	if (f <= 0.0031308){
+		return 12.92 * f;
+	} else {
+		return 1.055 * pow(f, 1.0 / 2.4) - 0.055;
+	}
 }
 task void scanline_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[], const uniform int32 width){
 	foreach (i = 0 ... width){
 		for (int c = 0; c < 3; ++c){
-			float val = fb[(taskIndex0 * width + i) * 3 + c];
-			if (val >= 1.f){
-				srgb[(taskIndex0 * width + i) * 3 + c] = 255;
-			} else if (val <= 0.f){
-				srgb[(taskIndex0 * width + i) * 3 + c] = 0;
-			} else {
-				srgb[(taskIndex0 * width + i) * 3 + c] = float_to_srgb8(val);
-			}
+			float val = linear_to_srgb(fb[(taskIndex0 * width + i) * 3 + c]);
+			srgb[(taskIndex0 * width + i) * 3 + c] = clamp(val * 255.0, 0.0, 255.0);
 		}
 	}
 }
