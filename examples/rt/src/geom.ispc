@@ -14,7 +14,7 @@ export void drop_sphere(const uniform Geometry * uniform geom){
 	uniform Sphere * uniform sphere = (uniform Sphere * uniform)geom;
 	delete sphere;
 }
-bool sphere_intersect(Isect &isect, const Ray &ray, const uniform Geometry * uniform geom){
+bool sphere_intersect(const uniform Geometry * uniform geom, Isect &isect, const Ray &ray){
 	uniform Sphere * uniform sphere = (uniform Sphere * uniform)geom;
 	Vec3f rs = ray.origin - sphere->center;
 	const float a = dot(ray.dir, ray.dir);
@@ -50,7 +50,7 @@ export void drop_plane(const uniform Geometry * uniform geom){
 	uniform Plane * uniform plane = (uniform Plane * uniform)geom;
 	delete plane;
 }
-bool plane_intersect(Isect &isect, const Ray &ray, const uniform Geometry * uniform geom){
+bool plane_intersect(const uniform Geometry * uniform geom, Isect &isect, const Ray &ray){
 	uniform Plane * uniform plane = (uniform Plane * uniform)geom;
 	float t = dot(plane->center - ray.origin, plane->normal) / dot(ray.dir, plane->normal);
 	if (t > 0.f && t < isect.t){

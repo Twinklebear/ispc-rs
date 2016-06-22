@@ -33,7 +33,7 @@ export void make_sphere(uniform const Geometry * uniform * uniform out, uniform 
 		uniform float radius, uniform const Material * uniform mat);
 // Release the ISPC-side sphere
 export void drop_sphere(const uniform Geometry * uniform geom);
-bool sphere_intersect(Isect &isect, const Ray &ray, const uniform Geometry * uniform geom);
+bool sphere_intersect(const uniform Geometry * uniform geom, Isect &isect, const Ray &ray);
 
 // Allocate and construct a new ISPC-side plane, the pointer passed will be set to point to
 // the newly allocated sphere
@@ -41,7 +41,7 @@ export void make_plane(uniform const Geometry * uniform * uniform out, uniform c
 		uniform const Vec3f * uniform normal, uniform const Material * uniform mat);
 // Release the ISPC-side sphere
 export void drop_plane(const uniform Geometry * uniform geom);
-bool plane_intersect(Isect &isect, const Ray &ray, const uniform Geometry * uniform geom);
+bool plane_intersect(const uniform Geometry * uniform geom, Isect &isect, const Ray &ray);
 
 #endif
 

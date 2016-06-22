@@ -35,13 +35,12 @@ void intersect_scene(Isect &isect, const Ray &ray, const uniform Geometry * cons
 		const uniform int32 n_geom)
 {
 	for (uniform int i = 0; i < n_geom; ++i){
-		// TODO: Do this with function pts since we don't need to share the struct with Rust anymore
 		if (geom[i]->type == SPHERE){
-			if (sphere_intersect(isect, ray, geom[i])){
+			if (sphere_intersect(geom[i], isect, ray)){
 				isect.hit = i + 1;
 			}
 		} else if (geom[i]->type == PLANE){
-			if (plane_intersect(isect, ray, geom[i])){
+			if (plane_intersect(geom[i], isect, ray)){
 				isect.hit = i + 1;
 			}
 		}
