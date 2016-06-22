@@ -44,6 +44,13 @@ inline Vec3f operator/(Vec3f v, float s){
 	res.z = v.z / s;
 	return res;
 }
+inline Vec3f operator/(Vec3f a, Vec3f b){
+	Vec3f res;
+	res.x = a.x / b.x;
+	res.y = a.y / b.y;
+	res.z = a.z / b.z;
+	return res;
+}
 inline Vec3f operator+(Vec3f a, Vec3f b){
 	Vec3f res;
 	res.x = a.x + b.x;
