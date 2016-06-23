@@ -4,7 +4,6 @@ export void make_point_light(const void** uniform out, uniform const Vec3f * uni
 		uniform const Vec3f * uniform emission)
 {
 	uniform PointLight * uniform light = uniform new PointLight;
-	light->light.type = POINT;
 	light->light.incident = point_light_incident;
 	light->light.occlusion_tester = point_light_occlusion_test;
 
