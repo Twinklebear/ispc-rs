@@ -1,0 +1,25 @@
+#ifndef ISPC_VOL_IH
+#define ISPC_VOL_IH
+
+typedef void* uniform  ISPCHandle;
+typedef unsigned int64 uint64;
+
+enum DataType {
+	UCHAR,
+	USHORT,
+	FLOAT,
+};
+
+struct Volume {
+	ISPCHandle handle;
+	void *data;
+	uint64 dims[3];
+	DataType data_type;
+};
+
+export void make_volume(uniform ISPCHandle* uniform out, const uniform uint64 width,
+		const uniform uint64 height, const uniform uint64 depth, const uniform DataType data_type);
+export void drop_volume(uniform ISPCHandle vol);
+
+#endif
+
