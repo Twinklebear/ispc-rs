@@ -6,15 +6,11 @@ addons:
     - ubuntu-toolchain-r-test
 rust:
     - stable
+    - beta
+    - nightly
 matrix:
     allow_failures:
         - rust: nightly
-    include:
-        - rust: beta
-          script: travis-cargo build
-        - rust: nightly
-          script: travis-cargo build
-
 before_script:
     - export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04
     - wget http://llvm.org/releases/${LLVM_VERSION}/${LLVM}.tar.xz
