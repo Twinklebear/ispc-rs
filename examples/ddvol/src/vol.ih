@@ -2,6 +2,7 @@
 #define ISPC_VOL_IH
 
 typedef void* uniform  ISPCHandle;
+typedef unsigned int8 uint8;
 typedef unsigned int64 uint64;
 
 enum DataType {
@@ -12,7 +13,7 @@ enum DataType {
 
 struct Volume {
 	ISPCHandle handle;
-	void *data;
+	uint8* uniform data;
 	uint64 dims[3];
 	DataType data_type;
 };
