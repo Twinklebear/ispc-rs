@@ -299,7 +299,6 @@ impl Config {
     /// Set the target triple to compile for, overriding the default of `env!("TARGET")`
     pub fn target(&mut self, target: &str) -> &mut Config {
         self.target = Some(target.to_string());
-        // TODO WILL: We should also parse the target architecture from this string and set it
         self
     }
     /// Set whether Cargo metadata should be emitted to link to the compiled library
@@ -457,7 +456,6 @@ impl Config {
     /// returns env("OUT_DIR")
     fn get_out_dir(&self) -> PathBuf {
         self.out_dir.clone().unwrap_or_else(|| {
-            // TODO: The */out part is incorrectly interpreted as the file name so append a /
             env::var_os("OUT_DIR").map(PathBuf::from).unwrap()
         })
     }
