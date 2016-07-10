@@ -154,6 +154,47 @@ pub enum OptimizationOpt {
     ForceAlignedMemory,
 }
 
+/// ISPC target CPU type options, if none is set ISPC will
+/// target the machine being compile on.
+#[derive(Eq, PartialEq)]
+pub enum CPU {
+    Generic,
+    /// Synonym for Atom target
+    Bonnell,
+    Core2,
+    Penryn,
+    /// Synonym for corei7 target
+    Nehalem,
+    /// Synonym for corei7-avx
+    SandyBridge,
+    /// Synonym for core-avx-i target
+    IvyBridge,
+    /// Synonym for core-avx2 target
+    Haswell,
+    Broadwell,
+    Knl,
+    /// Synonym for slm target
+    Silvermont,
+}
+
+impl ToString for CPU {
+    fn to_string(&self) -> String {
+        match *self {
+            CPU::Generic => String::from("--cpu=generic"),
+            CPU::Bonnell => String::from("--cpu=bonnell"),
+            CPU::Core2 => String::from("--cpu=core2"),
+            CPU::Penryn => String::from("--cpu=penryn"),
+            CPU::Nehalem => String::from("--cpu=nehalem"),
+            CPU::SandyBridge => String::from("--cpu=sandybridge"),
+            CPU::IvyBridge => String::from("--cpu=ivybridge"),
+            CPU::Haswell => String::from("--cpu=haswell"),
+            CPU::Broadwell => String::from("--cpu=broadwell"),
+            CPU::Knl => String::from("--cpu=knl"),
+            CPU::Silvermont => String::from("--cpu=silvermont"),
+        }
+    }
+}
+
 impl ToString for OptimizationOpt {
     fn to_string(&self) -> String {
         match *self {
@@ -253,6 +294,7 @@ pub struct Config {
     werror: bool,
     addressing: Option<Addressing>,
     optimization_opts: BTreeSet<OptimizationOpt>,
+    cpu_target: Option<CPU>,
 }
 
 impl Config {
@@ -273,6 +315,7 @@ impl Config {
             werror: false,
             addressing: None,
             optimization_opts: BTreeSet::new(),
+            cpu_target: None,
         }
     }
     /// Add an ISPC file to be compiled
@@ -330,6 +373,12 @@ impl Config {
     /// Set an optimization option.
     pub fn optimization_opt(&mut self, opt: OptimizationOpt) -> &mut Config {
         self.optimization_opts.insert(opt);
+        self
+    }
+    /// Set the cpu target. This overrides the default choice of ISPC which
+    /// is to target the CPU of the machine we're compiling on.
+    pub fn cpu(&mut self, cpu: CPU) -> &mut Config {
+        self.cpu_target = Some(cpu);
         self
     }
     /// Run the compiler, producing the library `lib`. If compilation fails
@@ -422,7 +471,18 @@ impl Config {
             ispc_args.push(String::from("-g"));
         }
         let opt_level = self.get_opt_level();
-        ispc_args.push(String::from("-O") + &opt_level.to_string());
+        if let Some(ref c) = self.cpu_target {
+            ispc_args.push(c.to_string());
+            // The ispc compiler crashes if we give -O0 and --cpu=generic,
+            // see https://github.com/ispc/ispc/issues/1223
+            if *c != CPU::Generic || (*c == CPU::Generic && opt_level != 0) {
+                ispc_args.push(String::from("-O") + &opt_level.to_string());
+            } else {
+                println!("cargo:warning=ispc-rs: Omitting -O0 on CPU::Generic target, ispc bug 1223");
+            }
+        } else {
+            ispc_args.push(String::from("-O") + &opt_level.to_string());
+        }
 
         // If we're on Unix we need position independent code
         if cfg!(unix) {
