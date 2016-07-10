@@ -107,6 +107,17 @@ pub enum MathLib {
     System,
 }
 
+impl ToString for MathLib {
+    fn to_string(&self) -> String {
+        match *self {
+            MathLib::ISPCDefault => String::from("--math-lib=default"),
+            MathLib::Fast => String::from("--math-lib=fast"),
+            MathLib::SVML => String::from("--math-lib=svml"),
+            MathLib::System => String::from("--math-lib=system"),
+        }
+    }
+}
+
 /// Select 32 or 64 bit addressing to be used by ISPC. Note: 32-bit
 /// addressing calculations are done by default, even on 64 bit target
 /// architectures.
@@ -115,6 +126,15 @@ pub enum Addressing {
     A32,
     /// Select 64 bit addressing calculations.
     A64,
+}
+
+impl ToString for Addressing {
+    fn to_string(&self) -> String {
+        match *self {
+            Addressing::A32 => String::from("--addressing=32"),
+            Addressing::A64 => String::from("--addressing=64"),
+        }
+    }
 }
 
 /// ISPC optimization options.
@@ -132,6 +152,19 @@ pub enum OptimizationOpt {
     FastMath,
     /// Always issue aligned vector load and store instructions.
     ForceAlignedMemory,
+}
+
+impl ToString for OptimizationOpt {
+    fn to_string(&self) -> String {
+        match *self {
+            OptimizationOpt::DisableAssertions => String::from("--opt=disable-assertions"),
+            OptimizationOpt::DisableFMA => String::from("--opt=disable-fma"),
+            OptimizationOpt::DisableLoopUnroll => String::from("--opt=disable-loop-unroll"),
+            OptimizationOpt::FastMaskedVload => String::from("--opt=fast-masked-vload"),
+            OptimizationOpt::FastMath => String::from("--opt=fast-math"),
+            OptimizationOpt::ForceAlignedMemory => String::from("--opt=force-aligned-memory"),
+        }
+    }
 }
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
@@ -390,15 +423,8 @@ impl Config {
             ispc_args.push(String::from("-g"));
         }
         let opt_level = self.get_opt_level();
-        if opt_level == 0 {
-            ispc_args.push(String::from("-O0"));
-        } else if opt_level == 1 {
-            ispc_args.push(String::from("-O1"));
-        } else if opt_level == 2 {
-            ispc_args.push(String::from("-O2"));
-        } else if opt_level == 3 {
-            ispc_args.push(String::from("-O3"));
-        }
+        ispc_args.push(String::from("-O") + &opt_level.to_string());
+
         // If we're on Unix we need position independent code
         if cfg!(unix) {
             ispc_args.push(String::from("--pic"));
@@ -415,38 +441,15 @@ impl Config {
                 None => ispc_args.push(format!("-D{}", d.0)),
             }
         }
-        // TODO: Maybe some self-printing trait for args? To go from MathLib::Fast
-        // to --math-lib=fast
-        match self.math_lib {
-            MathLib::ISPCDefault => ispc_args.push(String::from("--math-lib=default")),
-            MathLib::Fast => ispc_args.push(String::from("--math-lib=fast")),
-            MathLib::SVML => ispc_args.push(String::from("--math-lib=svml")),
-            MathLib::System => ispc_args.push(String::from("--math-lib=system")),
-        }
+        ispc_args.push(self.math_lib.to_string());
         if self.werror {
             ispc_args.push(String::from("--werror"));
         }
-        self.addressing.as_ref().map(|s| {
-            match *s {
-                Addressing::A32 => ispc_args.push(String::from("--addressing=32")),
-                Addressing::A64 => ispc_args.push(String::from("--addressing=64")),
-            }
-        });
+        if let Some(ref s) = self.addressing {
+            ispc_args.push(s.to_string());
+        }
         for o in &self.optimization_opts {
-            match *o {
-                OptimizationOpt::DisableAssertions =>
-                    ispc_args.push(String::from("--opt=disable-assertions")),
-                OptimizationOpt::DisableFMA =>
-                    ispc_args.push(String::from("--opt=disable-fma")),
-                OptimizationOpt::DisableLoopUnroll =>
-                    ispc_args.push(String::from("--opt=disable-loop-unroll")),
-                OptimizationOpt::FastMaskedVload =>
-                    ispc_args.push(String::from("--opt=fast-masked-vload")),
-                OptimizationOpt::FastMath =>
-                    ispc_args.push(String::from("--opt=fast-math")),
-                OptimizationOpt::ForceAlignedMemory =>
-                    ispc_args.push(String::from("--opt=force-aligned-memory")),
-            }
+            ispc_args.push(o.to_string());
         }
         ispc_args
     }
