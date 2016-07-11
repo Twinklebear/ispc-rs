@@ -295,6 +295,7 @@ pub struct Config {
     addressing: Option<Addressing>,
     optimization_opts: BTreeSet<OptimizationOpt>,
     cpu_target: Option<CPU>,
+    force_alignment: Option<u32>,
 }
 
 impl Config {
@@ -316,6 +317,7 @@ impl Config {
             addressing: None,
             optimization_opts: BTreeSet::new(),
             cpu_target: None,
+            force_alignment: None,
         }
     }
     /// Add an ISPC file to be compiled
@@ -379,6 +381,11 @@ impl Config {
     /// is to target the CPU of the machine we're compiling on.
     pub fn cpu(&mut self, cpu: CPU) -> &mut Config {
         self.cpu_target = Some(cpu);
+        self
+    }
+    /// Force ISPC memory allocations to be aligned to `alignment`.
+    pub fn force_alignment(&mut self, alignment: u32) -> &mut Config {
+        self.force_alignment = Some(alignment);
         self
     }
     /// Run the compiler, producing the library `lib`. If compilation fails
@@ -506,6 +513,9 @@ impl Config {
         }
         if let Some(ref s) = self.addressing {
             ispc_args.push(s.to_string());
+        }
+        if let Some(ref f) = self.force_alignment {
+            ispc_args.push(String::from("--force-alignment=") + &f.to_string());
         }
         for o in &self.optimization_opts {
             ispc_args.push(o.to_string());
