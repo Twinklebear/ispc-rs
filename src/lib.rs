@@ -137,23 +137,6 @@ impl ToString for Addressing {
     }
 }
 
-/// ISPC optimization options.
-#[derive(Ord, PartialOrd, Eq, PartialEq)]
-pub enum OptimizationOpt {
-    /// Remove assertion statements from final code.
-    DisableAssertions,
-    /// Disable 'fused multiply-add' instructions (on targets that support them).
-    DisableFMA,
-    /// Disable loop unrolling.
-    DisableLoopUnroll,
-    /// Faster masked vector loads on SSE (may go past end of array).
-    FastMaskedVload,
-    /// Perform non-IEEE-compliant optimizations of numeric expressions.
-    FastMath,
-    /// Always issue aligned vector load and store instructions.
-    ForceAlignedMemory,
-}
-
 /// ISPC target CPU type options, if none is set ISPC will
 /// target the machine being compile on.
 #[derive(Eq, PartialEq)]
@@ -193,6 +176,23 @@ impl ToString for CPU {
             CPU::Silvermont => String::from("--cpu=silvermont"),
         }
     }
+}
+
+/// ISPC optimization options.
+#[derive(Ord, PartialOrd, Eq, PartialEq)]
+pub enum OptimizationOpt {
+    /// Remove assertion statements from final code.
+    DisableAssertions,
+    /// Disable 'fused multiply-add' instructions (on targets that support them).
+    DisableFMA,
+    /// Disable loop unrolling.
+    DisableLoopUnroll,
+    /// Faster masked vector loads on SSE (may go past end of array).
+    FastMaskedVload,
+    /// Perform non-IEEE-compliant optimizations of numeric expressions.
+    FastMath,
+    /// Always issue aligned vector load and store instructions.
+    ForceAlignedMemory,
 }
 
 impl ToString for OptimizationOpt {
