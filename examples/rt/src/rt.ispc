@@ -8,8 +8,6 @@
 #include "geom.ih"
 #include "mc.ih"
 
-#define NUM_AO_SAMPLES 8
-
 struct Camera {
 	// Specify the location of the camera in the world
 	Vec3f pos, dir, up;
