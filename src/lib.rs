@@ -291,7 +291,6 @@ pub struct Config {
     // Additional ISPC compiler options that the user can set
     defines: Vec<(String, Option<String>)>,
     math_lib: MathLib,
-    werror: bool,
     addressing: Option<Addressing>,
     optimization_opts: BTreeSet<OptimizationOpt>,
     cpu_target: Option<CPU>,
@@ -299,6 +298,10 @@ pub struct Config {
     no_omit_frame_ptr: bool,
     no_stdlib: bool,
     no_cpp: bool,
+    quiet: bool,
+    werror: bool,
+    woff: bool,
+    wno_perf: bool
 }
 
 impl Config {
@@ -316,7 +319,6 @@ impl Config {
             cargo_metadata: true,
             defines: Vec::new(),
             math_lib: MathLib::ISPCDefault,
-            werror: false,
             addressing: None,
             optimization_opts: BTreeSet::new(),
             cpu_target: None,
@@ -324,6 +326,10 @@ impl Config {
             no_omit_frame_ptr: false,
             no_stdlib: false,
             no_cpp: false,
+            quiet: false,
+            werror: false,
+            woff: false,
+            wno_perf: false
         }
     }
     /// Add an ISPC file to be compiled
@@ -373,11 +379,6 @@ impl Config {
         self.math_lib = math_lib;
         self
     }
-    /// Toggle warnings as errors on/off, defaults to off.
-    pub fn werror(&mut self, on: bool) -> &mut Config {
-        self.werror = on;
-        self
-    }
     /// Set an optimization option.
     pub fn optimization_opt(&mut self, opt: OptimizationOpt) -> &mut Config {
         self.optimization_opts.insert(opt);
@@ -399,20 +400,40 @@ impl Config {
         self.include_paths.push(path.as_ref().to_path_buf());
         self
     }
-    /// Enable/disable frame pointer omission. It may be useful for profiling to
+    /// Disable frame pointer omission. It may be useful for profiling to
     /// disable omission.
-    pub fn no_omit_frame_pointer(&mut self, disable: bool) -> &mut Config {
-        self.no_omit_frame_ptr = disable;
+    pub fn no_omit_frame_pointer(&mut self) -> &mut Config {
+        self.no_omit_frame_ptr = true;
         self
     }
-    /// Enable/disable whether the ispc standard library is available.
-    pub fn no_stdlib(&mut self, disable: bool) -> &mut Config {
-        self.no_stdlib = disable;
+    /// Don't make the ispc standard library available.
+    pub fn no_stdlib(&mut self) -> &mut Config {
+        self.no_stdlib = true;
         self
     }
-    /// Enable/disable whether the C preprocessor is run
-    pub fn no_cpp(&mut self, disable: bool) -> &mut Config {
-        self.no_cpp = disable;
+    /// Don't run the C preprocessor
+    pub fn no_cpp(&mut self) -> &mut Config {
+        self.no_cpp = true;
+        self
+    }
+    /// Enable suppression of all ispc compiler output.
+    pub fn quiet(&mut self) -> &mut Config {
+        self.quiet = true;
+        self
+    }
+    /// Enable treating warnings as errors.
+    pub fn werror(&mut self) -> &mut Config {
+        self.werror = true;
+        self
+    }
+    /// Disable all warnings.
+    pub fn woff(&mut self) -> &mut Config {
+        self.woff = true;
+        self
+    }
+    /// Don't issue warnings related to performance issues
+    pub fn wno_perf(&mut self) -> &mut Config {
+        self.wno_perf = true;
         self
     }
     /// Run the compiler, producing the library `lib`. If compilation fails
@@ -535,9 +556,6 @@ impl Config {
             }
         }
         ispc_args.push(self.math_lib.to_string());
-        if self.werror {
-            ispc_args.push(String::from("--werror"));
-        }
         if let Some(ref s) = self.addressing {
             ispc_args.push(s.to_string());
         }
@@ -558,6 +576,18 @@ impl Config {
         }
         if self.no_cpp {
             ispc_args.push(String::from("--nocpp"));
+        }
+        if self.quiet {
+            ispc_args.push(String::from("--quiet"));
+        }
+        if self.werror {
+            ispc_args.push(String::from("--werror"));
+        }
+        if self.woff {
+            ispc_args.push(String::from("--woff"));
+        }
+        if self.wno_perf {
+            ispc_args.push(String::from("--wno-perf"));
         }
         ispc_args
     }
