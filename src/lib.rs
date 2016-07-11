@@ -296,6 +296,9 @@ pub struct Config {
     optimization_opts: BTreeSet<OptimizationOpt>,
     cpu_target: Option<CPU>,
     force_alignment: Option<u32>,
+    no_omit_frame_ptr: bool,
+    no_stdlib: bool,
+    no_cpp: bool,
 }
 
 impl Config {
@@ -318,6 +321,9 @@ impl Config {
             optimization_opts: BTreeSet::new(),
             cpu_target: None,
             force_alignment: None,
+            no_omit_frame_ptr: false,
+            no_stdlib: false,
+            no_cpp: false,
         }
     }
     /// Add an ISPC file to be compiled
@@ -388,9 +394,25 @@ impl Config {
         self.force_alignment = Some(alignment);
         self
     }
-    /// Add an extra include path for the ispc compiler to search for files
+    /// Add an extra include path for the ispc compiler to search for files.
     pub fn include_path<P: AsRef<Path>>(&mut self, path: P) -> &mut Config {
         self.include_paths.push(path.as_ref().to_path_buf());
+        self
+    }
+    /// Enable/disable frame pointer omission. It may be useful for profiling to
+    /// disable omission.
+    pub fn no_omit_frame_pointer(&mut self, disable: bool) -> &mut Config {
+        self.no_omit_frame_ptr = disable;
+        self
+    }
+    /// Enable/disable whether the ispc standard library is available.
+    pub fn no_stdlib(&mut self, disable: bool) -> &mut Config {
+        self.no_stdlib = disable;
+        self
+    }
+    /// Enable/disable whether the C preprocessor is run
+    pub fn no_cpp(&mut self, disable: bool) -> &mut Config {
+        self.no_cpp = disable;
         self
     }
     /// Run the compiler, producing the library `lib`. If compilation fails
@@ -527,6 +549,15 @@ impl Config {
         }
         for p in &self.include_paths {
             ispc_args.push(format!("-I {}", p.display()));
+        }
+        if self.no_omit_frame_ptr {
+            ispc_args.push(String::from("--no-omit-frame-pointer"));
+        }
+        if self.no_stdlib {
+            ispc_args.push(String::from("--nostdlib"));
+        }
+        if self.no_cpp {
+            ispc_args.push(String::from("--nocpp"));
         }
         ispc_args
     }
