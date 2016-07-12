@@ -220,7 +220,7 @@ impl Config {
             werror: false,
             woff: false,
             wno_perf: false,
-            target_isa: None,            
+            target_isa: None,
         }
     }
     /// Add an ISPC file to be compiled
