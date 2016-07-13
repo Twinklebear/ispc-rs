@@ -78,6 +78,8 @@ extern crate gcc;
 extern crate libc;
 extern crate aligned_alloc;
 extern crate num_cpus;
+extern crate regex;
+extern crate semver;
 
 pub mod task;
 pub mod exec;
@@ -92,6 +94,9 @@ use std::mem;
 use std::sync::{Once, ONCE_INIT, Arc};
 use std::fmt::Display;
 use std::collections::BTreeSet;
+
+use regex::Regex;
+use semver::Version;
 
 use task::ISPCTaskFn;
 use exec::{TaskSystem, Parallel};
@@ -165,6 +170,7 @@ macro_rules! exit_failure {
 
 /// Extra configuration to be passed to ISPC
 pub struct Config {
+    ispc_version: Version,
     ispc_files: Vec<PathBuf>,
     objects: Vec<PathBuf>,
     headers: Vec<PathBuf>,
@@ -196,7 +202,20 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Config {
+        // Query the ISPC compiler version. This also acts as a check that we can
+        // find the ISPC compiler when we need it later.
+        let cmd_output = Command::new("ispc").arg("--version").output()
+            .expect("Failed to find ISPC compiler in PATH");
+        if !cmd_output.status.success() {
+            exit_failure!("Failed to get ISPC version, is it in your PATH?");
+        }
+        let ver_string = String::from_utf8_lossy(&cmd_output.stdout);
+        let re = Regex::new(r"Intel\(r\) SPMD Program Compiler \(ispc\), (\d+\.\d+\.\d+)").unwrap();
+        let ispc_ver = Version::parse(re.captures(&ver_string).expect("Failed to parse ISPC version").at(1)
+                                     .unwrap()).expect("Failed to parse ISPC version");
+
         Config {
+            ispc_version: ispc_ver,
             ispc_files: Vec::new(),
             objects: Vec::new(),
             headers: Vec::new(),
@@ -384,6 +403,10 @@ impl Config {
         // Tell cargo where to find the library we just built if we're running
         // in a build script
         self.print(&format!("cargo:rustc-link-search=native={}", dst.display()));
+    }
+    /// Get the ISPC compiler version.
+    pub fn ispc_version(&self) -> &Version {
+        &self.ispc_version
     }
     /// Link the ISPC code into a static library on Unix using `ar`
     #[cfg(unix)]
