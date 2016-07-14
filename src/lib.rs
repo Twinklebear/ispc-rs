@@ -581,7 +581,6 @@ static INSTRUMENT_INIT: Once = ONCE_INIT;
 /// spawns tasks otherwise the task system will have already been initialized to
 /// `Parallel`, which you can also see as an example for implementing a task system.
 ///
-///
 /// Use the function to do any extra initialization for your task system. Note that
 /// the task system will be leaked and not destroyed until the program exits and the
 /// memory space is cleaned up.
