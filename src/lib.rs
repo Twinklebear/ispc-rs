@@ -84,6 +84,7 @@ extern crate semver;
 pub mod task;
 pub mod exec;
 pub mod opt;
+pub mod instrument;
 
 use std::path::{Path, PathBuf};
 use std::fs::File;
@@ -94,6 +95,7 @@ use std::mem;
 use std::sync::{Once, ONCE_INIT, Arc};
 use std::fmt::Display;
 use std::collections::BTreeSet;
+use std::ffi::CStr;
 
 use regex::Regex;
 use semver::Version;
@@ -101,6 +103,7 @@ use semver::Version;
 use task::ISPCTaskFn;
 use exec::{TaskSystem, Parallel};
 use opt::{MathLib, Addressing, CPU, OptimizationOpt, TargetISA};
+use instrument::{Instrument, SimpleInstrument};
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
@@ -116,22 +119,11 @@ use opt::{MathLib, Addressing, CPU, OptimizationOpt, TargetISA};
 ///
 /// // Functions exported from foo will be callable under foo::*
 /// ispc_module!(foo);
-/// // Alternatively if the module should be public:
-/// // ispc_module!(pub simple);
 /// ```
 #[macro_export]
 macro_rules! ispc_module {
     ($lib:ident) => (
-        #[allow(dead_code, non_camel_case_types)]
-        mod $lib {
-            include!(concat!(env!("OUT_DIR"), "/", stringify!($lib), ".rs"));
-        }
-    );
-    (pub $lib:ident) => (
-        #[allow(dead_code, non_camel_case_types)]
-        pub mod $lib {
-            include!(concat!(env!("OUT_DIR"), "/", stringify!($lib), ".rs"));
-        }
+        include!(concat!(env!("OUT_DIR"), "/", stringify!($lib), ".rs"));
     )
 }
 
@@ -197,6 +189,7 @@ pub struct Config {
     werror: bool,
     woff: bool,
     wno_perf: bool,
+    instrument: bool,
     target_isa: Option<TargetISA>,
 }
 
@@ -239,6 +232,7 @@ impl Config {
             werror: false,
             woff: false,
             wno_perf: false,
+            instrument: false,
             target_isa: None,
         }
     }
@@ -346,6 +340,17 @@ impl Config {
         self.wno_perf = true;
         self
     }
+    /// Emit instrumentation code for ISPC to gather performance data such
+    /// as vector utilization.
+    pub fn instrument(&mut self) -> &mut Config {
+        let min_ver = Version { major: 1, minor: 9, patch: 1, pre: vec![], build: vec![] };
+        if self.ispc_version < min_ver {
+            exit_failure!("Error: instrumentation is not supported on ISPC versions \
+                          older than 1.9.1 as it generates a non-C compatible header");
+        }
+        self.instrument = true;
+        self
+    }
     /// Select the target ISA and vector width. If none is specified ispc will
     /// choose the host CPU ISA and vector width.
     /// Run the compiler, producing the library `lib`. If compilation fails
@@ -391,15 +396,23 @@ impl Config {
         }
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
-        let mut bindings = bindgen::builder();
+        let mut bindings = bindgen::Builder::new();
         bindings.forbid_unknown_types()
             .header(self.bindgen_header.to_str().unwrap())
             .link(lib, bindgen::LinkType::Static);
         let bindgen_file = dst.join(lib).with_extension("rs");
-        match bindings.generate() {
-            Ok(b) => b.write_to_file(bindgen_file).unwrap(),
+        let generated_bindings = match bindings.generate() {
+            Ok(b) => b.to_string(),
             Err(_) => exit_failure!("Failed to generating Rust bindings to {}", lib),
         };
+        let mut file = match File::create(bindgen_file) {
+            Ok(f) => f,
+            Err(e) => exit_failure!("Failed to open bindgen mod file for writing: {}", e),
+        };
+        file.write(format!("pub mod {} {{\n", lib).as_bytes()).unwrap();
+        file.write(generated_bindings.as_bytes()).unwrap();
+        file.write("}".as_bytes()).unwrap();
+
         // Tell cargo where to find the library we just built if we're running
         // in a build script
         self.print(&format!("cargo:rustc-link-search=native={}", dst.display()));
@@ -508,6 +521,9 @@ impl Config {
         if self.wno_perf {
             ispc_args.push(String::from("--wno-perf"));
         }
+        if self.instrument {
+            ispc_args.push(String::from("--instrument"));
+        }
         if let Some(ref t) = self.target_isa {
             ispc_args.push(t.to_string());
         }
@@ -557,6 +573,9 @@ impl Default for Config {
 static mut TASK_SYSTEM: Option<&'static TaskSystem> = None;
 static TASK_INIT: Once = ONCE_INIT;
 
+static mut INSTRUMENT: Option<&'static Instrument> = None;
+static INSTRUMENT_INIT: Once = ONCE_INIT;
+
 /// If you have implemented your own task system you can provide it for use instead
 /// of the default threaded one. This must be done prior to calling ISPC code which
 /// spawns tasks otherwise the task system will have already been initialized to
@@ -592,6 +611,34 @@ fn get_task_system() -> &'static TaskSystem {
     unsafe { TASK_SYSTEM.unwrap() }
 }
 
+/// If you have implemented your own instrument for logging ISPC performance
+/// data you can use this function to provide it for use instead of the
+/// default one. This function **must** be called before calling into ISPC code,
+/// otherwise the instrumenter will already be set to the default.
+pub fn set_instrument<F: FnOnce() -> Arc<Instrument>>(f: F) {
+    INSTRUMENT_INIT.call_once(|| {
+        let instrument = f();
+        unsafe {
+            let s: *const Instrument = mem::transmute(&*instrument);
+            mem::forget(instrument);
+            INSTRUMENT = Some(&*s);
+        }
+    });
+}
+
+fn get_instrument() -> &'static Instrument {
+    // TODO: This is a bit nasty, like above
+    INSTRUMENT_INIT.call_once(|| {
+        unsafe {
+            let instrument = Arc::new(SimpleInstrument) as Arc<Instrument>;
+            let s: *const Instrument = mem::transmute(&*instrument);
+            mem::forget(instrument);
+            INSTRUMENT = Some(&*s);
+        }
+    });
+    unsafe { INSTRUMENT.unwrap() }
+}
+
 #[allow(non_snake_case)]
 #[doc(hidden)]
 #[no_mangle]
@@ -615,5 +662,17 @@ pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut 
 #[no_mangle]
 pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
     get_task_system().sync(handle);
+}
+
+#[allow(non_snake_case)]
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn ISPCInstrument(cfile: *const libc::c_char, cnote: *const libc::c_char,
+                                        line: libc::c_int, mask: libc::uint64_t) {
+
+    let file_name = CStr::from_ptr(cfile);
+    let note = CStr::from_ptr(cnote);
+    let active_count = (mask as u64).count_ones();
+    get_instrument().instrument(&file_name, &note, line as i32, mask as u64, active_count);
 }
 
