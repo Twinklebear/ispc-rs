@@ -8,7 +8,7 @@ use vec3f::Vec3f;
 use material::Lambertian;
 
 /// Type alias for the Geometry base struct in ISPC
-pub type Geometry = ::rt::Struct_Geometry;
+pub type Geometry = ::rt::Geometry;
 
 /// A simple sphere with some radius located at `center`
 pub struct Sphere {

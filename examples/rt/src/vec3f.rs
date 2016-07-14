@@ -2,7 +2,7 @@ use std::f32;
 use std::ops::{Add, Sub, Mul, Div, Neg};
 
 /// Set a nicer type alias for the exported ISPC struct
-pub type Vec3f = ::rt::Struct_Vec3f;
+pub type Vec3f = ::rt::Vec3f;
 
 impl Vec3f {
     pub fn broadcast(x: f32) -> Vec3f {

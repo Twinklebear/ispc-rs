@@ -2,7 +2,7 @@ use std::f32;
 use vec3f::Vec3f;
 
 /// Set a nicer type alias for the exported ISPC struct
-pub type Camera = ::rt::Struct_Camera;
+pub type Camera = ::rt::Camera;
 
 impl Camera {
     /// Create a new camera at some orientation in the world

@@ -6,7 +6,7 @@ use rt;
 use vec3f::Vec3f;
 
 /// Type alias for the Geometry base struct in ISPC
-pub type Material = ::rt::Struct_Material;
+pub type Material = ::rt::Material;
 
 /// A simple Lambertian material
 pub struct Lambertian {
