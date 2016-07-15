@@ -409,7 +409,7 @@ impl Config {
         };
         file.write(format!("pub mod {} {{\n", lib).as_bytes()).unwrap();
         file.write(generated_bindings.as_bytes()).unwrap();
-        file.write("}".as_bytes()).unwrap();
+        file.write(b"}").unwrap();
 
         // Tell cargo where to find the library we just built if we're running
         // in a build script
@@ -677,6 +677,6 @@ pub unsafe extern "C" fn ISPCInstrument(cfile: *const libc::c_char, cnote: *cons
     let file_name = CStr::from_ptr(cfile);
     let note = CStr::from_ptr(cnote);
     let active_count = (mask as u64).count_ones();
-    get_instrument().instrument(&file_name, &note, line as i32, mask as u64, active_count);
+    get_instrument().instrument(file_name, note, line as i32, mask as u64, active_count);
 }
 

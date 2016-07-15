@@ -146,7 +146,7 @@ impl TaskSystem for Parallel {
             let c = Arc::new(Context::new(self.next_context_id.fetch_add(1, atomic::Ordering::SeqCst)));
             {
                 let h = &*c;
-                *handle_ptr = mem::transmute(h);
+                *handle_ptr = h as *const Context as *mut libc::c_void;
             }
             context_list.push(c);
             let ctx = context_list.last().unwrap();
