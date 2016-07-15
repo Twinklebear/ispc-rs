@@ -47,8 +47,6 @@
 //!
 //! // Functions exported from simple will be callable under simple::*
 //! ispc_module!(simple);
-//! // Alternatively if the module should be public:
-//! // ispc_module!(pub simple);
 //! ```
 //!
 //! Some more complete examples can be found in the
