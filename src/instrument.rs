@@ -12,6 +12,9 @@ pub trait Instrument {
     /// and note strings are converted `CStr` and the number of active programs is
     /// computed from the mask.
     fn instrument(&self, file: &CStr, note: &CStr, line: i32, mask: u64, active_count: u32);
+    /// Called through `ispc::print_instrumenting_summary`, optionally log out a summary
+    /// of performance information gathered through the `instrument` callback.
+    fn print_summary(&self) {}
 }
 
 /// A simple ISPC instrumenter which will print the information passed to it out.

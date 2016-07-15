@@ -1,6 +1,6 @@
 [package]
 name = "ispc"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Will Usher <willusher.life@gmail.com>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "http://www.willusher.io/ispc-rs/ispc/"
@@ -22,13 +22,13 @@ exclude = [
 
 [dependencies]
 bindgen = "0.18.0"
-gcc = "0.3.28"
+gcc = "0.3.31"
 libc = "0.2.14"
 aligned_alloc = "0.1.2"
 num_cpus = "0.2.13"
 regex = "0.1.73"
 semver = "0.2.3"
-clippy = { version = "0.0.77", optional = true }
+clippy = { version = "0.0.79", optional = true }
 
 [features]
 unstable = ["clippy"]

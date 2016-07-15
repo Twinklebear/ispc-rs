@@ -625,6 +625,13 @@ pub fn set_instrument<F: FnOnce() -> Arc<Instrument>>(f: F) {
     });
 }
 
+/// Print out a summary of performace data gathered from instrumenting ISPC.
+/// Must enable instrumenting to have this record and print data, see
+/// `Config::instrument`.
+pub fn print_instrumenting_summary() {
+    get_instrument().print_summary();
+}
+
 fn get_instrument() -> &'static Instrument {
     // TODO: This is a bit nasty, like above
     INSTRUMENT_INIT.call_once(|| {
