@@ -1,6 +1,7 @@
 #ifndef ISPC_CAMERA_IH
 #define ISPC_CAMERA_IH
 
+#include "types.ih"
 #include "vec3f.ih"
 
 struct Camera {
@@ -10,9 +11,10 @@ struct Camera {
 	float<3> dir_top_left, screen_du, screen_dv;
 	int32 width, height;
 };
-export void make_camera(void *uniform *uniform out, const uniform Vec3f* uniform pos,
+export void make_camera(uniform ISPCHandle* uniform out, const uniform Vec3f* uniform pos,
 		const uniform Vec3f* uniform target, const uniform Vec3f* uniform up, const uniform float fovy,
 		const uniform int32 width, const uniform int32 height);
+export void drop_camera(uniform ISPCHandle cam);
 /* Generate a jittered ray through pixel x,y using the samples to offset randomly within
  * the pixel. samples should be in [0, 1]
  */
