@@ -28,11 +28,11 @@ pub fn empty_handle() -> ISPCHandle {
 fn main() {
     let width = 512;
     let height = 512;
-    let camera = Camera::new(Vec3f::new(1.5, 0.5, 2.0), Vec3f::new(0.5, 0.5, 0.5),
+    let camera = Camera::new(Vec3f::new(2.0, 0.5, 2.0), Vec3f::new(0.5, 0.5, 0.5),
                              Vec3f::new(0.0, 1.0, 0.0), 60.0, width as i32, height as i32);
-    let volume = Volume::new(Vec3i::broadcast(2));
-    let volume_data = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0];
-    volume.set_region(&volume_data[..], Vec3i::broadcast(0), Vec3i::broadcast(2));
+    let volume = Volume::new(Vec3i::new(2, 1, 1));
+    let volume_data = [0.0, 1.0];//, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0];
+    volume.set_region(&volume_data[..], Vec3i::broadcast(0), Vec3i::new(2, 1, 1));
     let mut framebuffer = vec![0.0; width * height * 3];
     let mut srgb_img_buf = vec![0u8; width * height * 3];
     let mut rng = rand::thread_rng();
