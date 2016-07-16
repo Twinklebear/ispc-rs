@@ -66,7 +66,7 @@ float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 		color.z = 1;
 		return color;
 	}
-	
+
 	// Now raymarch the volume
 	const float<3> dt_vec = {
 		rcp(vol->dims.x * abs(ray.dir.x)),
