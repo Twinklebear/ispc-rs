@@ -1,25 +1,22 @@
 #ifndef ISPC_VOL_IH
 #define ISPC_VOL_IH
 
-typedef void* uniform  ISPCHandle;
-typedef unsigned int8 uint8;
-typedef unsigned int64 uint64;
+#include "vec3i.ih"
+#include "vec3f.ih"
 
-enum DataType {
-	UCHAR,
-	USHORT,
-	FLOAT,
-};
+typedef void* uniform ISPCHandle;
 
 struct Volume {
 	ISPCHandle handle;
-	uint8* uniform data;
-	uint64 dims[3];
-	DataType data_type;
+	float* uniform data;
+	int<3> dims;
 };
 
-export void make_volume(uniform ISPCHandle* uniform out, const uniform uint64 width,
-		const uniform uint64 height, const uniform uint64 depth, const uniform DataType data_type);
+// This just exports as a void* right? Is there a point to the typedef?
+export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* uniform dims);
+// Set a block of data in the volume
+export void set_region(uniform ISPCHandle* uniform volume, const float* uniform region,
+		const uniform Vec3i* uniform start, const uniform Vec3i* uniform size);
 export void drop_volume(uniform ISPCHandle vol);
 
 #endif

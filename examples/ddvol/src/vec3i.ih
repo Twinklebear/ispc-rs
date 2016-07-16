@@ -1,0 +1,31 @@
+#ifndef VEC3I_ISPC_H
+#define VEC3I_ISPC_H
+
+struct Vec3i {
+	int x, y, z;
+};
+inline Vec3i make_vec3f(int x, int y, int z){
+	Vec3i v;
+	v.x = x;
+	v.y = y;
+	v.z = z;
+	return v;
+}
+inline uniform Vec3i make_vec3f(uniform int x, uniform int y, uniform int z){
+	uniform Vec3i v;
+	v.x = x;
+	v.y = y;
+	v.z = z;
+	return v;
+}
+inline int<3> to_short_vec(Vec3i v) {
+	int<3> a = {v.x, v.y, v.z};
+	return a;
+}
+inline uniform int<3> to_short_vec(uniform Vec3i v) {
+	uniform int<3> a = {v.x, v.y, v.z};
+	return a;
+}
+
+#endif
+

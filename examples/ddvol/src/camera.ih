@@ -1,0 +1,31 @@
+#ifndef ISPC_CAMERA_IH
+#define ISPC_CAMERA_IH
+
+#include "vec3f.ih"
+
+struct Camera {
+	// Specify the location of the camera in the world
+	float<3> pos, dir, up;
+	// Computed values to make finding the ray through a pixel easier
+	float<3> dir_top_left, screen_du, screen_dv;
+	int32 width, height;
+};
+export void make_camera(void *uniform *uniform out, const uniform Vec3f* uniform pos,
+		const uniform Vec3f* uniform target, const uniform Vec3f* uniform up, const uniform float fovy,
+		const uniform int32 width, const uniform int32 height);
+/* Generate a jittered ray through pixel x,y using the samples to offset randomly within
+ * the pixel. samples should be in [0, 1]
+ */
+inline Ray camera_ray(const uniform Camera* uniform cam, const float x, const float y, const float samples[2]){
+	Ray ray;
+	ray.origin = cam->pos;
+	ray.dir = cam->dir_top_left;
+	const float<3> u_step = ((x + samples[0]) / cam->width) * cam->screen_du;
+	const float<3> v_step = ((y + samples[1]) / cam->height) * cam->screen_dv;
+	ray.dir = ray.dir + u_step + v_step;
+	ray.dir = normalize(ray.dir);
+	return ray;
+}
+
+#endif
+
