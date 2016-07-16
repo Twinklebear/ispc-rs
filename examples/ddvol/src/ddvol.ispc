@@ -57,8 +57,7 @@ float linear_to_srgb(const float f) {
 task void scanline_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[], const uniform int32 width){
 	foreach (i = 0 ... width){
 		for (int c = 0; c < 3; ++c){
-			//float val = linear_to_srgb(fb[(taskIndex0 * width + i) * 3 + c]);
-			float val = fb[(taskIndex0 * width + i) * 3 + c];
+			float val = linear_to_srgb(fb[(taskIndex0 * width + i) * 3 + c]);
 			srgb[(taskIndex0 * width + i) * 3 + c] = clamp(val * 255.0, 0.0, 255.0);
 		}
 	}

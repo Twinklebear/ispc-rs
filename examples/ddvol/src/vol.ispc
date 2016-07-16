@@ -75,9 +75,6 @@ float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 	};
 	const float dt = min(dt_vec.x, min(dt_vec.y, dt_vec.z));
 	float<3> pos = ray.origin + tenter * ray.dir;
-	// TODO: Should this be ceil or round up?
-	//const int num_steps = ceil((texit - tenter) / dt);
-	//for (int i = 0; i < num_steps; ++i){
 	for (float t = tenter; t < texit; t += dt){
 		// TODO: Sample a transfer function!
 		const float sample = (sample_volume(vol, pos) - vol->value_range.x)
