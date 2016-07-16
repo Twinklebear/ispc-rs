@@ -1,8 +1,11 @@
+#![allow(dead_code)]
+
 use std::f32;
 use std::ops::{Add, Sub, Mul, Div, Neg};
 
 /// Set a nicer type alias for the exported ISPC struct
 pub type Vec3f = ::ddvol::Vec3f;
+pub type Vec3i = ::ddvol::Vec3i;
 
 impl Vec3f {
     pub fn broadcast(x: f32) -> Vec3f {
@@ -91,5 +94,60 @@ impl Div<f32> for Vec3f {
     }
 }
 
-// TODO: copy-paste, find-replace for vec3i ops
+impl Vec3i {
+    pub fn broadcast(x: i32) -> Vec3i {
+        Vec3i { x: x, y: x, z: x }
+    }
+    pub fn new(x: i32, y: i32, z: i32) -> Vec3i {
+        Vec3i { x: x, y: y, z: z}
+    }
+}
+
+impl Neg for Vec3i {
+    type Output = Vec3i;
+
+    fn neg(self) -> Vec3i {
+        Vec3i { x: -self.x, y: -self.y, z: -self.z }
+    }
+}
+
+impl Add for Vec3i {
+    type Output = Vec3i;
+    /// Add two vectors together
+    fn add(self, rhs: Vec3i) -> Vec3i {
+        Vec3i { x: self.x + rhs.x, y: self.y + rhs.y, z: self.z + rhs.z }
+    }
+}
+
+impl Sub for Vec3i {
+    type Output = Vec3i;
+    /// Subtract two vectors
+    fn sub(self, rhs: Vec3i) -> Vec3i {
+        Vec3i { x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z }
+    }
+}
+
+impl Mul for Vec3i {
+    type Output = Vec3i;
+    /// Multiply two vectors
+    fn mul(self, rhs: Vec3i) -> Vec3i {
+        Vec3i { x: self.x * rhs.x, y: self.y * rhs.y, z: self.z * rhs.z }
+    }
+}
+
+impl Mul<i32> for Vec3i {
+    type Output = Vec3i;
+    /// Scale the vector by some value
+    fn mul(self, rhs: i32) -> Vec3i {
+        Vec3i { x: self.x * rhs, y: self.y * rhs, z: self.z * rhs }
+    }
+}
+
+impl Mul<Vec3i> for i32 {
+    type Output = Vec3i;
+    /// Scale the vector by some value
+    fn mul(self, rhs: Vec3i) -> Vec3i {
+        Vec3i { x: self * rhs.x, y: self * rhs.y, z: self * rhs.z }
+    }
+}
 

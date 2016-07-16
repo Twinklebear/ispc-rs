@@ -1,11 +1,6 @@
 #ifndef VEC3F_ISPC_H
 #define VEC3F_ISPC_H
 
-// 1.0 / pi
-#define M_1_PI 0.31830988618379067154
-// pi / 4.0
-#define M_PI_4 0.78539816339744830961
-
 struct Vec3f {
 	float x, y, z;
 };
@@ -64,6 +59,14 @@ inline float<3> cross(float<3> a, float<3> b){
 inline float<3> normalize(float<3> a){
 	float inv_len = rsqrt(dot(a, a));
 	return a * inv_len;
+}
+inline float<3> min(float<3> a, float<3> b){
+	float<3> x = { min(a.x, b.x), min(a.y, b.y), min(a.z, b.z) };
+	return x;
+}
+inline float<3> max(float<3> a, float<3> b){
+	float<3> x = { max(a.x, b.x), max(a.y, b.y), max(a.z, b.z) };
+	return x;
 }
 inline void ortho_basis(float<3> basis[3], const float<3> n){
 	basis[2] = n;

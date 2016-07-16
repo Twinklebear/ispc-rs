@@ -1,0 +1,15 @@
+#ifndef ISPC_TYPES_IH
+#define ISPC_TYPES_IH
+
+// Various useful typedefs to have globally available
+
+// 1.0 / pi
+#define M_1_PI 0.31830988618379067154
+// pi / 4.0
+#define M_PI_4 0.78539816339744830961
+#define INFINITY 1e36
+
+typedef void* uniform ISPCHandle;
+
+#endif
+
