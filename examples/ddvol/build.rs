@@ -7,7 +7,7 @@ fn main() {
     if cfg!(windows) {
         cfg.debug(false);
     }
-    let ispc_files = vec!["src/vol.ispc", "src/camera.ispc"];
+    let ispc_files = vec!["src/ddvol.ispc", "src/vol.ispc", "src/camera.ispc"];
     for s in &ispc_files[..] {
         cfg.file(*s);
     }
