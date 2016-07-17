@@ -29,7 +29,7 @@ pub fn empty_handle() -> ISPCHandle {
 fn main() {
     let width = 512;
     let height = 512;
-    let camera = Camera::new(Vec3f::new(2.0, 0.5, 2.0), Vec3f::new(0.5, 0.5, 0.5),
+    let camera = Camera::new(Vec3f::new(2.0, 0.5, -1.0), Vec3f::new(0.5, 0.5, 0.5),
                              Vec3f::new(0.0, 1.0, 0.0), 60.0, width as i32, height as i32);
     let volume = Volume::new(Vec3i::broadcast(64));
     let volume_data: Vec<_> = iter::repeat(0.0).take(32 * 32 * 32).collect();
@@ -63,7 +63,6 @@ fn main() {
     let scanline_seeds: Vec<_> = rng.gen_iter::<i32>().take(height).collect();
     unsafe {
         let start = Instant::now();
-        println!("Rendering");
         ddvol::render(camera.ispc_equiv(), volume.ispc_equiv(), scanline_seeds.as_ptr(),
                       width as i32, height as i32, framebuffer.as_mut_ptr());
         let elapsed = start.elapsed();

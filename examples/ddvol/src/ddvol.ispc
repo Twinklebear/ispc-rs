@@ -28,6 +28,7 @@ task void render_scanline(const uniform Camera* uniform camera, const uniform IS
 			const float samples[2] = {frandom(&rng_state), frandom(&rng_state)};
 			Ray ray = camera_ray(camera, i, taskIndex0, samples);
 			float<4> color = raycast_volume(volume, ray);
+			// TODO: Composite the volume color over the background
 			img[(taskIndex0 * width + i) * 3] += color.x;
 			img[(taskIndex0 * width + i) * 3 + 1] += color.y;
 			img[(taskIndex0 * width + i) * 3 + 2] += color.z;

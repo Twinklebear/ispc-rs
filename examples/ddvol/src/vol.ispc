@@ -26,7 +26,6 @@ export void set_region(uniform ISPCHandle volume, const uniform float* uniform r
 			}
 		}
 	}
-	print("volume value range % to %\n", v->value_range.x, v->value_range.y);
 }
 export void drop_volume(uniform ISPCHandle vol){
 	uniform Volume* uniform v = (uniform Volume* uniform)vol;
@@ -63,7 +62,6 @@ float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 
 	float<4> color = {0, 0, 0, 0};
 	if (tenter > texit){
-		color.z = 1;
 		return color;
 	}
 
@@ -79,7 +77,8 @@ float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 		// TODO: Sample a transfer function!
 		const float sample = (sample_volume(vol, pos) - vol->value_range.x)
 			/ (vol->value_range.y - vol->value_range.x);
-		const float<4> grayscale = {sample, sample, sample, sample};
+		// TODO: Once we sample a transfer function, remove this opacity hack
+		const float<4> grayscale = {sample, sample, sample, sample / 2};
 		// TODO: Swizzles are read only!? I can't do color.xyz = ...?
 		const float<3> col = (1.0 - color.w) * grayscale.w * grayscale.xyz;
 		color.x += col.x;
