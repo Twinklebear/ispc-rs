@@ -2,10 +2,12 @@ use ISPCHandle;
 use empty_handle;
 use ddvol;
 use vec3::Vec3i;
+use tfn::TransferFunction;
 
 /// A volume dataset being rendered with its ISPC handle
 pub struct Volume {
     ispc_handle: ISPCHandle,
+    tfn: TransferFunction,
 }
 
 impl Volume {
@@ -13,10 +15,12 @@ impl Volume {
     /// store `dimensions.x * dimensions.y * dimensions.z` voxels.
     pub fn new(dimensions: Vec3i) -> Volume {
         let mut vol = empty_handle();
+        let tfn = TransferFunction::grayscale();
         unsafe {
-            ddvol::make_volume(&mut vol as *mut ISPCHandle, &dimensions as *const Vec3i);
+            ddvol::make_volume(&mut vol as *mut ISPCHandle, &dimensions as *const Vec3i,
+                               tfn.ispc_equiv());
         }
-        Volume { ispc_handle: vol }
+        Volume { ispc_handle: vol, tfn: tfn }
     }
     /// Set a region of voxel data for the volume.
     pub fn set_region(&mut self, region: &[f32], start: Vec3i, size: Vec3i) {

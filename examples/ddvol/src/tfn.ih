@@ -1,0 +1,21 @@
+#ifndef ISPC_TFN_IH
+#define ISPC_TFN_IH
+
+#include "types.ih"
+#include "vec3f.ih"
+
+struct TransferFunction {
+	uniform float<3>* uniform colors;
+	uniform int n_colors;
+	uniform float* uniform opacities;
+	uniform int n_opacities;
+};
+
+export void make_transfer_function(uniform ISPCHandle* uniform out,
+		const uniform Vec3f* uniform colors, const uniform int n_colors,
+		const uniform float* uniform opacity, const uniform int n_opacities);
+export void drop_transfer_function(uniform ISPCHandle tfn);
+float<4> sample_transfer_function(const uniform ISPCHandle tfn, const float val);
+
+#endif
+

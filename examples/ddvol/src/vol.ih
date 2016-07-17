@@ -4,15 +4,18 @@
 #include "types.ih"
 #include "vec3i.ih"
 #include "vec3f.ih"
+#include "tfn.ih"
 
 struct Volume {
 	uniform float* uniform data;
 	uniform int<3> dims;
 	uniform float<2> value_range; 
+	uniform ISPCHandle tfn;
 };
 
 // This just exports as a void* right? Is there a point to the typedef?
-export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* uniform dims);
+export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* uniform dims,
+						uniform ISPCHandle tfn);
 // Set a block of data in the volume
 export void set_region(uniform ISPCHandle volume, const float* uniform region,
 		const uniform Vec3i* uniform start, const uniform Vec3i* uniform size);

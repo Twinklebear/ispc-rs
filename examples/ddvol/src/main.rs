@@ -17,6 +17,7 @@ mod raw;
 mod vol;
 mod vec3;
 mod camera;
+mod tfn;
 
 ispc_module!(ddvol);
 

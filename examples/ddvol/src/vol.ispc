@@ -1,6 +1,8 @@
 #include "vol.ih"
 
-export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* uniform dims) {
+export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* uniform dims,
+						uniform ISPCHandle tfn)
+{
 	uniform Volume* uniform v = uniform new uniform Volume;
 	v->dims = to_short_vec(*dims);
 	// TODO: How to handle the data distributed version? allocating
@@ -9,6 +11,7 @@ export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* un
 	v->data = uniform new uniform float[dims->x * dims->y * dims->z];
 	v->value_range.x = INFINITY;
 	v->value_range.y = -INFINITY;
+	v->tfn = tfn;
 	*out = v;
 }
 export void set_region(uniform ISPCHandle volume, const uniform float* uniform region,
@@ -75,16 +78,15 @@ float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 	float<3> pos = ray.origin + tenter * ray.dir;
 	for (float t = tenter; t < texit; t += dt){
 		// TODO: Sample a transfer function!
-		const float sample = (sample_volume(vol, pos) - vol->value_range.x)
+		const float value = (sample_volume(vol, pos) - vol->value_range.x)
 			/ (vol->value_range.y - vol->value_range.x);
-		// TODO: Once we sample a transfer function, remove this opacity hack
-		const float<4> grayscale = {sample, sample, sample, sample / 2};
+		const float<4> tfn_sample = sample_transfer_function(vol->tfn, value);
 		// TODO: Swizzles are read only!? I can't do color.xyz = ...?
-		const float<3> col = (1.0 - color.w) * grayscale.w * grayscale.xyz;
+		const float<3> col = (1.0 - color.w) * tfn_sample.w * tfn_sample.xyz;
 		color.x += col.x;
 		color.y += col.y;
 		color.z += col.z;
-		color.w += (1.0 - color.w) * grayscale.w;
+		color.w += (1.0 - color.w) * tfn_sample.w;
 		if (color.w >= 0.98) {
 			break;
 		}
