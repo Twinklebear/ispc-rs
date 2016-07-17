@@ -30,7 +30,7 @@ export void set_region(uniform ISPCHandle volume, const uniform float* uniform r
 export void drop_volume(uniform ISPCHandle vol){
 	uniform Volume* uniform v = (uniform Volume* uniform)vol;
 	if (v->data != NULL){
-		delete v->data;
+		delete[] v->data;
 	}
 	delete v;
 }
