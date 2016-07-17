@@ -20,7 +20,8 @@ pub fn import<T: NumCast>(path: &Path, dims: Vec3i) -> Volume {
         Ok(f) => BufReader::new(f),
         Err(e) => panic!("Error opening volume {}", e),
     };
-    let mut data: Vec<_> = iter::repeat(0u8).take((dims.x * dims.y * dims.z) as usize).collect();
+    let mut data: Vec<_> = iter::repeat(0u8)
+        .take((dims.x * dims.y * dims.z) as usize * mem::size_of::<T>()).collect();
     f.read_exact(&mut data[..]).expect("Failed to read entire RAW volume");
     let data: Vec<f32> = data.chunks(mem::size_of::<T>())
         .map(|x| unsafe { mem::transmute_copy::<u8, T>(&x[0]) })
