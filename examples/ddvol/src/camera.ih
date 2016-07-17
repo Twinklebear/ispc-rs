@@ -6,10 +6,10 @@
 
 struct Camera {
 	// Specify the location of the camera in the world
-	float<3> pos, dir, up;
+	uniform float<3> pos, dir, up;
 	// Computed values to make finding the ray through a pixel easier
-	float<3> dir_top_left, screen_du, screen_dv;
-	int32 width, height;
+	uniform float<3> dir_top_left, screen_du, screen_dv;
+	uniform int32 width, height;
 };
 export void make_camera(uniform ISPCHandle* uniform out, const uniform Vec3f* uniform pos,
 		const uniform Vec3f* uniform target, const uniform Vec3f* uniform up, const uniform float fovy,
