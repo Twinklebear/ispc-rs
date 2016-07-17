@@ -15,7 +15,7 @@ impl Volume {
     /// store `dimensions.x * dimensions.y * dimensions.z` voxels.
     pub fn new(dimensions: Vec3i) -> Volume {
         let mut vol = empty_handle();
-        let tfn = TransferFunction::grayscale();
+        let tfn = TransferFunction::cool_warm();
         unsafe {
             ddvol::make_volume(&mut vol as *mut ISPCHandle, &dimensions as *const Vec3i,
                                tfn.ispc_equiv());
