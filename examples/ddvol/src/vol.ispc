@@ -40,13 +40,13 @@ float sample_volume(const uniform Volume* uniform volume, const float<3> pos) {
 	const float<3> tex_coords = pos * volume->dims;
 	// TODO better than crap nearest neighbor sampling
 	const int<3> nearest_neighbor = {
-		clamp(tex_coords.x, 0.f, (float)volume->dims.x),
-		clamp(tex_coords.y, 0.f, (float)volume->dims.y),
-		clamp(tex_coords.z, 0.f, (float)volume->dims.z)
+		clamp(tex_coords.x, 0.f, (float)volume->dims.x - 1),
+		clamp(tex_coords.y, 0.f, (float)volume->dims.y - 1),
+		clamp(tex_coords.z, 0.f, (float)volume->dims.z - 1)
 	};
-	const int texel = (nearest_neighbor.z * volume->dims.y + nearest_neighbor.y) * volume->dims.x
+	const int voxel = (nearest_neighbor.z * volume->dims.y + nearest_neighbor.y) * volume->dims.x
 		+ nearest_neighbor.x;
-	return volume->data[texel];
+	return volume->data[voxel];
 }
 float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 	const uniform Volume* uniform vol = (uniform Volume* uniform)volume;
