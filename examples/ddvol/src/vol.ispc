@@ -12,17 +12,17 @@ export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* un
 	*out = v;
 }
 export void set_region(uniform ISPCHandle volume, const uniform float* uniform region,
-		const uniform Vec3i* uniform _start, const uniform Vec3i* uniform _size) {
+		const uniform Vec3i* uniform start, const uniform Vec3i* uniform size) {
 	uniform Volume* uniform v = (uniform Volume* uniform)volume;
-	const uniform int<3> start = to_short_vec(*_start);
-	const uniform int<3> size = to_short_vec(*_size);
-	const uniform int<3> end = start + size;
-	for (uniform int z = start.z; z < end.z; ++z) {
-		for (uniform int y = start.y; y < end.y; ++y) {
-			foreach (x = start.x ... end.x) {
-				v->data[(z * v->dims.y + y) * v->dims.x + x] = region[(z * size.y + y) * size.x + x];
-				v->value_range.x = reduce_min(min(v->value_range.x, v->data[(z * v->dims.y + y) * v->dims.x + x]));
-				v->value_range.y = reduce_max(max(v->value_range.y, v->data[(z * v->dims.y + y) * v->dims.x + x]));
+	for (uniform int z = 0; z < size->z; ++z) {
+		for (uniform int y = 0; y < size->y; ++y) {
+			foreach (x = 0 ... size->x) {
+				const float val = region[(z * size->y + y) * size->x + x];
+				const int voxel = ((z + start->z) * v->dims.y + y + start->y) * v->dims.x
+					+ x + start->x;
+				v->data[voxel] = val;
+				v->value_range.x = reduce_min(min(v->value_range.x, val));
+				v->value_range.y = reduce_max(max(v->value_range.y, val));
 			}
 		}
 	}
