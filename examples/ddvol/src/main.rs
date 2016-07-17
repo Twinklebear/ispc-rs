@@ -2,15 +2,15 @@
 extern crate ispc;
 extern crate image;
 extern crate rand;
+extern crate num;
 
 use std::ptr;
-use std::iter;
 use std::time::Instant;
+use std::path::Path;
 
 use rand::Rng;
 
 use camera::Camera;
-use vol::Volume;
 use vec3::{Vec3f, Vec3i};
 
 mod raw;
@@ -29,33 +29,10 @@ pub fn empty_handle() -> ISPCHandle {
 fn main() {
     let width = 512;
     let height = 512;
-    let camera = Camera::new(Vec3f::new(2.0, 0.5, -1.0), Vec3f::new(0.5, 0.5, 0.5),
+    let camera = Camera::new(Vec3f::new(0.0, 0.5, 1.5), Vec3f::new(0.5, 0.5, 0.5),
                              Vec3f::new(0.0, 1.0, 0.0), 60.0, width as i32, height as i32);
-    let volume = Volume::new(Vec3i::broadcast(64));
-    let volume_data: Vec<_> = iter::repeat(0.0).take(32 * 32 * 32).collect();
-    volume.set_region(&volume_data[..], Vec3i::broadcast(0), Vec3i::broadcast(32));
-
-    let volume_data: Vec<_> = iter::repeat(1.0).take(32 * 32 * 32).collect();
-    volume.set_region(&volume_data[..], Vec3i::new(32, 0, 0), Vec3i::broadcast(32));
-
-    let volume_data: Vec<_> = iter::repeat(2.0).take(32 * 32 * 32).collect();
-    volume.set_region(&volume_data[..], Vec3i::new(0, 32, 0), Vec3i::broadcast(32));
-
-    let volume_data: Vec<_> = iter::repeat(3.0).take(32 * 32 * 32).collect();
-    volume.set_region(&volume_data[..], Vec3i::new(32, 32, 0), Vec3i::broadcast(32));
-
-    let volume_data: Vec<_> = iter::repeat(4.0).take(32 * 32 * 32).collect();
-    volume.set_region(&volume_data[..], Vec3i::new(0, 0, 32), Vec3i::broadcast(32));
-
-    let volume_data: Vec<_> = iter::repeat(5.0).take(32 * 32 * 32).collect();
-    volume.set_region(&volume_data[..], Vec3i::new(32, 0, 32), Vec3i::broadcast(32));
-
-    let volume_data: Vec<_> = iter::repeat(6.0).take(32 * 32 * 32).collect();
-    volume.set_region(&volume_data[..], Vec3i::new(0, 32, 32), Vec3i::broadcast(32));
-
-    let volume_data: Vec<_> = iter::repeat(7.0).take(32 * 32 * 32).collect();
-    volume.set_region(&volume_data[..], Vec3i::new(32, 32, 32), Vec3i::broadcast(32));
-
+    let path = Path::new("./csafe-heptane-302-volume/csafe-heptane-302-volume.raw");
+    let volume = raw::import::<u8>(path, Vec3i::broadcast(302));
     let mut framebuffer = vec![0.0; width * height * 3];
     let mut srgb_img_buf = vec![0u8; width * height * 3];
     let mut rng = rand::thread_rng();
