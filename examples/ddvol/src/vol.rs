@@ -19,7 +19,7 @@ impl Volume {
         Volume { ispc_handle: vol }
     }
     /// Set a region of voxel data for the volume.
-    pub fn set_region(&self, region: &[f32], start: Vec3i, size: Vec3i) {
+    pub fn set_region(&mut self, region: &[f32], start: Vec3i, size: Vec3i) {
         assert_eq!(region.len(), (size.x * size.y * size.z) as usize);
         unsafe {
             ddvol::set_region(self.ispc_handle, region.as_ptr(),

@@ -2,9 +2,14 @@
 #include "camera.ih"
 #include "vol.ih"
 
+struct RenderParams {
+	Vec3f background;
+	int n_samples;
+};
+
 task void render_scanline(const uniform Camera* uniform camera, const uniform ISPCHandle volume,
-		const uniform int32 * uniform seeds, const uniform int32 width, const uniform int32 height,
-		uniform float img[])
+		const uniform RenderParams* uniform params, const uniform int32 * uniform seeds,
+		const uniform int32 width, const uniform int32 height, uniform float img[])
 {
 	RNGState rng_state;
 	// On AVX1.1 and up we can use hardware randomness to improve seed quality
@@ -18,20 +23,22 @@ task void render_scanline(const uniform Camera* uniform camera, const uniform IS
 #else
 	seed_rng(&rng_state, seeds[taskIndex0] + programIndex);
 #endif
-	const uniform int n_samples = 16;
-	const uniform float inv_samples = 1.f / n_samples;
+	const uniform float inv_samples = 1.f / params->n_samples;
 	// TODO: Should switch and go parallel on each pixel and do n * programCount samples so
 	// we're tracing packets. This will require a reduce at the end though to write the
 	// samples back to the framebuffer without trampling.
+	const float<4> background = {params->background.x, params->background.y, params->background.z, 1};
 	foreach (i = 0 ... width){
-		for (int s = 0; s < n_samples; ++s){
+		for (int s = 0; s < params->n_samples; ++s){
 			const float samples[2] = {frandom(&rng_state), frandom(&rng_state)};
 			Ray ray = camera_ray(camera, i, taskIndex0, samples);
-			float<4> color = raycast_volume(volume, ray);
-			// TODO: Composite the volume color over the background
-			img[(taskIndex0 * width + i) * 3] += color.x;
-			img[(taskIndex0 * width + i) * 3 + 1] += color.y;
-			img[(taskIndex0 * width + i) * 3 + 2] += color.z;
+			const float<4> color = raycast_volume(volume, ray);
+			// Composite the volume color over the background color and accumulate into
+			// the framebuffer
+			const float<3> composite = color.xyz + (1.0 - color.w) * background.w * background.xyz;
+			img[(taskIndex0 * width + i) * 3] += composite.x;
+			img[(taskIndex0 * width + i) * 3 + 1] += composite.y;
+			img[(taskIndex0 * width + i) * 3 + 2] += composite.z;
 		}
 		for (int c = 0; c < 3; ++c){
 			img[(taskIndex0 * width + i) * 3 + c] *= inv_samples;
@@ -40,11 +47,11 @@ task void render_scanline(const uniform Camera* uniform camera, const uniform IS
 }
 // Raycast the volume
 export void render(const uniform ISPCHandle camera, const uniform ISPCHandle volume,
-		const uniform int32 * uniform seeds, const uniform int32 width, const uniform int32 height,
-		uniform float img[])
+		const uniform RenderParams* uniform params, const uniform int32 * uniform seeds,
+		const uniform int32 width, const uniform int32 height, uniform float img[])
 {
 	const uniform Camera* uniform cam = (const uniform Camera* uniform)camera;
-	launch[height] render_scanline(cam, volume, seeds, width, height, img);
+	launch[height] render_scanline(cam, volume, params, seeds, width, height, img);
 }
 // We don't use ISPC's build in srgb conversion as it seems to be kind of buggy.
 // Maybe it assumes some alignment of the data that we don't enforce?
