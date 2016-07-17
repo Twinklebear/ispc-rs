@@ -22,6 +22,11 @@ impl Volume {
         }
         Volume { ispc_handle: vol, tfn: tfn }
     }
+    /// Set the transfer function used by the volume, overriding the default cool/warm.
+    pub fn set_transfer_function(&mut self, tfn: TransferFunction) {
+        self.tfn = tfn;
+        unsafe { ddvol::volume_set_transfer_function(self.ispc_handle, self.tfn.ispc_equiv()); }
+    }
     /// Set a region of voxel data for the volume.
     pub fn set_region(&mut self, region: &[f32], start: Vec3i, size: Vec3i) {
         assert_eq!(region.len(), (size.x * size.y * size.z) as usize);

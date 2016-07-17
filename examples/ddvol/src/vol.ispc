@@ -14,6 +14,10 @@ export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* un
 	v->tfn = tfn;
 	*out = v;
 }
+export void volume_set_transfer_function(uniform ISPCHandle volume, uniform ISPCHandle tfn){
+	uniform Volume* uniform v = (uniform Volume* uniform)volume;
+	v->tfn = tfn;
+}
 export void set_region(uniform ISPCHandle volume, const uniform float* uniform region,
 		const uniform Vec3i* uniform start, const uniform Vec3i* uniform size) {
 	uniform Volume* uniform v = (uniform Volume* uniform)volume;
