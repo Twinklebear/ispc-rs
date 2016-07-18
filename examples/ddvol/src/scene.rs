@@ -93,7 +93,6 @@ impl Scene {
             vol_file = base_path.join(vol_file);
         }
         assert_eq!(vol_file.extension(), Some(OsStr::new("raw")));
-        println!("Loading volume {}", vol_file.display());
         let dimensions = Scene::load_vec3i(e.find("dimensions")
                                            .expect("Volume dims must be set for RAW volume"))
             .expect("Invalid dimensions specified");
