@@ -8,6 +8,7 @@ build = "build.rs"
 image = "0.9.0"
 rand = "0.3.14"
 num = "0.1.34"
+serde_json = "0.7.4"
 ispc = { path = "../../" }
 
 [build-dependencies]
