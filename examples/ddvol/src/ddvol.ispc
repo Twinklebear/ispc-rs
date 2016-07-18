@@ -9,7 +9,7 @@ struct RenderParams {
 
 task void render_scanline(const uniform Camera* uniform camera, const uniform ISPCHandle volume,
 		const uniform RenderParams* uniform params, const uniform int32 * uniform seeds,
-		const uniform int32 width, const uniform int32 height, uniform float img[])
+		const uniform uint32_t width, const uniform uint32_t height, uniform float img[])
 {
 	RNGState rng_state;
 	// On AVX1.1 and up we can use hardware randomness to improve seed quality
@@ -48,7 +48,7 @@ task void render_scanline(const uniform Camera* uniform camera, const uniform IS
 // Raycast the volume
 export void render(const uniform ISPCHandle camera, const uniform ISPCHandle volume,
 		const uniform RenderParams* uniform params, const uniform int32 * uniform seeds,
-		const uniform int32 width, const uniform int32 height, uniform float img[])
+		const uniform uint32_t width, const uniform uint32_t height, uniform float img[])
 {
 	const uniform Camera* uniform cam = (const uniform Camera* uniform)camera;
 	launch[height] render_scanline(cam, volume, params, seeds, width, height, img);
@@ -62,7 +62,7 @@ float linear_to_srgb(const float f) {
 		return 1.055 * pow(f, 1.0 / 2.4) - 0.055;
 	}
 }
-task void scanline_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[], const uniform int32 width){
+task void scanline_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[], const uniform uint32_t width){
 	foreach (i = 0 ... width){
 		for (int c = 0; c < 3; ++c){
 			float val = linear_to_srgb(fb[(taskIndex0 * width + i) * 3 + c]);
@@ -72,7 +72,7 @@ task void scanline_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[
 }
 // Convert the linear RGB framebuffer we render to to sRGB8 for saving out to an image
 export void framebuffer_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[],
-		const uniform int32 width, const uniform int32 height)
+		const uniform uint32_t width, const uniform uint32_t height)
 {
 	launch[height] scanline_to_srgb(fb, srgb, width);
 }

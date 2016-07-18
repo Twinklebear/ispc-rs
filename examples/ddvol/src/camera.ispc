@@ -3,7 +3,7 @@
 
 export void make_camera(uniform ISPCHandle* uniform out, const uniform Vec3f* uniform pos,
 		const uniform Vec3f* uniform target, const uniform Vec3f* uniform up, const uniform float fovy,
-		const uniform int32 width, const uniform int32 height) {
+		const uniform uint32_t width, const uniform uint32_t height) {
 	uniform Camera* uniform camera = uniform new uniform Camera;
 	camera->pos = to_short_vec(*pos);
 	camera->up = to_short_vec(*up);

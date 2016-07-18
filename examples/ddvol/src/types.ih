@@ -10,6 +10,7 @@
 #define INFINITY 1e36
 
 typedef void* uniform ISPCHandle;
+typedef unsigned int32 uint32_t;
 
 #endif
 

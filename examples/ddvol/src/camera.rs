@@ -9,7 +9,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(pos: Vec3f, target: Vec3f, up: Vec3f, fovy: f32, width: i32, height: i32) -> Camera {
+    pub fn new(pos: Vec3f, target: Vec3f, up: Vec3f, fovy: f32, width: u32, height: u32) -> Camera {
         let mut cam = empty_handle();
         unsafe {
             ddvol::make_camera(&mut cam as *mut ISPCHandle, &pos as *const Vec3f,
