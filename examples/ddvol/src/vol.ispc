@@ -41,8 +41,30 @@ export void drop_volume(uniform ISPCHandle vol){
 	}
 	delete v;
 }
+// Perform bilinear sampling on a slice of the volume data
+static inline float bilinear_sample(const uniform Volume* uniform v, const float<2> coords, const int z){
+	const int<2> origin = {floor(coords.x), floor(coords.y)};
+	const float<2> local = coords - origin;
+	const uniform float* varying slice = &v->data[z * v->dims.y * v->dims.x];
+	return slice[origin.y * v->dims.y + origin.x] * (1.0 - local.x) * (1.0 - local.y)
+		+ slice[origin.y * v->dims.y + origin.x + 1] * local.x * (1.0 - local.y)
+		+ slice[(origin.y + 1) * v->dims.y + origin.x] * (1.0 - local.x) * local.y
+		+ slice[(origin.y + 1) * v->dims.y + origin.x + 1] * local.x * local.y;
+}
 // Sample the volume at the position. pos should be within the normalized [0, 1] volume coordinates.
-float sample_volume(const uniform Volume* uniform volume, const float<3> pos) {
+static inline float sample_volume(const uniform Volume* uniform volume, const float<3> pos){
+#if 1
+	float<3> tex_coords = pos * volume->dims;
+	// TODO: How do I want to properly deal with going off the edge of the texture?
+	tex_coords.x = clamp(tex_coords.x, 0.f, (float)volume->dims.x - 2);
+	tex_coords.y = clamp(tex_coords.y, 0.f, (float)volume->dims.y - 2);
+	tex_coords.z = clamp(tex_coords.z, 0.f, (float)volume->dims.z - 2);
+	const int lo_z = floor(tex_coords.z);
+	const float lo_slice = bilinear_sample(volume, tex_coords.xy, lo_z);
+	const float hi_slice = bilinear_sample(volume, tex_coords.xy, lo_z + 1);
+	const float t_val = tex_coords.z - lo_z;
+	return (1.0 - t_val) * lo_slice + t_val * hi_slice;
+#else
 	const float<3> tex_coords = pos * volume->dims;
 	// TODO better than crap nearest neighbor sampling
 	const int<3> nearest_neighbor = {
@@ -53,6 +75,7 @@ float sample_volume(const uniform Volume* uniform volume, const float<3> pos) {
 	const int voxel = (nearest_neighbor.z * volume->dims.y + nearest_neighbor.y) * volume->dims.x
 		+ nearest_neighbor.x;
 	return volume->data[voxel];
+#endif
 }
 float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 	const uniform Volume* uniform vol = (uniform Volume* uniform)volume;
