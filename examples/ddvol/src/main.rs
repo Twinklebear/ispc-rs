@@ -31,10 +31,13 @@ pub fn empty_handle() -> ISPCHandle {
 }
 
 const USAGE: &'static str = "
-Usage: ddvol <scene> [options]
+Usage:
+  ddvol <scene> [options]
+  ddvol (-h | --help)
 
 Options:
-    -o OUT  Specify a file to writing the render to, defaults to 'ddvol.png'.
+  -o OUT        Specify a file to writing the render to, defaults to 'ddvol.png'.
+  -h, --help    Show this message.
 ";
 
 #[derive(RustcDecodable)]

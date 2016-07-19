@@ -13,7 +13,7 @@ impl TransferFunction {
     /// to white/opaque.
     pub fn grayscale() -> TransferFunction {
         let colors = [Vec3f::broadcast(0.0), Vec3f::broadcast(1.0)];
-        let opacities = [0.0, 1.0];
+        let opacities = [0.0, 0.5];
         TransferFunction::new(&colors[..], &opacities[..])
     }
     /// Create a cool/warm divergent color map.
@@ -21,7 +21,7 @@ impl TransferFunction {
         let colors = [Vec3f::new(0.231373, 0.298039, 0.752941),
                       Vec3f::new(0.865003, 0.865003, 0.865003),
                       Vec3f::new(0.705882, 0.0156863, 0.14902)];
-        let opacities = [0.0, 1.0];
+        let opacities = [0.0, 0.5];
         TransferFunction::new(&colors[..], &opacities[..])
     }
     /// Create a Jet color map
@@ -30,7 +30,7 @@ impl TransferFunction {
             Vec3f::new(0.0, 1.0, 1.0), Vec3f::new(0.500008, 1.0, 0.500008),
             Vec3f::new(1.0, 1.0, 0.0), Vec3f::new(1.0, 0.0, 0.0), Vec3f::new(0.500008, 0.0, 0.0)
         ];
-        let opacities = [0.0, 1.0];
+        let opacities = [0.0, 0.5];
         TransferFunction::new(&colors[..], &opacities[..])
     }
     pub fn new(colors: &[Vec3f], opacities: &[f32]) -> TransferFunction {
