@@ -4,11 +4,14 @@ extern crate image;
 extern crate rand;
 extern crate num;
 extern crate serde_json;
+extern crate docopt;
+extern crate rustc_serialize;
 
 use std::ptr;
 use std::time::Instant;
 
 use rand::Rng;
+use docopt::Docopt;
 
 use scene::{RenderParams, Scene};
 
@@ -27,8 +30,22 @@ pub fn empty_handle() -> ISPCHandle {
     ptr::null::<*mut ::std::os::raw::c_void>() as ISPCHandle
 }
 
+const USAGE: &'static str = "
+Usage: ddvol <scene> [options]
+
+Options:
+    -o OUT  Specify a file to writing the render to, defaults to 'ddvol.png'.
+";
+
+#[derive(RustcDecodable)]
+pub struct Args {
+    arg_scene: String,
+    flag_o: Option<String>,
+}
+
 fn main() {
-    let scene = Scene::load("./csafe.json");
+    let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
+    let scene = Scene::load(&args.arg_scene[..]);
     let mut framebuffer = vec![0.0; scene.width * scene.height * 3];
     let mut srgb_img_buf = vec![0u8; scene.width * scene.height * 3];
     let mut rng = rand::thread_rng();
@@ -43,9 +60,13 @@ fn main() {
         ddvol::framebuffer_to_srgb(framebuffer.as_ptr(), srgb_img_buf.as_mut_ptr(),
                                    scene.width as u32, scene.height as u32);
     }
-    match image::save_buffer("ddvol.png", &srgb_img_buf[..], scene.width as u32, scene.height as u32,
+    let out_file = match args.flag_o {
+        Some(s) => s.clone(),
+        None => String::from("ddvol.png"),
+    };
+    match image::save_buffer(&out_file[..], &srgb_img_buf[..], scene.width as u32, scene.height as u32,
                              image::RGB(8)) {
-        Ok(_) => println!("Rendered image saved to ddvol.png"),
+        Ok(_) => println!("Rendered image saved to {}", out_file),
         Err(e) => panic!("Error saving image: {}", e),
     };
 }
