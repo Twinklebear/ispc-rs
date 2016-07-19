@@ -34,22 +34,24 @@ float<4> sample_transfer_function(const uniform ISPCHandle tfn, const float val)
 	// Need to re-map the range of lo/hi to 0/1 then we can interpolate
 	// based on val re-mapped into this range as well
 	{
-		const int lo = val * t->n_colors;
+		const float color_idx = val * t->n_colors;
+		const int lo = color_idx;
 		const int hi = lo + 1;
 		if (hi == t->n_colors){
 			color = t->colors[lo];
 		} else {
-			const float t_val = val - lo;
+			const float t_val = color_idx - lo;
 			color = (1.0 - t_val) * t->colors[lo] + t_val * t->colors[hi];
 		}
 	}
 	{
-		const int lo = val * t->n_opacities;
+		const float opacity_idx = val * t->n_opacities;
+		const int lo = opacity_idx;
 		const int hi = lo + 1;
 		if (hi == t->n_opacities){
 			opacity = t->opacities[lo];
 		} else {
-			const float t_val = val - lo;
+			const float t_val = opacity_idx - lo;
 			opacity = (1.0 - t_val) * t->opacities[lo] + t_val * t->opacities[hi];
 		}
 	}
