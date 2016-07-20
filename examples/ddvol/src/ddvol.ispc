@@ -75,6 +75,7 @@ export void framebuffer_to_srgb(const uniform float fb[], uniform unsigned int8 
 		const uniform uint32_t width, const uniform uint32_t height)
 {
 	launch[height] scanline_to_srgb(fb, srgb, width);
+	sync;
 	// Flip the image about y
 	for (uniform int y = 0; y < height / 2; ++y){
 		foreach (x = 0 ... width * 3){
