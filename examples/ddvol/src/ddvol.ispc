@@ -63,11 +63,9 @@ float linear_to_srgb(const float f) {
 	}
 }
 task void scanline_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[], const uniform uint32_t width){
-	foreach (i = 0 ... width){
-		for (int c = 0; c < 3; ++c){
-			float val = linear_to_srgb(fb[(taskIndex0 * width + i) * 3 + c]);
-			srgb[(taskIndex0 * width + i) * 3 + c] = clamp(val * 255.0, 0.0, 255.0);
-		}
+	foreach (i = 0 ... width * 3){
+		const float val = linear_to_srgb(fb[taskIndex0 * width * 3 + i]);
+		srgb[taskIndex0 * width * 3 + i] = clamp(val * 255.0, 0.0, 255.0);
 	}
 }
 // Convert the linear RGB framebuffer we render to to sRGB8 for saving out to an image
