@@ -1,0 +1,21 @@
+{
+	"volume": {
+		"note": "You can get the volume from http://www.ospray.org/ examples",
+		"file": "magnetic-512-volume/magnetic-512-volume.raw",
+		"data_type": "f32",
+		"dimensions": [512, 512, 512]
+	},
+	"transfer_function": "linear_green.json",
+	"camera": {
+		"pos": [-0.5, 0.5, 1.5],
+		"target": [0.5, 0.5, 0.5],
+		"up": [0, 0, 1],
+		"fovy": 60
+	},
+	"width": 1024,
+	"height": 1024,
+	"background": [0.8, 0.8, 0.8],
+	"n_samples": 8
+}
+
+
