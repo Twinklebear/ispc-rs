@@ -66,7 +66,9 @@ impl Scene {
             Ok(d) => d,
             Err(e) => panic!("JSON parsing error: {}", e),
         };
-        assert!(data.is_object(), "Expected a root JSON object. See example scenes");
+        if !data.is_object() {
+            panic!("Expected a root JSON object. See example scenes");
+        }
         let base_path = match Path::new(file).parent() {
             Some(p) => p,
             None => Path::new(file),
@@ -92,7 +94,6 @@ impl Scene {
         if !vol_file.is_absolute() {
             vol_file = base_path.join(vol_file);
         }
-        assert_eq!(vol_file.extension(), Some(OsStr::new("raw")));
         let dimensions = Scene::load_vec3i(e.find("dimensions")
                                            .expect("Volume dims must be set for RAW volume"))
             .expect("Invalid dimensions specified");
@@ -120,7 +121,7 @@ impl Scene {
             if !tfn_buf.is_absolute() {
                 tfn_buf = base_path.join(tfn_buf);
             }
-            panic!("TODO: ParaView transferfunction importing is not implemented");
+            Scene::import_paraview_tfn(tfn_buf.as_path())
         } else {
             let tfn_name = tfn_file.to_str().unwrap();
             if tfn_name == "grayscale" {
@@ -133,6 +134,65 @@ impl Scene {
                 panic!("Scene error: {} is not a built in transfer function", tfn_name);
             }
         }
+    }
+    fn import_paraview_tfn(path: &Path) -> TransferFunction {
+        println!("Importing ParaView transfer function {}", path.display());
+        let mut f = match File::open(path) {
+            Ok(f) => f,
+            Err(e) => panic!("Failed to open ParaView transfer function file: {}", e),
+        };
+        let mut content = String::new();
+        if let Err(e) = f.read_to_string(&mut content) {
+            panic!("Failed to read ParaView transfer function file: {}", e);
+        }
+        let data: Value = match serde_json::from_str(&content[..]) {
+            Ok(d) => d,
+            Err(e) => panic!("JSON parsing error: {}", e),
+        };
+        let pv_tfn = &data.as_array().expect("Expected a root JSON array in ParaView function")[0];
+        let color_space = pv_tfn.find("ColorSpace").expect("Expected a color space from ParaView function")
+            .as_string().expect("ColorSpace must be a string");
+        if color_space == "Diverging" {
+            println!("Warning: ParaView's diverging colormap interpolation is not supported, \
+                      you may see some incorrect colors");
+        }
+        let name = pv_tfn.find("Name").expect("Expected a name for ParaView function");
+        if pv_tfn.find("Points").is_some() {
+            println!("Warning: Opacity values in ParaView transfer functions are currently ignored");
+        }
+        let rgb_data = pv_tfn.find("RGBPoints").expect("Expected RGBPoints specifying the transfer function")
+            .as_array().expect("RGBPoints must be an array");
+        let rgb_points: Vec<_> = rgb_data.chunks(4).map(|x| {
+            let val = x[0].as_f64().unwrap() as f32;
+            let r = x[1].as_f64().unwrap() as f32;
+            let g = x[2].as_f64().unwrap() as f32;
+            let b = x[3].as_f64().unwrap() as f32;
+            (val, Vec3f::new(r, g, b))
+        }).collect();
+        // Re-sample the ParaView transfer function into an evenly spaced linear transfer function
+        let mut colors = Vec::new();
+        let mut lo = 0;
+        let mut hi = 0;
+        colors.push(rgb_points[0].1);
+        for i in 1..255 {
+            let x = i as f32 / 255.0;
+            if x > rgb_points[lo].0 {
+                hi = rgb_points.iter().skip(lo).take_while(|pt| x > pt.0).count() + lo;
+                lo = hi - 1;
+            }
+            let delta = x - rgb_points[lo].0;
+            let interval = rgb_points[hi].0 - rgb_points[lo].0;
+            let col =
+                if delta == 0.0 || interval == 0.0 {
+                    rgb_points[lo].1
+                } else {
+                    rgb_points[lo].1 + delta / interval * (rgb_points[hi].1 - rgb_points[lo].1)
+                };
+            colors.push(col);
+        }
+        colors.push(rgb_points.last().unwrap().1);
+        println!("Imported ParaView transfer function {}", name);
+        TransferFunction::new(&colors[..], &[0.0, 0.5])
     }
     fn load_camera(e: &Value, width: usize, height: usize) -> Camera {
         let pos = Scene::load_vec3f(e.find("pos").expect("Camera view position must be set"))
