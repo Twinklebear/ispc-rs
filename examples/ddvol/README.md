@@ -5,7 +5,8 @@ rendering of distributed data. Currently it's just a simple volume raycaster whi
 can load and render RAW
 volume files and colormap them with some default provided transfer functions,
 `grayscale`, `cool_warm` and `jet` or by loading a transfer function exported
-from [ParaView](). Examples of the scene format can be found in [`scenes/`](scenes/).
+from [ParaView](http://www.paraview.org/). Examples of the scene format can be
+found in [`scenes/`](scenes/).
 
 Below are two example images of datasets from [OSPRay's downloadable demos](http://www.ospray.org/demos.html),
 the magnetic reconnection 512^3 data set and the CSAFE 302^3 dataset,
