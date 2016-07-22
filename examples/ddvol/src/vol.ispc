@@ -92,11 +92,10 @@ float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 	const float dt = min(dt_vec.x, min(dt_vec.y, dt_vec.z));
 	float<3> pos = ray.origin + tenter * ray.dir;
 	for (float t = tenter; t < texit; t += dt){
-		// TODO: Sample a transfer function!
 		const float value = (sample_volume(vol, pos) - vol->value_range.x)
 			/ (vol->value_range.y - vol->value_range.x);
 		const float<4> tfn_sample = sample_transfer_function(vol->tfn, value);
-		// TODO: Swizzles are read only!? I can't do color.xyz = ...?
+		// TODO: I can't do color.xyz += ...?
 		const float<3> col = (1.0 - color.w) * tfn_sample.w * tfn_sample.xyz;
 		color.x += col.x;
 		color.y += col.y;
