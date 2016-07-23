@@ -10,6 +10,10 @@ use material::Lambertian;
 /// Type alias for the Geometry base struct in ISPC
 pub type Geometry = ::rt::Geometry;
 
+pub trait ISPCGeometry {
+    fn ispc_equiv(&self) -> *const Geometry;
+}
+
 /// A simple sphere with some radius located at `center`
 pub struct Sphere {
     center: Vec3f,
@@ -32,7 +36,10 @@ impl Sphere {
         }
         Sphere { center: center, radius: radius, material: mat, ispc_geom: geom }
     }
-    pub fn ispc_equiv(&self) -> *const Geometry {
+}
+
+impl ISPCGeometry for Sphere {
+    fn ispc_equiv(&self) -> *const Geometry {
         self.ispc_geom
     }
 }
@@ -62,7 +69,10 @@ impl Plane {
         }
         Plane { center: center, normal: n, material: mat, ispc_geom: geom }
     }
-    pub fn ispc_equiv(&self) -> *const Geometry {
+}
+
+impl ISPCGeometry for Plane {
+    fn ispc_equiv(&self) -> *const Geometry {
         self.ispc_geom
     }
 }
