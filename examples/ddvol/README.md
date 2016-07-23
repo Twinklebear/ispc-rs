@@ -14,9 +14,12 @@ colormapped with transfer functions exported from ParaView. The scene files for
 these are included in [`scenes/`](scenes/) though you'll need to download the volume
 data from the OSPRay webpage.
 
-Magnetic Reconnection:
+Magnetic Reconnection, via the OSPRay demos page courtesy of Bill Daughton (LANL) and
+Berk Geveci (KitWare) from [this paper](http://arxiv.org/abs/1405.4040)
 ![Magnetic Reconnection](http://i.imgur.com/3tPHx2S.png)
 
-CSAFE:
+CSAFE, via the OSPRay demos page courtesy of of the Center for the Simulation of
+Accidental Fires and Explosions (CSAFE) at the Scientific Computing and Imaging
+Institute (SCI), University of Utah.
 ![CSAFE](http://i.imgur.com/zdX2ZF5.png)
 
