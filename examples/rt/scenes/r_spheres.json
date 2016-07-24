@@ -1,0 +1,96 @@
+{
+	"camera": {
+		"pos": [0, 0.5, -3],
+		"target": [0, 0.5, 0],
+		"up": [0, 1, 0],
+		"fovy": 60
+	},
+	"geometry": [
+		{
+			"type": "sphere",
+			"center": [-0.5, -0.25, 0],
+			"radius": 0.25,
+			"lambertian": [0.8, 0.1, 0.1]
+		},
+		{
+			"type": "sphere",
+			"center": [-0.5, 0.25, 0],
+			"radius": 0.25,
+			"lambertian": [0.8, 0.1, 0.1]
+		},
+		{
+			"type": "sphere",
+			"center": [-0.5, 0.75, 0],
+			"radius": 0.25,
+			"lambertian": [0.8, 0.1, 0.1]
+		},
+		{
+			"type": "sphere",
+			"center": [-0.5, 1.25, 0],
+			"radius": 0.25,
+			"lambertian": [0.8, 0.1, 0.1]
+		},
+		{
+			"type": "sphere",
+			"center": [0, 1.25, 0],
+			"radius": 0.25,
+			"lambertian": [0.8, 0.1, 0.1]
+		},
+		{
+			"type": "sphere",
+			"center": [0, 0.25, 0],
+			"radius": 0.25,
+			"lambertian": [0.8, 0.1, 0.1]
+		},
+		{
+			"type": "sphere",
+			"center": [0.44, 1, 0],
+			"radius": 0.25,
+			"lambertian": [0.8, 0.1, 0.1]
+		},
+		{
+			"type": "sphere",
+			"center": [0.44, 0.5, 0],
+			"radius": 0.25,
+			"lambertian": [0.8, 0.1, 0.1]
+		},
+		{
+			"type": "sphere",
+			"center": [0.35, -0.2, 0],
+			"radius": 0.25,
+			"lambertian": [0.8, 0.1, 0.1]
+		},
+		{
+			"type": "plane",
+			"center": [0, -0.5, 0],
+			"normal": [0, 1, 0],
+			"lambertian": [0.9, 0.9, 0.9]
+		},
+		{
+			"type": "plane",
+			"center": [-2.5, 0, 0],
+			"normal": [1, -0.2, 0],
+			"lambertian": [0.1, 0.2, 0.7]
+		},
+		{
+			"type": "plane",
+			"center": [2.5, 0, 0],
+			"normal": [-1, -0.2, 0],
+			"lambertian": [0.1, 0.2, 0.7]
+		},
+		{
+			"type": "plane",
+			"center": [0, 0, 2],
+			"normal": [0, -0.2, -1],
+			"lambertian": [0.1, 0.2, 0.7]
+		}
+	],
+	"light": {
+		"pos": [1, 2, -2],
+		"intensity": [10, 10, 10]
+	},
+	"width": 512,
+	"height": 512,
+	"n_samples": 2
+}
+
