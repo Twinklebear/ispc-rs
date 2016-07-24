@@ -394,9 +394,8 @@ impl Config {
         }
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
-        let mut bindings = bindgen::Builder::new();
+        let mut bindings = bindgen::Builder::new(self.bindgen_header.to_str().unwrap());
         bindings.forbid_unknown_types()
-            .header(self.bindgen_header.to_str().unwrap())
             .link(lib, bindgen::LinkType::Static);
         let bindgen_file = dst.join(lib).with_extension("rs");
         let generated_bindings = match bindings.generate() {

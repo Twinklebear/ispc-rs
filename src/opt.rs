@@ -62,6 +62,7 @@ pub enum CPU {
     Haswell,
     Broadwell,
     Knl,
+    Skx,
     /// Synonym for slm target
     Silvermont,
 }
@@ -79,6 +80,7 @@ impl ToString for CPU {
             CPU::Haswell => String::from("--cpu=haswell"),
             CPU::Broadwell => String::from("--cpu=broadwell"),
             CPU::Knl => String::from("--cpu=knl"),
+            CPU::Skx => String::from("--cpu=skx"),
             CPU::Silvermont => String::from("--cpu=silvermont"),
         }
     }
