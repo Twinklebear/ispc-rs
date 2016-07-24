@@ -66,7 +66,7 @@ fn main() {
     };
     match image::save_buffer(&out_file[..], &srgb_img_buf[..], scene.width as u32, scene.height as u32,
                              image::RGB(8)) {
-        Ok(_) => println!("Rendered image saved to rt.png"),
+        Ok(_) => println!("Rendered image saved to {}", out_file),
         Err(e) => panic!("Error saving image: {}", e),
     };
 }
