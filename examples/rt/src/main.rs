@@ -54,7 +54,8 @@ fn main() {
         let geom: Vec<_> = scene.geometry.iter().map(|x| x.ispc_equiv()).collect();
         let start = Instant::now();
         rt::render(&scene.camera as *const Camera, geom.as_ptr(), geom.len() as i32, scene.light.ispc_equiv(),
-                   scanline_seeds.as_ptr(), scene.width as i32, scene.height as i32, framebuffer.as_mut_ptr());
+                   scanline_seeds.as_ptr(), scene.width as i32, scene.height as i32, framebuffer.as_mut_ptr(),
+                   scene.n_samples as i32);
         let elapsed = start.elapsed();
         println!("Rendering took {}s", elapsed.as_secs() as f64 + elapsed.subsec_nanos() as f64 * 1e-9);
         rt::framebuffer_to_srgb(framebuffer.as_ptr(), srgb_img_buf.as_mut_ptr(),

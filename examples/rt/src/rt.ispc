@@ -98,7 +98,7 @@ Vec3f pathtracer_li(const Ray &r, const uniform Geometry * const uniform * unifo
 task void render_scanline(const uniform Camera * uniform camera,
 		const uniform Geometry * const uniform * uniform geom,
 		const uniform int32 n_geom, const uniform Light * uniform light, const uniform int32 * uniform seeds,
-		const uniform int32 width, const uniform int32 height, uniform float img[])
+		const uniform int32 width, const uniform int32 height, uniform float img[], const uniform int n_samples)
 {
 	RNGState rng_state;
 	// On AVX1.1 and up we can use hardware randomness to improve seed quality
@@ -112,7 +112,6 @@ task void render_scanline(const uniform Camera * uniform camera,
 #else
 	seed_rng(&rng_state, seeds[taskIndex0] + programIndex);
 #endif
-	const uniform int n_samples = 64;
 	const uniform float inv_samples = 1.f / n_samples;
 	// TODO: Should switch and go parallel on each pixel and do n * programCount samples
 	foreach (i = 0 ... width){
@@ -132,10 +131,10 @@ task void render_scanline(const uniform Camera * uniform camera,
 // Render the scene with Whitted raytracing + AO to an sRGB image
 export void render(const uniform Camera * uniform camera, const uniform Geometry * const uniform * uniform geom,
 		const uniform int32 n_geom, const void* uniform light, const uniform int32 * uniform seeds,
-		const uniform int32 width, const uniform int32 height, uniform float img[])
+		const uniform int32 width, const uniform int32 height, uniform float img[], const uniform int n_samples)
 {
 	launch[height] render_scanline(camera, geom, n_geom, (const uniform Light * uniform)light,
-			seeds, width, height, img);
+			seeds, width, height, img, n_samples);
 }
 float linear_to_srgb(const float f) {
 	if (f <= 0.0031308){
