@@ -36,19 +36,24 @@ Usage:
   ddvol (-h | --help)
 
 Options:
-  -o OUT        Specify a file to writing the render to, defaults to 'ddvol.png'.
-  -h, --help    Show this message.
+  -o OUT                Specify a file to writing the render to, defaults to 'ddvol.png'.
+  -i, --isovalue VAL    Set an isovalue to render an implicit isosurface with the volume.
+  -h, --help            Show this message.
 ";
 
 #[derive(RustcDecodable)]
 pub struct Args {
     arg_scene: String,
     flag_o: Option<String>,
+    flag_i: Option<f32>,
 }
 
 fn main() {
     let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
-    let scene = Scene::load(&args.arg_scene[..]);
+    let mut scene = Scene::load(&args.arg_scene[..]);
+    if let Some(val) = args.flag_i {
+        scene.volume.set_isovalue(val);
+    }
     let mut framebuffer = vec![0.0; scene.width * scene.height * 3];
     let mut srgb_img_buf = vec![0u8; scene.width * scene.height * 3];
     let mut rng = rand::thread_rng();

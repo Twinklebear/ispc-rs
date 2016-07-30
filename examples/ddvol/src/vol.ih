@@ -11,6 +11,7 @@ struct Volume {
 	uniform int<3> dims;
 	uniform float<3> box_max;
 	uniform float<2> value_range;
+	uniform float isovalue;
 	uniform ISPCHandle tfn;
 };
 
@@ -18,6 +19,9 @@ struct Volume {
 export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* uniform dims,
 						uniform ISPCHandle tfn);
 export void volume_set_transfer_function(uniform ISPCHandle volume, uniform ISPCHandle tfn);
+// Change the isovalue being rendered. Setting to a value less than 0 will turn off
+// the isosurface.
+export void volume_set_isovalue(uniform ISPCHandle volume, const uniform float isovalue);
 // Set a block of data in the volume
 export void set_region(uniform ISPCHandle volume, const float* uniform region,
 		const uniform Vec3i* uniform start, const uniform Vec3i* uniform size);

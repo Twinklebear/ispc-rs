@@ -15,11 +15,16 @@ export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* un
 	v->value_range.x = INFINITY;
 	v->value_range.y = -INFINITY;
 	v->tfn = tfn;
+	v->isovalue = -1.0;
 	*out = v;
 }
 export void volume_set_transfer_function(uniform ISPCHandle volume, uniform ISPCHandle tfn){
 	uniform Volume* uniform v = (uniform Volume* uniform)volume;
 	v->tfn = tfn;
+}
+export void volume_set_isovalue(uniform ISPCHandle volume, const uniform float isovalue){
+	uniform Volume* uniform v = (uniform Volume* uniform)volume;
+	v->isovalue = (isovalue - v->value_range.x) / (v->value_range.y - v->value_range.x);
 }
 export void set_region(uniform ISPCHandle volume, const uniform float* uniform region,
 		const uniform Vec3i* uniform start, const uniform Vec3i* uniform size) {
@@ -68,6 +73,17 @@ static inline float sample_volume(const uniform Volume* uniform volume, const fl
 	const float t_val = tex_coords.z - lo_z;
 	return (1.0 - t_val) * lo_slice + t_val * hi_slice;
 }
+static inline float<3> sample_volume_gradient(const uniform Volume* uniform volume,
+		const float<3> pos, const float dt)
+{
+	const float<2> h = {dt, 0};
+	const float<3> grad = {
+		sample_volume(volume, pos + h.xyy) - sample_volume(volume, pos - h.xyy),
+		sample_volume(volume, pos + h.yxy) - sample_volume(volume, pos - h.yxy),
+		sample_volume(volume, pos + h.yyx) - sample_volume(volume, pos - h.yyx)
+	};
+	return grad / (2.0 * dt);
+}
 float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 	const uniform Volume* uniform vol = (uniform Volume* uniform)volume;
 	const float<3> inv_dir = 1.0 / ray.dir;
@@ -93,12 +109,29 @@ float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 	};
 	const float dt = min(dt_vec.x, min(dt_vec.y, dt_vec.z));
 	float<3> pos = ray.origin + tenter * ray.dir;
+	const uniform float isovalue = vol->isovalue;
+	const uniform bool isosurface = isovalue >= 0.0;
+	float prev_val = 0.f;
 	for (float t = tenter; t < texit; t += dt){
 		const float value = (sample_volume(vol, pos) - vol->value_range.x)
 			/ (vol->value_range.y - vol->value_range.x);
-		const float<4> tfn_sample = sample_transfer_function(vol->tfn, value);
+		float<4> tfn_sample = sample_transfer_function(vol->tfn, value);
+		float<3> col;
+		if (isosurface) {
+			if (t != tenter && prev_val <= isovalue && value >= isovalue) {
+				const float<3> prev_pos = pos - dt * ray.dir;
+				pos = (isovalue - prev_val) / (value - prev_val) * (pos - prev_pos) + prev_pos;
+				tfn_sample.w = 1.f;
+				const float<3> normal = -normalize(sample_volume_gradient(vol, pos, dt));
+				const float lighting = clamp(dot(normal, -ray.dir), 0.1, 1.0);
+				tfn_sample.x *= lighting;
+				tfn_sample.y *= lighting;
+				tfn_sample.z *= lighting;
+			}
+			prev_val = value;
+		}
+		col = (1.0 - color.w) * tfn_sample.w * tfn_sample.xyz;
 		// TODO: I can't do color.xyz += ...?
-		const float<3> col = (1.0 - color.w) * tfn_sample.w * tfn_sample.xyz;
 		color.x += col.x;
 		color.y += col.y;
 		color.z += col.z;

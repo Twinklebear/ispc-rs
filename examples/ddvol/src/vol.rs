@@ -27,6 +27,11 @@ impl Volume {
         self.tfn = tfn;
         unsafe { ddvol::volume_set_transfer_function(self.ispc_handle, self.tfn.ispc_equiv()); }
     }
+    /// Change the isovalue being rendered. Setting to a value less than 0 will turn off
+    /// the isosurface.
+    pub fn set_isovalue(&mut self, isovalue: f32) {
+        unsafe { ddvol::volume_set_isovalue(self.ispc_handle, isovalue); }
+    }
     /// Set a region of voxel data for the volume.
     pub fn set_region(&mut self, region: &[f32], start: Vec3i, size: Vec3i) {
         assert_eq!(region.len(), (size.x * size.y * size.z) as usize);
