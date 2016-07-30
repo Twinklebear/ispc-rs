@@ -121,6 +121,7 @@ float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 			if (t != tenter && prev_val <= isovalue && value >= isovalue) {
 				const float<3> prev_pos = pos - dt * ray.dir;
 				pos = (isovalue - prev_val) / (value - prev_val) * (pos - prev_pos) + prev_pos;
+				tfn_sample = sample_transfer_function(vol->tfn, isovalue);
 				tfn_sample.w = 1.f;
 				const float<3> normal = -normalize(sample_volume_gradient(vol, pos, dt));
 				const float lighting = clamp(dot(normal, -ray.dir), 0.1, 1.0);
