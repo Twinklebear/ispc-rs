@@ -5,6 +5,9 @@ export void make_volume(uniform ISPCHandle* uniform out, const uniform Vec3i* un
 {
 	uniform Volume* uniform v = uniform new uniform Volume;
 	v->dims = to_short_vec(*dims);
+	// Find scale factor for each axis such that the longest axis is [0, 1] 
+	const uniform float max_axis = max(v->dims.x, max(v->dims.y, v->dims.z));
+	v->box_max = v->dims / max_axis;
 	// TODO: How to handle the data distributed version? allocating
 	// the the whole thing up front is fine for a volume that fits in memory,
 	// not so when it doesn't and is distributed
@@ -69,10 +72,9 @@ float<4> raycast_volume(const uniform ISPCHandle volume, Ray &ray){
 	const uniform Volume* uniform vol = (uniform Volume* uniform)volume;
 	const float<3> inv_dir = 1.0 / ray.dir;
 	// Find the intersection with the box containing the volume [0, 1]
-	const uniform float<3> box_max = {1, 1, 1};
 	const uniform float<3> box_min = {0, 0, 0};
 	const float<3> tmin_tmp = (box_min - ray.origin) * inv_dir;
-	const float<3> tmax_tmp = (box_max - ray.origin) * inv_dir;
+	const float<3> tmax_tmp = (vol->box_max - ray.origin) * inv_dir;
 	const float<3> tmin = min(tmin_tmp, tmax_tmp);
 	const float<3> tmax = max(tmin_tmp, tmax_tmp);
 	const float tenter = max(0.f, max(tmin.x, max(tmin.y, tmin.z)));

@@ -9,7 +9,8 @@
 struct Volume {
 	uniform float* uniform data;
 	uniform int<3> dims;
-	uniform float<2> value_range; 
+	uniform float<3> box_max;
+	uniform float<2> value_range;
 	uniform ISPCHandle tfn;
 };
 
