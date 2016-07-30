@@ -19,7 +19,7 @@ Berk Geveci (KitWare) from [this paper](http://arxiv.org/abs/1405.4040)
 ![Magnetic Reconnection](http://i.imgur.com/3tPHx2S.png)
 
 `ddvol` can also render implicit isosurfaces, set with the `-i` or `--isovalue` argument.
-![Magnetic Reconnection with Isosurface](http://i.imgur.com/agOYEea.png)
+![Magnetic Reconnection with Isosurface](http://i.imgur.com/6Duu3da.png)
 
 CSAFE, via the OSPRay demos page courtesy of of the Center for the Simulation of
 Accidental Fires and Explosions (CSAFE) at the Scientific Computing and Imaging
