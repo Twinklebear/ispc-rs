@@ -36,12 +36,13 @@ task void render_scanline(const uniform Camera* uniform camera, const uniform IS
 			// Composite the volume color over the background color and accumulate into
 			// the framebuffer
 			const float<3> composite = color.xyz + (1.0 - color.w) * background.w * background.xyz;
-			img[(taskIndex0 * width + i) * 3] += composite.x;
-			img[(taskIndex0 * width + i) * 3 + 1] += composite.y;
-			img[(taskIndex0 * width + i) * 3 + 2] += composite.z;
+			img[(taskIndex0 * width + i) * 4] += composite.x;
+			img[(taskIndex0 * width + i) * 4 + 1] += composite.y;
+			img[(taskIndex0 * width + i) * 4 + 2] += composite.z;
+			img[(taskIndex0 * width + i) * 4 + 3] += color.w;
 		}
-		for (int c = 0; c < 3; ++c){
-			img[(taskIndex0 * width + i) * 3 + c] *= inv_samples;
+		for (int c = 0; c < 4; ++c){
+			img[(taskIndex0 * width + i) * 4 + c] *= inv_samples;
 		}
 	}
 }
@@ -53,33 +54,4 @@ export void render(const uniform ISPCHandle camera, const uniform ISPCHandle vol
 	const uniform Camera* uniform cam = (const uniform Camera* uniform)camera;
 	launch[height] render_scanline(cam, volume, params, seeds, width, height, img);
 }
-// We don't use ISPC's build in srgb conversion as it seems to be kind of buggy.
-// Maybe it assumes some alignment of the data that we don't enforce?
-float linear_to_srgb(const float f) {
-	if (f <= 0.0031308){
-		return 12.92 * f;
-	} else {
-		return 1.055 * pow(f, 1.0 / 2.4) - 0.055;
-	}
-}
-task void scanline_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[], const uniform uint32_t width){
-	foreach (i = 0 ... width * 3){
-		const float val = linear_to_srgb(fb[taskIndex0 * width * 3 + i]);
-		srgb[taskIndex0 * width * 3 + i] = clamp(val * 255.0, 0.0, 255.0);
-	}
-}
-// Convert the linear RGB framebuffer we render to to sRGB8 for saving out to an image
-export void framebuffer_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[],
-		const uniform uint32_t width, const uniform uint32_t height)
-{
-	launch[height] scanline_to_srgb(fb, srgb, width);
-	sync;
-	// Flip the image about y
-	for (uniform int y = 0; y < height / 2; ++y){
-		foreach (x = 0 ... width * 3){
-			const unsigned int8 tmp = srgb[y * width * 3 + x];
-			srgb[y * width * 3 + x] = srgb[(height - y - 1) * width * 3 + x];
-			srgb[(height - y - 1) * width * 3 + x] = tmp;
-		}
-	}
-}
+
