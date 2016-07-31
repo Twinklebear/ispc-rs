@@ -3,6 +3,13 @@
 
 #include "types.ih"
 
+// A tile of the image being rendered too
+struct Tile {
+	uniform uint32_t x, y;
+	uniform uint32_t tile_size;
+	uniform float* uniform data;
+};
+
 // Convert the linear RGB framebuffer we render to to sRGB8 for saving out to an image
 export void framebuffer_to_srgb(const uniform float fb[], uniform unsigned int8 srgb[],
 		const uniform uint32_t width, const uniform uint32_t height);
