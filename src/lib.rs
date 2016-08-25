@@ -371,11 +371,17 @@ impl Config {
             let object = dst.join(ispc_fname.clone()).with_extension("o");
             let header = dst.join(ispc_fname.clone()).with_extension("h");
             let deps = dst.join(ispc_fname).with_extension("idep");
-            let status = Command::new("ispc").args(&default_args[..])
+            let output = Command::new("ispc").args(&default_args[..])
                 .arg(s).arg("-o").arg(&object).arg("-h").arg(&header)
-                .arg("-MMM").arg(&deps).status().unwrap();
+                .arg("-MMM").arg(&deps).output().unwrap();
 
-            if !status.success() {
+            if !output.stderr.is_empty() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                for l in stderr.lines() {
+                    println!("cargo:warning={}", l);
+                }
+            }
+            if !output.status.success() {
                 exit_failure!("Failed to compile ISPC source file {}", s.display());
             }
             self.objects.push(object);
