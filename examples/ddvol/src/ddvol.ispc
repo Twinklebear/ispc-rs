@@ -25,9 +25,6 @@ export void render_tile(const uniform ISPCHandle cam, const uniform ISPCHandle v
 	seed_rng(&rng_state, seed + programIndex);
 #endif
 	const uniform float inv_samples = 1.f / params->n_samples;
-	// TODO: Should switch and go parallel on each pixel and do n * programCount samples so
-	// we're tracing packets. This will require a reduce at the end though to write the
-	// samples back to the framebuffer without trampling.
 	const float<4> background = {params->background.x, params->background.y, params->background.z, 1};
 	foreach_tiled (y = 0 ... tile->tile_size, x = 0 ... tile->tile_size){
 		const int<2> pixel = {tile->x + x, tile->y + y};
