@@ -22,13 +22,13 @@ exclude = [
 
 [dependencies]
 bindgen = "0.19.0"
-gcc = "0.3.32"
-libc = "0.2.14"
+gcc = "0.3.35"
+libc = "0.2.15"
 aligned_alloc = "0.1.2"
-num_cpus = "0.2.13"
+num_cpus = "1.0.0"
 regex = "0.1.73"
-semver = "0.2.3"
-clippy = { version = "0.0.79", optional = true }
+semver = "0.4.0"
+clippy = { version = "0.0.87", optional = true }
 
 [features]
 unstable = ["clippy"]
