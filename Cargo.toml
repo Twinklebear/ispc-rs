@@ -28,7 +28,7 @@ aligned_alloc = "0.1.2"
 num_cpus = "1.0.0"
 regex = "0.1.73"
 semver = "0.4.0"
-clippy = { version = "0.0.87", optional = true }
+clippy = { version = "0.0.91", optional = true }
 
 [features]
 unstable = ["clippy"]
