@@ -53,7 +53,7 @@ static inline float get_voxel(const uniform Volume* uniform v, const int x, cons
 	const int tx = clamp(x, 0, v->dims.x - 1);
 	const int ty = clamp(y, 0, v->dims.y - 1);
 	const int tz = clamp(z, 0, v->dims.z - 1);
-	return v->data[(tz * v->dims.y + ty) * v->dims.y + tx];
+	return v->data[(tz * v->dims.y + ty) * v->dims.x + tx];
 }
 // Perform bilinear sampling on a slice of the volume data
 static inline float bilinear_sample(const uniform Volume* uniform v, const float<2> coords, const int z){
