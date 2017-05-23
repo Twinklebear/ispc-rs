@@ -419,9 +419,10 @@ impl Config {
             Ok(f) => f,
             Err(e) => exit_failure!("Failed to open bindgen mod file for writing: {}", e),
         };
-        file.write(format!("pub mod {} {{\n", lib).as_bytes()).unwrap();
-        file.write(generated_bindings.as_bytes()).unwrap();
-        file.write(b"}").unwrap();
+        file.write_all(format!("#[allow(non_camel_case_types,dead_code)]\npub mod {} {{\n", lib)
+                       .as_bytes()).unwrap();
+        file.write_all(generated_bindings.as_bytes()).unwrap();
+        file.write_all(b"}").unwrap();
 
         // Tell cargo where to find the library we just built if we're running
         // in a build script
