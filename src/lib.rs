@@ -17,10 +17,10 @@
 //! build = "build.rs"
 //!
 //! [dependencies]
-//! ispc = "0.3.1"
+//! ispc = "0.3.2"
 //!
 //! [build-dependencies]
-//! ispc = "0.3.1"
+//! ispc = "0.3.2"
 //! ```
 //!
 //! Now you can use `ispc` to compile your code into a static library:
