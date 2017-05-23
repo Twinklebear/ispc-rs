@@ -73,33 +73,33 @@ impl Scene {
             Some(p) => p,
             None => Path::new(file),
         };
-        let img_width = data.find("width").expect("image width must be set")
+        let img_width = data.get("width").expect("image width must be set")
             .as_u64().expect("image width must be an int") as usize;
-        let img_height = data.find("height").expect("image height must be set")
+        let img_height = data.get("height").expect("image height must be set")
             .as_u64().expect("image height must be an int") as usize;
-        let mut volume = Scene::load_volume(data.find("volume").expect("A volume must be specified"), &base_path);
-        let tfn = Scene::load_transfer_function(data.find("transfer_function")
+        let mut volume = Scene::load_volume(data.get("volume").expect("A volume must be specified"), &base_path);
+        let tfn = Scene::load_transfer_function(data.get("transfer_function")
                                                 .expect("A transfer function must be specified"), &base_path);
         volume.set_transfer_function(tfn);
 
-        let camera = Scene::load_camera(data.find("camera").expect("A camera must be specified"),
+        let camera = Scene::load_camera(data.get("camera").expect("A camera must be specified"),
                                         img_width, img_height);
         let render_params = Scene::load_render_params(&data);
         Scene { width: img_width, height: img_height, camera: camera,
                 volume: volume, params: render_params }
     }
     fn load_volume(e: &Value, base_path: &Path) -> Volume {
-        let mut vol_file = Path::new(e.find("file").expect("A volume filename must be set")
-                                 .as_string().expect("Volume filename must be a string")).to_owned();
+        let mut vol_file = Path::new(e.get("file").expect("A volume filename must be set")
+                                 .as_str().expect("Volume filename must be a string")).to_owned();
         if !vol_file.is_absolute() {
             vol_file = base_path.join(vol_file);
         }
-        let dimensions = Scene::load_vec3i(e.find("dimensions")
+        let dimensions = Scene::load_vec3i(e.get("dimensions")
                                            .expect("Volume dims must be set for RAW volume"))
             .expect("Invalid dimensions specified");
 
-        let dtype = e.find("data_type").expect("A data type must be specified for RAW volumes")
-                     .as_string().expect("data type must be a string");
+        let dtype = e.get("data_type").expect("A data type must be specified for RAW volumes")
+                     .as_str().expect("data type must be a string");
         if dtype == "u8" {
             raw::import::<u8>(vol_file.as_path(), dimensions)
         } else if dtype == "u16" {
@@ -113,7 +113,7 @@ impl Scene {
         }
     }
     fn load_transfer_function(e: &Value, base_path: &Path) -> TransferFunction {
-        let tfn_file = Path::new(e.as_string().expect("transfer_function filename/name must be a string"));
+        let tfn_file = Path::new(e.as_str().expect("transfer_function filename/name must be a string"));
         // Load the ParaView transfer function file if it's one, otherwise
         // see if it's one of our defaults we can provide
         if tfn_file.extension() == Some(OsStr::new("json")) {
@@ -150,17 +150,17 @@ impl Scene {
             Err(e) => panic!("JSON parsing error: {}", e),
         };
         let pv_tfn = &data.as_array().expect("Expected a root JSON array in ParaView function")[0];
-        let color_space = pv_tfn.find("ColorSpace").expect("Expected a color space from ParaView function")
-            .as_string().expect("ColorSpace must be a string");
+        let color_space = pv_tfn.get("ColorSpace").expect("Expected a color space from ParaView function")
+            .as_str().expect("ColorSpace must be a string");
         if color_space == "Diverging" {
             println!("Warning: ParaView's diverging colormap interpolation is not supported, \
                       you may see some incorrect colors");
         }
-        let name = pv_tfn.find("Name").expect("Expected a name for ParaView function");
-        if pv_tfn.find("Points").is_some() {
+        let name = pv_tfn.get("Name").expect("Expected a name for ParaView function");
+        if pv_tfn.get("Points").is_some() {
             println!("Warning: Opacity values in ParaView transfer functions are currently ignored");
         }
-        let rgb_data = pv_tfn.find("RGBPoints").expect("Expected RGBPoints specifying the transfer function")
+        let rgb_data = pv_tfn.get("RGBPoints").expect("Expected RGBPoints specifying the transfer function")
             .as_array().expect("RGBPoints must be an array");
         let rgb_points: Vec<_> = rgb_data.chunks(4).map(|x| {
             let val = x[0].as_f64().unwrap() as f32;
@@ -195,20 +195,20 @@ impl Scene {
         TransferFunction::new(&colors[..], &[0.0, 0.5])
     }
     fn load_camera(e: &Value, width: usize, height: usize) -> Camera {
-        let pos = Scene::load_vec3f(e.find("pos").expect("Camera view position must be set"))
+        let pos = Scene::load_vec3f(e.get("pos").expect("Camera view position must be set"))
             .expect("Invalid camera position");
-        let target = Scene::load_vec3f(e.find("target").expect("Camera view target must be set"))
+        let target = Scene::load_vec3f(e.get("target").expect("Camera view target must be set"))
             .expect("Invalid camera target");
-        let up = Scene::load_vec3f(e.find("up").expect("Camera up vector must be set"))
+        let up = Scene::load_vec3f(e.get("up").expect("Camera up vector must be set"))
             .expect("Invalid camera up");
-        let fovy = e.find("fovy").expect("Camera FOV Y must be set").as_f64()
+        let fovy = e.get("fovy").expect("Camera FOV Y must be set").as_f64()
             .expect("FOV Y must be a float") as f32;
         Camera::new(pos, target, up, fovy, width as u32, height as u32)
     }
     fn load_render_params(e: &Value) -> RenderParams {
-        let background = Scene::load_vec3f(e.find("background").expect("Background color must be set"))
+        let background = Scene::load_vec3f(e.get("background").expect("Background color must be set"))
             .expect("Background color must be a vec3f");
-        let n_samples = e.find("n_samples").expect("n_samples per pixel must be set")
+        let n_samples = e.get("n_samples").expect("n_samples per pixel must be set")
             .as_i64().expect("n_samples must be an int") as i32;
         RenderParams { background: background, n_samples: n_samples }
     }
