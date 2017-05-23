@@ -202,8 +202,10 @@ impl Config {
         }
         let ver_string = String::from_utf8_lossy(&cmd_output.stdout);
         let re = Regex::new(r"Intel\(r\) SPMD Program Compiler \(ispc\), (\d+\.\d+\.\d+)").unwrap();
-        let ispc_ver = Version::parse(re.captures(&ver_string).expect("Failed to parse ISPC version").at(1)
-                                     .unwrap()).expect("Failed to parse ISPC version");
+        let ispc_ver = Version::parse(re.captures_iter(&ver_string).next()
+                                      .expect("Failed to parse ISPC version").get(1)
+                                      .expect("Failed to parse ISPC version").as_str())
+                                      .expect("Failed to parse ISPC version");
 
         Config {
             ispc_version: ispc_ver,
@@ -398,11 +400,16 @@ impl Config {
         if !self.assemble(lib).success() {
             exit_failure!("Failed to assemble ISPC objects into library {}", lib);
         }
+        // TODO: It seems like link_static in bindgen isn't setting the #[link=..]
+        // pragma in the generated file?
+        println!("cargo:rustc-link-lib=static={}", lib);
+        println!("cargo:rustc-link-search=native={}", dst.display());
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
-        let mut bindings = bindgen::Builder::new(self.bindgen_header.to_str().unwrap());
-        bindings.forbid_unknown_types()
-            .link(lib, bindgen::LinkType::Static);
+        let bindings = bindgen::Builder::default()
+            .header(self.bindgen_header.to_str().unwrap())
+            .link_static(lib)
+            .no_unstable_rust();
         let bindgen_file = dst.join(lib).with_extension("rs");
         let generated_bindings = match bindings.generate() {
             Ok(b) => b.to_string(),
