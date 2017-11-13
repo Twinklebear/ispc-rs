@@ -4,8 +4,9 @@ extern crate image;
 extern crate rand;
 extern crate num;
 extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 extern crate docopt;
-extern crate rustc_serialize;
 
 use std::ptr;
 use std::time::Instant;
@@ -43,7 +44,7 @@ Options:
   -h, --help            Show this message.
 ";
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize, Debug)]
 pub struct Args {
     arg_scene: String,
     flag_o: Option<String>,
@@ -51,7 +52,7 @@ pub struct Args {
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
+    let args: Args = Docopt::new(USAGE).and_then(|d| d.deserialize()).unwrap_or_else(|e| e.exit());
     let mut scene = Scene::load(&args.arg_scene[..]);
     if let Some(val) = args.flag_i {
         scene.volume.set_isovalue(val);

@@ -6,8 +6,9 @@ extern crate ispc;
 extern crate image;
 extern crate rand;
 extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 extern crate docopt;
-extern crate rustc_serialize;
 
 use std::time::Instant;
 
@@ -36,14 +37,14 @@ Options:
   -h, --help    Show this message.
 ";
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 pub struct Args {
     arg_scene: String,
     flag_o: Option<String>,
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
+    let args: Args = Docopt::new(USAGE).and_then(|d| d.deserialize()).unwrap_or_else(|e| e.exit());
     let scene = Scene::load(&args.arg_scene[..]);
     let mut framebuffer = vec![0.0; scene.width * scene.height * 3];
     let mut srgb_img_buf = vec![0u8; scene.width * scene.height * 3];
