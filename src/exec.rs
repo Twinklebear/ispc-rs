@@ -93,7 +93,7 @@ impl Parallel {
             let num_threads = (oversubscribe * num_cpus::get() as f32) as usize;
             let chunk_size = par.chunk_size;
             for i in 0..num_threads {
-                let task_sys = par.clone();
+                let task_sys = Arc::clone(&par);
                 // Note that the spawned thread ids start at 1 since the main thread is 0
                 threads.push(thread::spawn(move || Parallel::worker_thread(task_sys, i + 1, num_threads + 1,
                                                                            chunk_size)));
