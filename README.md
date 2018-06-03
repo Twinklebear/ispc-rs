@@ -24,10 +24,10 @@ or ISPC tasks.
 build = "build.rs"
 
 [dependencies]
-ispc = "0.3.3"
+ispc = "0.3.4"
 
 [build-dependencies]
-ispc = "0.3.3"
+ispc = "0.3.4"
 ```
 
 Now you can use `ispc` to compile your code into a static library:
