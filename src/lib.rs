@@ -406,8 +406,7 @@ impl Config {
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
         let bindings = bindgen::Builder::default()
-            .header(self.bindgen_header.to_str().unwrap())
-            .link_static(lib);
+            .header(self.bindgen_header.to_str().unwrap());
         let bindgen_file = dst.join(lib).with_extension("rs");
         let generated_bindings = match bindings.generate() {
             Ok(b) => b.to_string(),
