@@ -455,6 +455,10 @@ impl Config {
     fn generate_bindgen_header(&mut self, lib: &str) {
         self.bindgen_header = self.get_out_dir().join(format!("_{}_ispc_bindgen_header.h", lib));
         let mut include_file = File::create(&self.bindgen_header).unwrap();
+       
+        write!(include_file, "#include <stdint.h>\n").unwrap();
+        write!(include_file, "#include <stdbool.h>\n").unwrap();
+
         for h in &self.headers[..] {
             write!(include_file, "#include \"{}\"\n", h.display()).unwrap();
         }
