@@ -1,0 +1,20 @@
+{
+	"volume": {
+		"note":"You can get csafe from http://www.ospray.org/ examples",
+		"file": "tacc-turbulence-256-volume/tacc-turbulence-256-volume.raw",
+		"data_type": "f32",
+		"dimensions": [256, 256, 256]
+	},
+	"transfer_function": "cool_warm_extended.json",
+	"camera": {
+		"pos": [-0.5, 0.5, 1.5],
+		"target": [0.5, 0.5, 0.5],
+		"up": [0, 1, 0],
+		"fovy": 60
+	},
+	"width": 1024,
+	"height": 1024,
+	"background": [0.8, 0.8, 0.8],
+	"n_samples": 8
+}
+
