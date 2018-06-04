@@ -35,8 +35,10 @@ pub trait TaskSystem {
     /// associate groups of tasks with a context of execution as mentioned before. The function `f`
     /// should be executed `count0 * count1 * count2` times and indices passed to the function
     /// should be as if running in a nested for loop, though no serial ordering is actually
-    /// required.
+    /// required. The `data` pointer points to the ISPC task specific parameter pointer and
+    /// should be passed through to the function.
     ///
+    /// For example, a serial task launcher could just run the tasks in a nested loop:
     /// ```ignore
     /// let total_tasks = count0 * count1 * count2;
     /// for z in 0..count2 {
@@ -49,9 +51,6 @@ pub trait TaskSystem {
     ///     }
     /// }
     /// ```
-    ///
-    /// The `data` pointer points to the ISPC task specific parameter pointer and should be passed
-    /// through to the function.
     unsafe fn launch(&self, handle_ptr: *mut *mut libc::c_void, f: ISPCTaskFn, data: *mut libc::c_void,
                      count0: i32, count1: i32, count2: i32);
     /// Synchronize an execution context with the tasks it's launched. Use `handle` to determine
