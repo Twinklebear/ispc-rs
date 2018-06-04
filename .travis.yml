@@ -30,7 +30,7 @@ after_success:
 env:
   matrix:
   - LLVM_VERSION=3.8.1
-  - LLVM_VERSION=4.0.1
+  - LLVM_VERSION=4.0.0
   - LLVM_VERSION=5.0.2
   - LLVM_VERSION=6.0.0
   global:
