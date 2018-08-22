@@ -137,43 +137,54 @@ pub enum TargetISA {
     AVX2i32x16,
     AVX2i64x4,
     AVX512KNLi32x16,
-    Genericx1,
-    Genericx4,
-    Genericx8,
-    Genericx16,
-    Genericx32,
-    Genericx64,
-    AnyGenericx16
+}
+
+impl TargetISA {
+    pub fn lib_suffix(&self) -> String {
+        match *self {
+            TargetISA::Host => String::from("host"),
+            TargetISA::SSE2i32x4 => String::from("sse2"),
+            TargetISA::SSE2i32x8 => String::from("sse2"),
+            TargetISA::SSE4i32x4 => String::from("sse4"),
+            TargetISA::SSE4i32x8 => String::from("sse4"),
+            TargetISA::SSE4i16x8 => String::from("sse4"),
+            TargetISA::SSE4i8x16 => String::from("sse4"),
+            TargetISA::AVX1i32x4 => String::from("avx1"),
+            TargetISA::AVX1i32x8 => String::from("avx1"),
+            TargetISA::AVX1i32x16 => String::from("avx1"),
+            TargetISA::AVX1i64x4 => String::from("avx1"),
+            TargetISA::AVX11i32x8 => String::from("avx11"),
+            TargetISA::AVX11i32x16 => String::from("avx11"),
+            TargetISA::AVX11i64x4 => String::from("avx11"),
+            TargetISA::AVX2i32x8 => String::from("avx2"),
+            TargetISA::AVX2i32x16 => String::from("avx2"),
+            TargetISA::AVX2i64x4 => String::from("avx2"),
+            TargetISA::AVX512KNLi32x16 => String::from("avx512knl"),
+        }
+    }
 }
 
 impl ToString for TargetISA {
     fn to_string(&self) -> String {
         match *self {
-            TargetISA::Host => String::from("--target=host"),
-            TargetISA::SSE2i32x4 => String::from("--target=sse2-i32x4"),
-            TargetISA::SSE2i32x8 => String::from("--target=sse2-i32x8"),
-            TargetISA::SSE4i32x4 => String::from("--target=sse4-i32x4"),
-            TargetISA::SSE4i32x8 => String::from("--target=sse4-i32x8"),
-            TargetISA::SSE4i16x8 => String::from("--target=sse4-i16x8"),
-            TargetISA::SSE4i8x16 => String::from("--target=sse4-i8x16"),
-            TargetISA::AVX1i32x4 => String::from("--target=avx1-i32x4"),
-            TargetISA::AVX1i32x8 => String::from("--target=avx1-i32x8"),
-            TargetISA::AVX1i32x16 => String::from("--target=avx1-i32x16"),
-            TargetISA::AVX1i64x4 => String::from("--target=avx1-i64x4"),
-            TargetISA::AVX11i32x8 => String::from("--target=avx1.1-i32x8"),
-            TargetISA::AVX11i32x16 => String::from("--target=avx1.1-i32x16"),
-            TargetISA::AVX11i64x4 => String::from("--target=avx1.1-i64x4"),
-            TargetISA::AVX2i32x8 => String::from("--target=avx2-i32x8"),
-            TargetISA::AVX2i32x16 => String::from("--target=avx2-i32x16"),
-            TargetISA::AVX2i64x4 => String::from("--target=avx2-i64x4"),
-            TargetISA::AVX512KNLi32x16 => String::from("--target=avx512knl-i32x16"),
-            TargetISA::Genericx1 => String::from("--target=generic-x1"),
-            TargetISA::Genericx4 => String::from("--target=generic-x4"),
-            TargetISA::Genericx8 => String::from("--target=generic-x8"),
-            TargetISA::Genericx16 => String::from("--target=generic-x16"),
-            TargetISA::Genericx32 => String::from("--target=generic-x32"),
-            TargetISA::Genericx64 => String::from("--target=generic-x64"),
-            TargetISA::AnyGenericx16 => String::from("--target=*-generic-x16"),
+            TargetISA::Host => String::from("host"),
+            TargetISA::SSE2i32x4 => String::from("sse2-i32x4"),
+            TargetISA::SSE2i32x8 => String::from("sse2-i32x8"),
+            TargetISA::SSE4i32x4 => String::from("sse4-i32x4"),
+            TargetISA::SSE4i32x8 => String::from("sse4-i32x8"),
+            TargetISA::SSE4i16x8 => String::from("sse4-i16x8"),
+            TargetISA::SSE4i8x16 => String::from("sse4-i8x16"),
+            TargetISA::AVX1i32x4 => String::from("avx1-i32x4"),
+            TargetISA::AVX1i32x8 => String::from("avx1-i32x8"),
+            TargetISA::AVX1i32x16 => String::from("avx1-i32x16"),
+            TargetISA::AVX1i64x4 => String::from("avx1-i64x4"),
+            TargetISA::AVX11i32x8 => String::from("avx1.1-i32x8"),
+            TargetISA::AVX11i32x16 => String::from("avx1.1-i32x16"),
+            TargetISA::AVX11i64x4 => String::from("avx1.1-i64x4"),
+            TargetISA::AVX2i32x8 => String::from("avx2-i32x8"),
+            TargetISA::AVX2i32x16 => String::from("avx2-i32x16"),
+            TargetISA::AVX2i64x4 => String::from("avx2-i64x4"),
+            TargetISA::AVX512KNLi32x16 => String::from("avx512knl-i32x16"),
         }
     }
 }

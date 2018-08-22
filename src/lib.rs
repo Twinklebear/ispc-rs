@@ -188,7 +188,7 @@ pub struct Config {
     woff: bool,
     wno_perf: bool,
     instrument: bool,
-    target_isa: Option<TargetISA>,
+    target_isa: Option<Vec<TargetISA>>,
 }
 
 impl Config {
@@ -353,10 +353,16 @@ impl Config {
     }
     /// Select the target ISA and vector width. If none is specified ispc will
     /// choose the host CPU ISA and vector width.
-    /// Run the compiler, producing the library `lib`. If compilation fails
-    /// the process will exit with EXIT_FAILURE to log build errors to the console.
     pub fn target_isa(&mut self, target: TargetISA) -> &mut Config {
-        self.target_isa = Some(target);
+        self.target_isa = Some(vec![target]);
+        self
+    }
+    /// Select multiple target ISAs and vector widths. If none is specified ispc will
+    /// choose the host CPU ISA and vector width.
+    /// Note that certain options are not compatible with this use case,
+    /// e.g. AVX1.1 will replace AVX1, Host should not be passed (just use the default)
+    pub fn target_isas(&mut self, targets: Vec<TargetISA>) -> &mut Config {
+        self.target_isa = Some(targets);
         self
     }
     /// The library name should not have any prefix or suffix, e.g. instead of
@@ -372,7 +378,7 @@ impl Config {
             let ispc_fname = String::from(fname) + "_ispc";
             let object = dst.join(ispc_fname.clone()).with_extension("o");
             let header = dst.join(ispc_fname.clone()).with_extension("h");
-            let deps = dst.join(ispc_fname).with_extension("idep");
+            let deps = dst.join(ispc_fname.clone()).with_extension("idep");
             let output = Command::new("ispc").args(&default_args[..])
                 .arg(s).arg("-o").arg(&object).arg("-h").arg(&header)
                 .arg("-MMM").arg(&deps).output().unwrap();
@@ -396,11 +402,23 @@ impl Config {
             for d in reader.lines() {
                 self.print(&format!("cargo:rerun-if-changed={}", d.unwrap()));
             }
+
+            // Push on the additional ISA-specific object files if any were generated
+            if let Some(ref t) = self.target_isa {
+                if t.len() > 1 {
+                    for isa in t.iter() {
+                        let isa_fname = ispc_fname.clone() + "_" + &isa.lib_suffix();
+                        let isa_obj = dst.join(isa_fname).with_extension("o");
+                        self.objects.push(isa_obj);
+                    }
+                }
+            }
         }
         if !self.assemble(lib).success() {
             exit_failure!("Failed to assemble ISPC objects into library {}", lib);
         }
         println!("cargo:rustc-link-lib=static={}", lib);
+
         println!("cargo:rustc-link-search=native={}", dst.display());
 
         // Now generate a header we can give to bindgen and generate bindings
@@ -416,8 +434,9 @@ impl Config {
             Ok(f) => f,
             Err(e) => exit_failure!("Failed to open bindgen mod file for writing: {}", e),
         };
-        file.write_all(format!("#[allow(non_camel_case_types,dead_code)]\npub mod {} {{\n", lib)
+        file.write_all("#[allow(non_camel_case_types,dead_code,non_upper_case_globals)]\n"
                        .as_bytes()).unwrap();
+        file.write_all(format!("pub mod {} {{\n", lib).as_bytes()).unwrap();
         file.write_all(generated_bindings.as_bytes()).unwrap();
         file.write_all(b"}").unwrap();
 
@@ -537,7 +556,12 @@ impl Config {
             ispc_args.push(String::from("--instrument"));
         }
         if let Some(ref t) = self.target_isa {
-            ispc_args.push(t.to_string());
+            let mut isa_str = String::from("--target=");
+            isa_str.push_str(&t[0].to_string());
+            for isa in t.iter().skip(1) {
+                isa_str.push_str(&format!(",{}", isa.to_string()));
+            }
+            ispc_args.push(isa_str);
         }
         ispc_args
     }
