@@ -434,7 +434,7 @@ impl Config {
             Ok(f) => f,
             Err(e) => exit_failure!("Failed to open bindgen mod file for writing: {}", e),
         };
-        file.write_all("#[allow(non_camel_case_types,dead_code,non_upper_case_globals)]\n"
+        file.write_all("#[allow(non_camel_case_types,dead_code,non_upper_case_globals,non_snake_case,improper_ctypes)]\n"
                        .as_bytes()).unwrap();
         file.write_all(format!("pub mod {} {{\n", lib).as_bytes()).unwrap();
         file.write_all(generated_bindings.as_bytes()).unwrap();
