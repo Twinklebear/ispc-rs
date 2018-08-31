@@ -63,11 +63,6 @@
 //! and Clang link with MSVC on Windows. For bindgen to find libclang you'll need to copy
 //! `libclang.lib` to `clang.lib` and place it in your path.
 //!
-//! *Multiple ISPC Files:* Unfortunately with multiple ISPC files when building with debug symbols
-//! some of the debug symbols for each compiled object will conflict, resulting in link errors and
-//! your program failing to compile. The workaround for this on Windows is to not build the ISPC
-//! code with debugging info if you're using multiple ISPC files, see the
-//! [multi file examples](https://github.com/Twinklebear/ispc-rs/tree/master/examples/multi_file).
 
 #![allow(dead_code)]
 
