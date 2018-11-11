@@ -24,9 +24,9 @@ script:
     - travis-cargo build
     - travis-cargo doc
     - for d in `ls examples/`; do
-      cd examples/${d}/
-      cargo build
-      cd ../../
+      cd examples/${d}/;
+      cargo build;
+      cd ../../;
       done
 after_success:
     - git config user.name "Travis-CI Doc Bot"
