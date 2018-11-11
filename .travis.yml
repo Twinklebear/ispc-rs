@@ -16,9 +16,12 @@ matrix:
 before_script:
     - export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-16.04
     - wget http://llvm.org/releases/${LLVM_VERSION}/${LLVM}.tar.xz
-    - mkdir llvm;
+    - mkdir llvm
     - tar -xf ${LLVM}.tar.xz -C llvm --strip-components=1;
     - export LIBCLANG_PATH=`pwd`/llvm/lib/
+    - wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.9.2/ispc-v1.9.2-linux.tar.gz?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fispcmirror%2Ffiles%2Fv1.9.2%2Fispc-v1.9.2-linux.tar.gz%2Fdownload&ts=1541908794
+    - tar -xf ispc.tar.gz
+    - export PATH=PATH:`pwd`/ispc-v1.9.2-linux/
     - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 script:
     - travis-cargo build
