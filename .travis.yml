@@ -8,7 +8,6 @@ addons:
 rust:
     - stable
     - beta
-    - nightly
 cache: cargo
 matrix:
     allow_failures:
