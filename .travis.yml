@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 sudo: false
 language: rust
 addons:
@@ -14,7 +14,7 @@ matrix:
     allow_failures:
         - rust: nightly
 before_script:
-    - export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04
+    - export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-16.04
     - wget http://llvm.org/releases/${LLVM_VERSION}/${LLVM}.tar.xz
     - mkdir llvm;
     - tar -xf ${LLVM}.tar.xz -C llvm --strip-components=1;
@@ -23,7 +23,7 @@ before_script:
 script:
     - travis-cargo build
     - travis-cargo doc
-    - for d in `ls examples/`; do;
+    - for d in `ls examples/`; do
       cd examples/${d}/
       cargo build
       cd ../../
