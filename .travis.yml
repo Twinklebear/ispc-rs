@@ -21,7 +21,7 @@ before_script:
     - export LIBCLANG_PATH=`pwd`/llvm/lib/
     - wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.9.2/ispc-v1.9.2-linux.tar.gz
     - tar -xf ispc.tar.gz
-    - export PATH=PATH:`pwd`/ispc-v1.9.2-linux/
+    - export PATH=$PATH:`pwd`/ispc-v1.9.2-linux/
     - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 script:
     - travis-cargo build
