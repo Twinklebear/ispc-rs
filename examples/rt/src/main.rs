@@ -12,7 +12,8 @@ extern crate docopt;
 
 use std::time::Instant;
 
-use rand::Rng;
+use rand::{thread_rng, Rng};
+use rand::distributions::Standard;
 use docopt::Docopt;
 
 use camera::Camera;
@@ -48,9 +49,8 @@ fn main() {
     let scene = Scene::load(&args.arg_scene[..]);
     let mut framebuffer = vec![0.0; scene.width * scene.height * 3];
     let mut srgb_img_buf = vec![0u8; scene.width * scene.height * 3];
-    let mut rng = rand::thread_rng();
     // We need a random seed for each scanline of the image
-    let scanline_seeds: Vec<_> = rng.gen_iter::<i32>().take(scene.height).collect();
+    let scanline_seeds: Vec<i32> = thread_rng().sample_iter(&Standard).take(scene.height).collect();
     unsafe {
         let geom: Vec<_> = scene.geometry.iter().map(|x| x.ispc_equiv()).collect();
         let start = Instant::now();

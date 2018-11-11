@@ -5,8 +5,8 @@ authors = ["Will Usher <willusher.life@gmail.com>"]
 build = "build.rs"
 
 [dependencies]
-image = "0.17.0"
-rand = "0.3.18"
+image = "0.20.1"
+rand = "0.5"
 ispc = { path = "../../" }
 
 [build-dependencies]

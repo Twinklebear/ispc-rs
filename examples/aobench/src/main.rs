@@ -3,7 +3,8 @@ extern crate ispc;
 extern crate image;
 extern crate rand;
 
-use rand::Rng;
+use rand::{thread_rng, Rng};
+use rand::distributions::Standard;
 
 ispc_module!(ao);
 
@@ -12,11 +13,9 @@ fn main() {
     let height = 256;
     let n_samples = 16;
     let mut fimg = vec![0.0; width * height];
-    let mut rng = rand::thread_rng();
     // We need a random seed for each scanline of the image
-    let scanline_seeds: Vec<_> = rng.gen_iter::<i32>().take(height).collect();
+    let scanline_seeds: Vec<i32> = thread_rng().sample_iter(&Standard).take(height).collect();
     unsafe {
-        //ao::aobench(width as i32, height as i32, n_samples, rng.gen::<i32>(), fimg.as_mut_ptr());
         ao::aobench_parallel(width as i32, height as i32, n_samples, scanline_seeds.as_ptr(),
                              fimg.as_mut_ptr());
     }

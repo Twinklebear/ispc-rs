@@ -11,7 +11,8 @@ extern crate docopt;
 use std::ptr;
 use std::time::Instant;
 
-use rand::Rng;
+use rand::{thread_rng, Rng};
+use rand::distributions::Standard;
 use docopt::Docopt;
 
 use scene::{RenderParams, Scene};
@@ -58,12 +59,13 @@ fn main() {
         scene.volume.set_isovalue(val);
     }
     let mut framebuffer = Framebuffer::new(scene.width, scene.height);
-    let mut rng = rand::thread_rng();
     // We need a random seed for each scanline of the image
-    let scanline_seeds: Vec<_> = rng.gen_iter::<i32>().take(scene.height).collect();
+    let scanline_seeds: Vec<i32> = thread_rng().sample_iter(&Standard).take(scene.height).collect();
     unsafe {
         let start = Instant::now();
-        ddvol::render(scene.camera.ispc_equiv(), scene.volume.ispc_equiv(), &scene.params as *const RenderParams,
+        ddvol::render(scene.camera.ispc_equiv(),
+                      scene.volume.ispc_equiv(),
+                      &scene.params as *const RenderParams,
                       scanline_seeds.as_ptr(), scene.width as u32, scene.height as u32,
                       framebuffer.data.as_mut_ptr());
         let elapsed = start.elapsed();

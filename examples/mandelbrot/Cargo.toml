@@ -5,7 +5,7 @@ authors = ["Will Usher <willusher.life@gmail.com>"]
 build = "build.rs"
 
 [dependencies]
-image = "0.17.0"
+image = "0.20.1"
 ispc = { path = "../../" }
 
 [build-dependencies]
