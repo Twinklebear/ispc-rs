@@ -1,44 +1,77 @@
-dist: xenial
 sudo: false
 language: rust
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-rust:
-    - stable
-    - beta
 cache: cargo
 matrix:
-    allow_failures:
-        - rust: nightly
+    include:
+        - os: linux
+          dist: xenial
+          env: LLVM_VERSION=5.0.2
+          rust: stable
+          addons:
+              apt:
+                  sources:
+                      - ubuntu-toolchain-r-test
+        - os: linux
+          dist: xenial
+          env: LLVM_VERSION=6.0.1
+          rust: stable
+          addons:
+              apt:
+                  sources:
+                      - ubuntu-toolchain-r-test
+        - os: linux
+          dist: xenial
+          env: LLVM_VERSION=7.0.1
+          rust: stable
+          addons:
+              apt:
+                  sources:
+                      - ubuntu-toolchain-r-test
+        - os: linux
+          dist: xenial
+          env: LLVM_VERSION=7.0.1
+          rust: beta
+          addons:
+              apt:
+                  sources:
+                      - ubuntu-toolchain-r-test
+        - os: osx
+          osx_image: xcode9.4
+          rust: stable
 before_script:
-    - export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-16.04
-    - wget http://llvm.org/releases/${LLVM_VERSION}/${LLVM}.tar.xz
-    - mkdir llvm
-    - tar -xf ${LLVM}.tar.xz -C llvm --strip-components=1;
-    - export LIBCLANG_PATH=`pwd`/llvm/lib/
-    - wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.9.2/ispc-v1.9.2-linux.tar.gz
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+          export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-16.04;
+          wget http://llvm.org/releases/${LLVM_VERSION}/${LLVM}.tar.xz;
+          mkdir llvm;
+          tar -xf ${LLVM}.tar.xz -C llvm --strip-components=1;
+          export LIBCLANG_PATH=`pwd`/llvm/lib/;
+          wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.9.2/ispc-v1.9.2-linux.tar.gz;
+      else
+          wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.9.2/ispc-v1.9.2-osx.tar.gz;
+      fi
     - tar -xf ispc.tar.gz
-    - export PATH=$PATH:`pwd`/ispc-v1.9.2-linux/
-    - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+    - export PATH=$PATH:`pwd`/ispc-v1.9.2-${TRAVIS_OS_NAME}/
+    - ispc --version
+    - pip install 'travis-cargo<0.2' --user
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+          export PATH=$HOME/.local/bin:$PATH;
+      else
+          export PATH=$HOME/Library/Python/2.7/bin:$PATH;
+      fi
 script:
     - travis-cargo build
     - travis-cargo doc
     - for d in `ls examples/`; do
-      cd examples/${d}/;
-      cargo build;
-      cd ../../;
+          cd examples/${d}/;
+          pwd;
+          cargo build;
+          cd ../../;
       done
 after_success:
     - git config user.name "Travis-CI Doc Bot"
     - git config user.email "willusher.life@gmail.com"
-    - travis-cargo --only stable doc-upload
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then travis-cargo --only stable doc-upload; fi
 env:
-  matrix:
-  - LLVM_VERSION=5.0.2
-  - LLVM_VERSION=6.0.1
-  - LLVM_VERSION=7.0.0
   global:
     secure: WwruT8gXkwGD3iojTU2iemzttaAk2c2irIlocge27xSaOKUGzZWV7ZEDQR56VG8Y1fQBA9kEYB+G7yltPwWh8LRHNrKvjB6t+w0hXXIildbj1Wt7D+u5hRsgWYcYBTtlJLyCvNAbJVkeVImJwDaAjwAk0u3ZPLBM9NBkdlQfjj8=
 
