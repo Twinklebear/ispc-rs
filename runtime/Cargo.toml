@@ -1,5 +1,5 @@
 [package]
-name = "ispc"
+name = "ispc_rt"
 version = "0.3.8"
 authors = ["Will Usher <willusher.life@gmail.com>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
@@ -9,7 +9,7 @@ readme = "README.md"
 license = "MIT"
 description = """
 A build-time dependency for Cargo build scripts to help with compiling
-and linking to ISPC code and generating Rust bindings for the resulting library.
+and linking to ISPC code and generating Rust bindings for the resulting library
 """
 keywords = ["build-dependencies", "ispc", "simd"]
 
@@ -21,6 +21,7 @@ exclude = [
 ]
 
 [dependencies]
-ispc_compile = { path = "./compile/" }
-ispc_rt = { path = "./runtime/" }
+libc = "0.2.43"
+aligned_alloc = "0.1.3"
+num_cpus = "1.8.0"
 

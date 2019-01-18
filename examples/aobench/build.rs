@@ -13,8 +13,6 @@ fn main() {
                      ispc::TargetISA::AVX2i32x8,
                      ispc::TargetISA::AVX512KNLi32x16,
                      ispc::TargetISA::AVX512SKXi32x16])
-        .opt_level(3)
-        .optimization_opt(ispc::OptimizationOpt::FastMath)
         .compile("ao");
 }
 

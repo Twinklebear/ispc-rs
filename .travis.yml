@@ -68,10 +68,10 @@ script:
           if [[ "$?" != "0" ]]; then exit 1; fi;
           cd ../../;
       done
-after_success:
-    - git config user.name "Travis-CI Doc Bot"
-    - git config user.email "willusher.life@gmail.com"
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then travis-cargo --only stable doc-upload; fi
+#after_success:
+#    - git config user.name "Travis-CI Doc Bot"
+#    - git config user.email "willusher.life@gmail.com"
+#    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then travis-cargo --only stable doc-upload; fi
 env:
   global:
     secure: WwruT8gXkwGD3iojTU2iemzttaAk2c2irIlocge27xSaOKUGzZWV7ZEDQR56VG8Y1fQBA9kEYB+G7yltPwWh8LRHNrKvjB6t+w0hXXIildbj1Wt7D+u5hRsgWYcYBTtlJLyCvNAbJVkeVImJwDaAjwAk0u3ZPLBM9NBkdlQfjj8=
