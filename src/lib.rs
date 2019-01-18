@@ -90,10 +90,10 @@ use std::ffi::CStr;
 use regex::Regex;
 use semver::Version;
 
-use task::ISPCTaskFn;
-use exec::{TaskSystem, Parallel};
-use opt::{MathLib, Addressing, CPU, OptimizationOpt, TargetISA};
-use instrument::{Instrument, SimpleInstrument};
+pub use task::ISPCTaskFn;
+pub use exec::{TaskSystem, Parallel};
+pub use opt::{MathLib, Addressing, CPU, OptimizationOpt, TargetISA};
+pub use instrument::{Instrument, SimpleInstrument};
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///

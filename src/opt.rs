@@ -137,6 +137,7 @@ pub enum TargetISA {
     AVX2i32x16,
     AVX2i64x4,
     AVX512KNLi32x16,
+    AVX512SKXi32x16
 }
 
 impl TargetISA {
@@ -160,6 +161,7 @@ impl TargetISA {
             TargetISA::AVX2i32x16 => String::from("avx2"),
             TargetISA::AVX2i64x4 => String::from("avx2"),
             TargetISA::AVX512KNLi32x16 => String::from("avx512knl"),
+            TargetISA::AVX512SKXi32x16 => String::from("avx512skx"),
         }
     }
 }
@@ -185,6 +187,7 @@ impl ToString for TargetISA {
             TargetISA::AVX2i32x16 => String::from("avx2-i32x16"),
             TargetISA::AVX2i64x4 => String::from("avx2-i64x4"),
             TargetISA::AVX512KNLi32x16 => String::from("avx512knl-i32x16"),
+            TargetISA::AVX512SKXi32x16 => String::from("avx512skx-i32x16"),
         }
     }
 }
