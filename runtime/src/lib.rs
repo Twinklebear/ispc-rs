@@ -41,14 +41,7 @@ pub use instrument::{Instrument, SimpleInstrument};
 #[macro_export]
 macro_rules! ispc_module {
     ($lib:ident) => (
-        include!(concat!(env!("OUT_DIR"), "/", stringify!($lib), ".rs"));
-    )
-}
-
-#[macro_export]
-macro_rules! packaged_ispc_module {
-    ($lib:ident) => (
-        include!(concat!(stringify!($lib), ".rs"));
+        include!(concat!(env!("ISPC_OUT_DIR"), "/", stringify!($lib), ".rs"));
     )
 }
 
@@ -68,12 +61,24 @@ impl PackagedModule {
     }
     /// Link with a previously built ISPC library packaged with the crate
     pub fn link(&self) {
+        // TODO: We should emit the env-var to find ISPC lib with
+        // cargo:rustc-env
         let libfile = self.lib.clone() + &env::var("HOST").unwrap();
         println!("cargo:rustc-link-lib=static={}", libfile);
-        if let Some(ref p) = self.path {
-            println!("cargo:rustc-link-search=native={}", p.display());
+        let path = self.get_lib_path();
+        println!("cargo:rustc-link-search=native={}", path.display());
+        println!("cargo:rustc-env=ISPC_OUT_DIR={}", path.display());
+    }
+    /// Returns the user-set output directory if they've set one, otherwise
+    /// returns env("OUT_DIR")
+    fn get_lib_path(&self) -> PathBuf {
+        let p = self.path.clone().unwrap_or_else(|| {
+            env::var_os("OUT_DIR").map(PathBuf::from).unwrap()
+        });
+        if p.is_relative() {
+            env::current_dir().unwrap().join(p)
         } else {
-            println!("cargo:rustc-link-search=native=./");
+            p
         }
     }
 }

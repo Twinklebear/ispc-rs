@@ -335,9 +335,12 @@ impl Config {
         file.write_all(generated_bindings.as_bytes()).unwrap();
         file.write_all(b"}").unwrap();
 
+        // TODO: Put back in the option to disable the cargo metadata for apps that
+        // use this as a runtime dep to compile stuff.
         // Tell cargo where to find the library we just built if we're running
         // in a build script
         println!("cargo:rustc-link-search=native={}", dst.display());
+        println!("cargo:rustc-env=ISPC_OUT_DIR={}", dst.display());
     }
     /// Get the ISPC compiler version.
     pub fn ispc_version(&self) -> &Version {
@@ -463,9 +466,14 @@ impl Config {
     /// Returns the user-set output directory if they've set one, otherwise
     /// returns env("OUT_DIR")
     fn get_out_dir(&self) -> PathBuf {
-        self.out_dir.clone().unwrap_or_else(|| {
+        let p = self.out_dir.clone().unwrap_or_else(|| {
             env::var_os("OUT_DIR").map(PathBuf::from).unwrap()
-        })
+        });
+        if p.is_relative() {
+            env::current_dir().unwrap().join(p)
+        } else {
+            p
+        }
     }
     /// Returns the default cargo output dir for build scripts (env("OUT_DIR"))
     fn get_build_dir(&self) -> PathBuf {

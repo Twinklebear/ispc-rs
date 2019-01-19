@@ -72,7 +72,7 @@ pub use ispc_rt::*;
 #[macro_export]
 macro_rules! ispc_module {
     ($lib:ident) => (
-        include!(concat!(env!("OUT_DIR"), "/", stringify!($lib), ".rs"));
+        include!(concat!(env!("ISPC_OUT_DIR"), "/", stringify!($lib), ".rs"));
     )
 }
 

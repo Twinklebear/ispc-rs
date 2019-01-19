@@ -16,14 +16,14 @@ fn link_ispc() {
                      TargetISA::AVX1i32x8,
                      TargetISA::AVX2i32x8,
                      TargetISA::AVX512KNLi32x16])
-        .out_dir("./src/")
+        .out_dir("src/")
         .compile("simple");
 }
 
 #[cfg(not(feature = "ispc"))]
 fn link_ispc() {
     ispc_rt::PackagedModule::new("simple")
-        .lib_path("./src/")
+        .lib_path("src/")
         .link();
 }
 

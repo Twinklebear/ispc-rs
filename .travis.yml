@@ -64,11 +64,11 @@ script:
     - for d in `ls examples/`; do
           cd examples/${d}/;
           pwd;
-          features="";
           if [[ "$d" == "simple" ]]; then
-            features="--features ispc";
+            # Test the packaging option
+            cargo build --features ispc;
           fi;
-          cargo build $features;
+          cargo build;
           if [[ "$?" != "0" ]]; then exit 1; fi;
           cd ../../;
       done
