@@ -66,7 +66,7 @@ script:
           pwd;
           features="";
           if [[ "$d" == "simple" ]]; then
-            features="--features build_ispc";
+            features="--features ispc";
           fi;
           cargo build $features;
           if [[ "$?" != "0" ]]; then exit 1; fi;

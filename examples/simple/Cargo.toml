@@ -12,5 +12,5 @@ ispc_compile = { path = "../../compile" }
 ispc_rt = { path = "../../runtime" }
 
 [features]
-build_ispc = []
+ispc = []
 

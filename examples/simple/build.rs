@@ -1,7 +1,7 @@
 extern crate ispc_rt;
 extern crate ispc_compile;
 
-#[cfg(feature = "build_ispc")]
+#[cfg(feature = "ispc")]
 fn link_ispc() {
     use ispc_compile::TargetISA;
     // For a portable program we can explicitly compile for each target ISA
@@ -19,7 +19,7 @@ fn link_ispc() {
         .compile("simple");
 }
 
-#[cfg(not(feature = "build_ispc"))]
+#[cfg(not(feature = "ispc"))]
 fn link_ispc() {
     ispc_rt::PackagedModule::new("simple")
         .lib_path("./src/")
