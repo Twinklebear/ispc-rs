@@ -1,4 +1,5 @@
 extern crate ispc_rt;
+#[cfg(feature = "ispc")]
 extern crate ispc_compile;
 
 #[cfg(feature = "ispc")]

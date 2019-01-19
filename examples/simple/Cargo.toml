@@ -8,9 +8,9 @@ build = "build.rs"
 ispc_rt = { path = "../../runtime" }
 
 [build-dependencies]
-ispc_compile = { path = "../../compile" }
+ispc_compile = { path = "../../compile", optional = true }
 ispc_rt = { path = "../../runtime" }
 
 [features]
-ispc = []
+ispc = ["ispc_compile"]
 
