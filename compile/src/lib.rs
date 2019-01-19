@@ -16,7 +16,6 @@ use std::fs::File;
 use std::io::{Write, BufRead, BufReader};
 use std::process::{Command, ExitStatus};
 use std::env;
-use std::fmt::Display;
 use std::collections::BTreeSet;
 
 use regex::Regex;
@@ -71,7 +70,6 @@ pub struct Config {
     debug: Option<bool>,
     opt_level: Option<u32>,
     target: Option<String>,
-    cargo_metadata: bool,
     // Additional ISPC compiler options that the user can set
     defines: Vec<(String, Option<String>)>,
     math_lib: MathLib,
@@ -117,7 +115,6 @@ impl Config {
             debug: None,
             opt_level: None,
             target: None,
-            cargo_metadata: true,
             defines: Vec::new(),
             math_lib: MathLib::ISPCDefault,
             addressing: None,
@@ -159,11 +156,6 @@ impl Config {
     /// Set the target triple to compile for, overriding the default of `env!("TARGET")`
     pub fn target(&mut self, target: &str) -> &mut Config {
         self.target = Some(target.to_string());
-        self
-    }
-    /// Set whether Cargo metadata should be emitted to link to the compiled library
-    pub fn cargo_metadata(&mut self, metadata: bool) -> &mut Config {
-        self.cargo_metadata = metadata;
         self
     }
     /// Add a define to be passed to the ISPC compiler, e.g. `-DFOO`
@@ -268,16 +260,17 @@ impl Config {
     /// `libexample.a` or `example.lib` simply pass `example`
     pub fn compile(&mut self, lib: &str) {
         let dst = self.get_out_dir();
+        let build_dir = self.get_build_dir();
         let default_args = self.default_args();
         for s in &self.ispc_files[..] {
             let fname = s.file_stem().expect("ISPC source files must be files")
                 .to_str().expect("ISPC source file names must be valid UTF-8");
-            self.print(&format!("cargo:rerun-if-changed={}", s.display()));
+            println!("cargo:rerun-if-changed={}", s.display());
 
             let ispc_fname = String::from(fname) + "_ispc";
-            let object = dst.join(ispc_fname.clone()).with_extension("o");
-            let header = dst.join(ispc_fname.clone()).with_extension("h");
-            let deps = dst.join(ispc_fname.clone()).with_extension("idep");
+            let object = build_dir.join(ispc_fname.clone()).with_extension("o");
+            let header = build_dir.join(ispc_fname.clone()).with_extension("h");
+            let deps = build_dir.join(ispc_fname.clone()).with_extension("idep");
             let output = Command::new("ispc").args(&default_args[..])
                 .arg(s).arg("-o").arg(&object).arg("-h").arg(&header)
                 .arg("-MMM").arg(&deps).output().unwrap();
@@ -299,7 +292,7 @@ impl Config {
                 .expect(&format!("Failed to open dependencies list for {}", s.display())[..]);
             let reader = BufReader::new(deps_list);
             for d in reader.lines() {
-                self.print(&format!("cargo:rerun-if-changed={}", d.unwrap()));
+                println!("cargo:rerun-if-changed={}", d.unwrap());
             }
 
             // Push on the additional ISA-specific object files if any were generated
@@ -307,24 +300,27 @@ impl Config {
                 if t.len() > 1 {
                     for isa in t.iter() {
                         let isa_fname = ispc_fname.clone() + "_" + &isa.lib_suffix();
-                        let isa_obj = dst.join(isa_fname).with_extension("o");
+                        let isa_obj = build_dir.join(isa_fname).with_extension("o");
                         self.objects.push(isa_obj);
                     }
                 }
             }
         }
-        if !self.assemble(lib).success() {
+        let libfile = lib.to_owned() + &env::var("HOST").unwrap();
+        if !self.assemble(&libfile).success() {
             exit_failure!("Failed to assemble ISPC objects into library {}", lib);
         }
-        println!("cargo:rustc-link-lib=static={}", lib);
-
-        println!("cargo:rustc-link-search=native={}", dst.display());
+        println!("cargo:rustc-link-lib=static={}", libfile);
+        println!("cargo:rerun-if-changed={}", libfile);
 
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
         let bindings = bindgen::Builder::default()
             .header(self.bindgen_header.to_str().unwrap());
+
         let bindgen_file = dst.join(lib).with_extension("rs");
+        println!("cargo:rerun-if-changed={}", bindgen_file.display());
+
         let generated_bindings = match bindings.generate() {
             Ok(b) => b.to_string(),
             Err(_) => exit_failure!("Failed to generating Rust bindings to {}", lib),
@@ -341,7 +337,7 @@ impl Config {
 
         // Tell cargo where to find the library we just built if we're running
         // in a build script
-        self.print(&format!("cargo:rustc-link-search=native={}", dst.display()));
+        println!("cargo:rustc-link-search=native={}", dst.display());
     }
     /// Get the ISPC compiler version.
     pub fn ispc_version(&self) -> &Version {
@@ -371,7 +367,7 @@ impl Config {
     /// Generate a single header that includes all of our ISPC headers which we can
     /// pass to bindgen
     fn generate_bindgen_header(&mut self, lib: &str) {
-        self.bindgen_header = self.get_out_dir().join(format!("_{}_ispc_bindgen_header.h", lib));
+        self.bindgen_header = self.get_build_dir().join(format!("_{}_ispc_bindgen_header.h", lib));
         let mut include_file = File::create(&self.bindgen_header).unwrap();
        
         write!(include_file, "#include <stdint.h>\n").unwrap();
@@ -471,6 +467,10 @@ impl Config {
             env::var_os("OUT_DIR").map(PathBuf::from).unwrap()
         })
     }
+    /// Returns the default cargo output dir for build scripts (env("OUT_DIR"))
+    fn get_build_dir(&self) -> PathBuf {
+        env::var_os("OUT_DIR").map(PathBuf::from).unwrap()
+    }
     /// Returns the user-set debug flag if they've set one, otherwise returns
     /// env("DEBUG")
     fn get_debug(&self) -> bool {
@@ -492,12 +492,6 @@ impl Config {
         self.target.clone().unwrap_or_else(|| {
             env::var("TARGET").unwrap()
         })
-    }
-    /// Print out cargo metadata if enabled
-    fn print<T: Display>(&self, s: &T) {
-        if self.cargo_metadata {
-            println!("{}", s);
-        }
     }
 }
 
