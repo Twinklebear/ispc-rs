@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{Write, BufRead, BufReader};
 use std::process::{Command, ExitStatus};
+use std::fmt::Display;
 use std::env;
 use std::collections::BTreeSet;
 
@@ -70,6 +71,7 @@ pub struct Config {
     debug: Option<bool>,
     opt_level: Option<u32>,
     target: Option<String>,
+    cargo_metadata: bool,
     // Additional ISPC compiler options that the user can set
     defines: Vec<(String, Option<String>)>,
     math_lib: MathLib,
@@ -115,6 +117,7 @@ impl Config {
             debug: None,
             opt_level: None,
             target: None,
+            cargo_metadata: true,
             defines: Vec::new(),
             math_lib: MathLib::ISPCDefault,
             addressing: None,
@@ -256,6 +259,11 @@ impl Config {
         self.target_isa = Some(targets);
         self
     }
+    /// Set whether Cargo metadata should be emitted to link to the compiled library
+    pub fn cargo_metadata(&mut self, metadata: bool) -> &mut Config {
+        self.cargo_metadata = metadata;
+        self
+    }
     /// The library name should not have any prefix or suffix, e.g. instead of
     /// `libexample.a` or `example.lib` simply pass `example`
     pub fn compile(&mut self, lib: &str) {
@@ -265,7 +273,7 @@ impl Config {
         for s in &self.ispc_files[..] {
             let fname = s.file_stem().expect("ISPC source files must be files")
                 .to_str().expect("ISPC source file names must be valid UTF-8");
-            println!("cargo:rerun-if-changed={}", s.display());
+            self.print(&format!("cargo:rerun-if-changed={}", s.display()));
 
             let ispc_fname = String::from(fname) + "_ispc";
             let object = build_dir.join(ispc_fname.clone()).with_extension("o");
@@ -278,7 +286,7 @@ impl Config {
             if !output.stderr.is_empty() {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 for l in stderr.lines() {
-                    println!("cargo:warning={}", l);
+                    self.print(&format!("cargo:warning={}", l));
                 }
             }
             if !output.status.success() {
@@ -292,7 +300,7 @@ impl Config {
                 .expect(&format!("Failed to open dependencies list for {}", s.display())[..]);
             let reader = BufReader::new(deps_list);
             for d in reader.lines() {
-                println!("cargo:rerun-if-changed={}", d.unwrap());
+                self.print(&format!("cargo:rerun-if-changed={}", d.unwrap()));
             }
 
             // Push on the additional ISA-specific object files if any were generated
@@ -310,8 +318,8 @@ impl Config {
         if !self.assemble(&libfile).success() {
             exit_failure!("Failed to assemble ISPC objects into library {}", lib);
         }
-        println!("cargo:rustc-link-lib=static={}", libfile);
-        println!("cargo:rerun-if-changed={}", libfile);
+        self.print(&format!("cargo:rustc-link-lib=static={}", libfile));
+        self.print(&format!("cargo:rerun-if-changed={}", libfile));
 
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
@@ -319,7 +327,7 @@ impl Config {
             .header(self.bindgen_header.to_str().unwrap());
 
         let bindgen_file = dst.join(lib).with_extension("rs");
-        println!("cargo:rerun-if-changed={}", bindgen_file.display());
+        self.print(&format!("cargo:rerun-if-changed={}", bindgen_file.display()));
 
         let generated_bindings = match bindings.generate() {
             Ok(b) => b.to_string(),
@@ -335,12 +343,8 @@ impl Config {
         file.write_all(generated_bindings.as_bytes()).unwrap();
         file.write_all(b"}").unwrap();
 
-        // TODO: Put back in the option to disable the cargo metadata for apps that
-        // use this as a runtime dep to compile stuff.
-        // Tell cargo where to find the library we just built if we're running
-        // in a build script
-        println!("cargo:rustc-link-search=native={}", dst.display());
-        println!("cargo:rustc-env=ISPC_OUT_DIR={}", dst.display());
+        self.print(&format!("cargo:rustc-link-search=native={}", dst.display()));
+        self.print(&format!("cargo:rustc-env=ISPC_OUT_DIR={}", dst.display()));
     }
     /// Get the ISPC compiler version.
     pub fn ispc_version(&self) -> &Version {
@@ -394,7 +398,7 @@ impl Config {
             if *c != CPU::Generic || (*c == CPU::Generic && opt_level != 0) {
                 ispc_args.push(String::from("-O") + &opt_level.to_string());
             } else {
-                println!("cargo:warning=ispc-rs: Omitting -O0 on CPU::Generic target, ispc bug 1223");
+                self.print(&format!("cargo:warning=ispc-rs: Omitting -O0 on CPU::Generic target, ispc bug 1223"));
             }
         } else {
             ispc_args.push(String::from("-O") + &opt_level.to_string());
@@ -500,6 +504,12 @@ impl Config {
         self.target.clone().unwrap_or_else(|| {
             env::var("TARGET").unwrap()
         })
+    }
+    /// Print out cargo metadata if enabled
+    fn print<T: Display>(&self, s: &T) {
+        if self.cargo_metadata {
+            println!("{}", s);
+        }
     }
 }
 
