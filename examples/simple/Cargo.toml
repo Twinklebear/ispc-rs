@@ -5,8 +5,12 @@ authors = ["Will Usher <willusher.life@gmail.com>"]
 build = "build.rs"
 
 [dependencies]
-ispc = { path = "../../" }
+ispc_rt = { path = "../../runtime" }
 
 [build-dependencies]
-ispc = { path = "../../" }
+ispc_compile = { path = "../../compile" }
+ispc_rt = { path = "../../runtime" }
+
+[features]
+build_ispc = []
 

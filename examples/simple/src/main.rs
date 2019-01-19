@@ -1,10 +1,10 @@
 #[macro_use]
-extern crate ispc;
+extern crate ispc_rt;
 
 // Import the generated bindings to our ISPC functions in
 // as the module simple, note that all of the functions will be
 // unsafe
-ispc_module!(simple);
+packaged_ispc_module!(simple);
 
 fn main() {
     let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];

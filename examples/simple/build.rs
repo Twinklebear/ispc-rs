@@ -1,20 +1,32 @@
-extern crate ispc;
+extern crate ispc_rt;
+extern crate ispc_compile;
 
-fn main() {
-    let mut cfg = ispc::Config::new();
-    let ispc_files = vec!["src/simple.ispc"];
-    for s in &ispc_files[..] {
-        cfg.file(*s);
-    }
+#[cfg(feature = "build_ispc")]
+fn link_ispc() {
+    use ispc_compile::TargetISA;
     // For a portable program we can explicitly compile for each target ISA
     // we want. Then ISPC will pick the correct ISA at runtime to call
     // for the target CPU.
-    cfg.target_isas(vec![
-                    ispc::opt::TargetISA::SSE2i32x4,
-                    ispc::opt::TargetISA::SSE4i32x4,
-                    ispc::opt::TargetISA::AVX1i32x8,
-                    ispc::opt::TargetISA::AVX2i32x8,
-                    ispc::opt::TargetISA::AVX512KNLi32x16]);
-    cfg.compile("simple");
+    ispc_compile::Config::new()
+        .file("src/simple.ispc")
+        .target_isas(vec![
+                     TargetISA::SSE2i32x4,
+                     TargetISA::SSE4i32x4,
+                     TargetISA::AVX1i32x8,
+                     TargetISA::AVX2i32x8,
+                     TargetISA::AVX512KNLi32x16])
+        .out_dir("./src/")
+        .compile("simple");
+}
+
+#[cfg(not(feature = "build_ispc"))]
+fn link_ispc() {
+    ispc_rt::PackagedModule::new("simple")
+        .lib_path("./src/")
+        .link();
+}
+
+fn main() {
+    link_ispc();
 }
 
