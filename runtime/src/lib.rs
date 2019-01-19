@@ -14,8 +14,10 @@ pub mod exec;
 pub mod instrument;
 
 use std::mem;
+use std::env;
 use std::sync::{Once, ONCE_INIT, Arc};
 use std::ffi::CStr;
+use std::path::{Path, PathBuf};
 
 pub use task::ISPCTaskFn;
 pub use exec::{TaskSystem, Parallel};
@@ -41,6 +43,39 @@ macro_rules! ispc_module {
     ($lib:ident) => (
         include!(concat!(env!("OUT_DIR"), "/", stringify!($lib), ".rs"));
     )
+}
+
+#[macro_export]
+macro_rules! packaged_ispc_module {
+    ($lib:ident) => (
+        include!(concat!(stringify!($lib), ".rs"));
+    )
+}
+
+pub struct PackagedModule {
+    path: Option<PathBuf>,
+    lib: String,
+}
+
+impl PackagedModule {
+    pub fn new(lib: &str) -> PackagedModule {
+        PackagedModule {path: None, lib: lib.to_owned()}
+    }
+    /// Specify the lib path to search for the packaged ISPC modules
+    pub fn lib_path<P: AsRef<Path>>(&mut self, path: P) -> &mut PackagedModule {
+        self.path = Some(path.as_ref().to_path_buf());
+        self
+    }
+    /// Link with a previously built ISPC library packaged with the crate
+    pub fn link(&self) {
+        let libfile = self.lib.clone() + &env::var("HOST").unwrap();
+        println!("cargo:rustc-link-lib=static={}", libfile);
+        if let Some(ref p) = self.path {
+            println!("cargo:rustc-link-search=native={}", p.display());
+        } else {
+            println!("cargo:rustc-link-search=native=./");
+        }
+    }
 }
 
 static mut TASK_SYSTEM: Option<&'static TaskSystem> = None;
