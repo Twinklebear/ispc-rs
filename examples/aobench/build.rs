@@ -7,12 +7,6 @@ fn main() {
     // the correct ISA for the host system
     ispc::Config::new()
         .file("src/ao.ispc")
-        .target_isas(vec![ispc::TargetISA::SSE2i32x4,
-                     ispc::TargetISA::SSE4i32x4,
-                     ispc::TargetISA::AVX11i32x8,
-                     ispc::TargetISA::AVX2i32x8,
-                     ispc::TargetISA::AVX512KNLi32x16,
-                     ispc::TargetISA::AVX512SKXi32x16])
         .compile("ao");
 }
 
