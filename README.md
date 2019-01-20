@@ -131,7 +131,6 @@ fn link_ispc() {
             TargetISA::AVX2i32x8,
             TargetISA::AVX512KNLi32x16,
             TargetISA::AVX512SKXi32x16])
-        ])
         .out_dir("src/")
         .compile("simple");
 }
