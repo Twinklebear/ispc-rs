@@ -1,7 +1,12 @@
 //! A small library meant to be used as a build dependency with Cargo for easily
-//! integrating [ISPC](https://ispc.github.io/) code into Rust projects.
+//! integrating [ISPC](https://ispc.github.io/) code into Rust projects. The
+//! `ispc_rt` crate is specifically targetted at linking with a previously
+//! compiled ISPC library and generated bindings (built with `ispc_compile`),
+//! to allow end users to link ISPC code without needing the ISPC compiler or clang.
 //!
-//! DOCS TODO for runtime lib
+//! This crate also includes the various runtime components for the ISPC
+//! language, including the parallel task system and performance instrumentation.
+//!
 
 #![allow(dead_code)]
 
@@ -45,24 +50,29 @@ macro_rules! ispc_module {
     )
 }
 
+/// A `PackagedModule` refers to an ISPC module which was previously
+/// built using `ispc_compile`, and is now distributed with
+/// the crate.
 pub struct PackagedModule {
     path: Option<PathBuf>,
     lib: String,
 }
 
 impl PackagedModule {
+    /// Create a new `PackagedModule` to link against the previously compiled
+    /// library named `lib`. As in `ispc_compile`, the library name should not
+    /// have any prefix or suffix. For example, instead of `libexample.a` or
+    /// `example.lib`, simple pass `example`
     pub fn new(lib: &str) -> PackagedModule {
         PackagedModule {path: None, lib: lib.to_owned()}
     }
-    /// Specify the lib path to search for the packaged ISPC modules
+    /// Specify the path to search for the packaged ISPC libraries and bindings
     pub fn lib_path<P: AsRef<Path>>(&mut self, path: P) -> &mut PackagedModule {
         self.path = Some(path.as_ref().to_path_buf());
         self
     }
     /// Link with a previously built ISPC library packaged with the crate
     pub fn link(&self) {
-        // TODO: We should emit the env-var to find ISPC lib with
-        // cargo:rustc-env
         let libfile = self.lib.clone() + &env::var("HOST").unwrap();
         println!("cargo:rustc-link-lib=static={}", libfile);
         let path = self.get_lib_path();

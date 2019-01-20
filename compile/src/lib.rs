@@ -1,7 +1,24 @@
 //! A small library meant to be used as a build dependency with Cargo for easily
-//! integrating [ISPC](https://ispc.github.io/) code into Rust projects.
+//! integrating [ISPC](https://ispc.github.io/) code into Rust projects. The
+//! `ispc_compile` crate provides functionality to use the ISPC compiler
+//! from your build script to build your ISPC code into a library,
+//! and generate Rust bindings to this library. The `ispc_rt` crate is
+//! still required at runtime to provide a macro to import the generated
+//! bindings, along with the task system and performance instrumentation system.
 //!
-//! DOCS TODO for compile time lib
+//! # Requirements for Compiling ISPC Code
+//!
+//! Both the [ISPC compiler](https://ispc.github.io/) and [libclang](http://clang.llvm.org/)
+//! (for [rust-bindgen](https://github.com/crabtw/rust-bindgen)) must be available in your path
+//! to compile the ISPC code and generate the bindings. These are not required if using `ispc_rt`
+//! to link against a previously compiled library.
+//!
+//! ## Windows Users
+//!
+//! You'll need Visual Studio and will have to use the MSVC ABI version of Rust since ISPC
+//! and Clang link with MSVC on Windows. For bindgen to find libclang you'll need to copy
+//! `libclang.lib` to `clang.lib` and place it in your path.
+//!
 
 extern crate bindgen;
 extern crate gcc;
