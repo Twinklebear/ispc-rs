@@ -33,7 +33,7 @@ use case is to include `ispc_compile` as an optional dependency behind a feature
 gate. When building with this feature gate the ISPC code will be built, otherwise
 the runtime crate will find and use the existing libraries.
 
-## Using ispc-rs as a Single Crate
+# Using ispc-rs as a Single Crate
 
 To use ispc-rs as a single crate, you'll want to add a build script to your
 crate (`build.rs`), tell Cargo about it, and add ispc-rs as a build time and
@@ -58,8 +58,8 @@ Now you can use `ispc` to compile your code into a static library:
 extern crate ispc;
 
 fn main() {
-	// Compile our ISPC library, this call will exit with EXIT_FAILURE if
-	// compilation fails.
+    // Compile our ISPC library, this call will exit with EXIT_FAILURE if
+    // compilation fails.
     ispc::compile_library("simple", &["src/simple.ispc"]);
 }
 ```
@@ -78,7 +78,21 @@ extern crate ispc;
 ispc_module!(simple);
 ```
 
-## Using the Separate Compile and Runtime Crates
+## Requirements for Compiling ISPC Code
+
+Both the [ISPC compiler](https://ispc.github.io/) and [libclang](http://clang.llvm.org/)
+(for [rust-bindgen](https://github.com/crabtw/rust-bindgen)) must be available in your path
+to compile the ISPC code and generate the bindings. These are not required if using `ispc_rt`
+to link against a previously compiled library.
+
+### Windows Users
+
+You'll need Visual Studio and will have to use the MSVC ABI version of Rust since ISPC
+and Clang link with MSVC on Windows. For bindgen to find libclang you'll need to copy
+`libclang.lib` to `clang.lib` and place it in your path.
+
+
+# Using the Separate Compile and Runtime Crates
 
 The process of using the separate crates is similar to that of the single crate;
 however, you'll use the individual `ispc_compile` and `ispc_rt` crates, with the
@@ -167,17 +181,4 @@ ispc_module!(simple);
 Some more complete examples can be found in the
 [examples/](https://github.com/Twinklebear/ispc-rs/tree/master/examples) folder.
 The separate crates example is [here](https://github.com/Twinklebear/ispc-rs/tree/master/examples/simple)
-
-# Requirements for Compiling ISPC Code
-
-Both the [ISPC compiler](https://ispc.github.io/) and [libclang](http://clang.llvm.org/)
-(for [rust-bindgen](https://github.com/crabtw/rust-bindgen)) must be available in your path
-to compile the ISPC code and generate the bindings. These are not required if using `ispc_rt`
-to link against a previously compiled library.
-
-## Windows Users
-
-You'll need Visual Studio and will have to use the MSVC ABI version of Rust since ISPC
-and Clang link with MSVC on Windows. For bindgen to find libclang you'll need to copy
-`libclang.lib` to `clang.lib` and place it in your path.
 
