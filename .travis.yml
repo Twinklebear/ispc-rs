@@ -47,8 +47,8 @@ before_script:
           export LIBCLANG_PATH=`pwd`/llvm/lib/;
       fi
     - wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.10.0/ispc-v1.10.0-${TRAVIS_OS_NAME}.tar.gz;
-    - tar -xf ispc.tar.gz
-    - export PATH=$PATH:`pwd`/ispc-v1.10.0-${TRAVIS_OS_NAME}/
+    - tar -xvf ispc.tar.gz
+    - export PATH=$PATH:`pwd`/ispc-v1.10.0-Linux/bin/:`pwd`/ispc-v1.10.0-Darwin/bin/
     - ispc --version
     - pip install 'travis-cargo<0.2' --user
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
