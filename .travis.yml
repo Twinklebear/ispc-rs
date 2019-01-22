@@ -45,12 +45,10 @@ before_script:
           mkdir llvm;
           tar -xf ${LLVM}.tar.xz -C llvm --strip-components=1;
           export LIBCLANG_PATH=`pwd`/llvm/lib/;
-          wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.9.2/ispc-v1.9.2-linux.tar.gz;
-      else
-          wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.9.2/ispc-v1.9.2-osx.tar.gz;
       fi
+    - wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.10.0/ispc-v1.10.0-${TRAVIS_OS_NAME}.tar.gz;
     - tar -xf ispc.tar.gz
-    - export PATH=$PATH:`pwd`/ispc-v1.9.2-${TRAVIS_OS_NAME}/
+    - export PATH=$PATH:`pwd`/ispc-v1.10.0-${TRAVIS_OS_NAME}/
     - ispc --version
     - pip install 'travis-cargo<0.2' --user
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
