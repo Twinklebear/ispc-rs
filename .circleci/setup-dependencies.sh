@@ -2,6 +2,9 @@
 
 set -x
 
+sudo apt-get update
+sudo apt-get install build-essential -y
+
 echo "Setting up Rust"
 curl https://sh.rustup.rs -sSf | sh
 export PATH=$PATH:~/.cargo/bin/
