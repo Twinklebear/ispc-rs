@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: debian:stretch
+    steps:
+      - checkout
+      - run:
+          name: Setup Dependencies
+          command: ./.circleci/setup-dependencies.sh
+      - run:
+          name: Build ispc-rs
+          command: cargo build
