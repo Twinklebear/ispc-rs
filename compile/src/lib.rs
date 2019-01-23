@@ -406,10 +406,10 @@ impl Config {
     /// Build up list of basic args for each target, debug, opt level, etc.
     fn default_args(&self) -> Vec<String> {
         let mut ispc_args = Vec::new();
-        if self.get_debug() {
+        let opt_level = self.get_opt_level();
+        if self.get_debug() && opt_level == 0 {
             ispc_args.push(String::from("-g"));
         }
-        let opt_level = self.get_opt_level();
         if let Some(ref c) = self.cpu_target {
             ispc_args.push(c.to_string());
             // The ispc compiler crashes if we give -O0 and --cpu=generic,
