@@ -5,7 +5,7 @@ authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "http://www.willusher.io/ispc-rs/ispc/"
 repository = "https://github.com/Twinklebear/ispc-rs"
-readme = "README.md"
+readme = "../README.md"
 license = "MIT"
 description = """
 A runtime dependency for linking Rust code with pre-built ISPC binaries

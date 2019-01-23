@@ -2,6 +2,12 @@
 
 A small library meant to be used as a build dependency with Cargo for easily
 integrating [ISPC](https://ispc.github.io/) code into Rust projects.
+ispc-rs is split into two crates: a compile time crate [ispc\_compile]()
+and a runtime crate [ispc\_rt](). This split allows library authors to
+avoid pushing unecessary dependencies onto end users of the library, who do not
+plan to modify the ISPC code. The [ispc-rs]() crate is also provided,
+which bundles the compile time and runtime crates into a convenient single
+crate, if this separation isn't needed.
 
 [![Crates.io](https://img.shields.io/crates/v/ispc.svg)](https://crates.io/crates/ispc)
 [![Build Status](https://travis-ci.org/Twinklebear/ispc-rs.svg?branch=master)](https://travis-ci.org/Twinklebear/ispc-rs)
