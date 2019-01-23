@@ -1,6 +1,6 @@
 [package]
 name = "ispc"
-version = "0.3.8"
+version = "1.0.0"
 authors = ["Will Usher <willusher.life@gmail.com>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "http://www.willusher.io/ispc-rs/ispc/"
@@ -10,6 +10,9 @@ license = "MIT"
 description = """
 A build-time dependency for Cargo build scripts to help with compiling
 and linking to ISPC code and generating Rust bindings for the resulting library.
+This crate is a meta-crate for the ispc_compile and ispc_rt crates, which provide
+the actual functionality for building ISPC code and generating bindgs, and
+importing those bindings into Rust.
 """
 keywords = ["build-dependencies", "ispc", "simd"]
 
@@ -21,6 +24,6 @@ exclude = [
 ]
 
 [dependencies]
-ispc_compile = { path = "./compile/" }
-ispc_rt = { path = "./runtime/" }
+ispc_compile = { path = "./compile/", version = "1.0.0" }
+ispc_rt = { path = "./runtime/", version = "1.0.0" }
 

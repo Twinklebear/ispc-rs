@@ -54,7 +54,7 @@
 //! 
 //! Now you can use `ispc` to compile your code into a static library:
 //! 
-//! ```ignore
+//! ```no_run
 //! extern crate ispc;
 //! 
 //! fn main() {
@@ -128,7 +128,7 @@
 //! previously built code with `ispc_rt`. Here we'll also output the
 //! compiled ISPC libraries and bindings into the src/ directory.
 //! 
-//! ```ignore
+//! ```no_run
 //! extern crate ispc_rt;
 //! #[cfg(feature = "ispc")]
 //! extern crate ispc_compile;

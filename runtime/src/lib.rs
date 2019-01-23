@@ -38,7 +38,7 @@ pub use instrument::{Instrument, SimpleInstrument};
 ///
 /// ```ignore
 /// #[macro_use]
-/// extern crate ispc;
+/// extern crate ispc_rt;
 ///
 /// // Functions exported from foo will be callable under foo::*
 /// ispc_module!(foo);

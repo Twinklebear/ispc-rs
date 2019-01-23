@@ -51,7 +51,9 @@ pub use opt::{MathLib, Addressing, CPU, OptimizationOpt, TargetISA};
 ///
 /// # Example
 /// ```no_run
-/// ispc::compile_library("foo", &["src/foo.ispc", "src/bar.ispc"]);
+/// extern crate ispc_compile;
+///
+/// ispc_compile::compile_library("foo", &["src/foo.ispc", "src/bar.ispc"]);
 /// ```
 pub fn compile_library(lib: &str, files: &[&str]) {
     let mut cfg = Config::new();

@@ -1,6 +1,6 @@
 [package]
 name = "ispc_compile"
-version = "0.3.8"
+version = "1.0.0"
 authors = ["Will Usher <willusher.life@gmail.com>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "http://www.willusher.io/ispc-rs/ispc/"
@@ -9,7 +9,11 @@ readme = "README.md"
 license = "MIT"
 description = """
 A build-time dependency for Cargo build scripts to help with compiling
-and linking to ISPC code and generating Rust bindings for the resulting library.
+and linking to ISPC code, and generating Rust bindings to the resulting library.
+The generated bindings can be imported by using ispc_rt, which will also
+support linking to pre-built ISPC code. Using pre-built binaries is useful
+for distributing a library or tool using ISPC, while not requiring end users
+to have the ISPC compiler.
 """
 keywords = ["build-dependencies", "ispc", "simd"]
 
@@ -21,9 +25,9 @@ exclude = [
 ]
 
 [dependencies]
-bindgen = "0.43"
+bindgen = "0.47.0"
 gcc = "0.3.55"
-libc = "0.2.43"
-regex = "1.0.6"
+libc = "0.2.47"
+regex = "1.1.0"
 semver = "0.9.0"
 
