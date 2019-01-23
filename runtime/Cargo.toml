@@ -1,7 +1,7 @@
 [package]
 name = "ispc_rt"
 version = "1.0.0"
-authors = ["Will Usher <willusher.life@gmail.com>"]
+authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "http://www.willusher.io/ispc-rs/ispc/"
 repository = "https://github.com/Twinklebear/ispc-rs"
