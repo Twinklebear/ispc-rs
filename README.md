@@ -2,10 +2,10 @@
 
 A small library meant to be used as a build dependency with Cargo for easily
 integrating [ISPC](https://ispc.github.io/) code into Rust projects.
-ispc-rs is split into two crates: a compile time crate [ispc\_compile]()
-and a runtime crate [ispc\_rt](). This split allows library authors to
+ispc-rs is split into two crates: a compile time crate [ispc\_compile](https://crates.io/crates/ispc_compile)
+and a runtime crate [ispc\_rt](https://crates.io/crates/ispc_rt). This split allows library authors to
 avoid pushing unecessary dependencies onto end users of the library, who do not
-plan to modify the ISPC code. The [ispc-rs]() crate is also provided,
+plan to modify the ISPC code. The [ispc-rs](https://crates.io/crates/ispc) crate is also provided,
 which bundles the compile time and runtime crates into a convenient single
 crate, if this separation isn't needed.
 
@@ -52,10 +52,10 @@ compile time dependency
 build = "build.rs"
 
 [dependencies]
-ispc = "0.3.8"
+ispc = "1.0.1"
 
 [build-dependencies]
-ispc = "0.3.8"
+ispc = "1.0.1"
 ```
 
 Now you can use `ispc` to compile your code into a static library:
@@ -119,11 +119,11 @@ code themselves, by using your crate with the ispc feature enabled.
 build = "build.rs"
 
 [dependencies]
-ispc_rt = "0.3.8"
+ispc_rt = "1.0.1"
 
 [build-dependencies]
-ispc_rt = "0.3.8"
-ispc_compile = { "0.3.8", optional = true }
+ispc_rt = "1.0.1"
+ispc_compile = { "1.0.1", optional = true }
 
 [features]
 ispc = ["ispc_compile"]
