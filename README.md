@@ -52,10 +52,10 @@ compile time dependency
 build = "build.rs"
 
 [dependencies]
-ispc = "1.0.2"
+ispc = "1.0.3"
 
 [build-dependencies]
-ispc = "1.0.2"
+ispc = "1.0.3"
 ```
 
 Now you can use `ispc` to compile your code into a static library:
@@ -123,7 +123,7 @@ ispc_rt = "1.0.1"
 
 [build-dependencies]
 ispc_rt = "1.0.1"
-ispc_compile = { "1.0.2", optional = true }
+ispc_compile = { "1.0.3", optional = true }
 
 [features]
 ispc = ["ispc_compile"]

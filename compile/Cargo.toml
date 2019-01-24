@@ -1,6 +1,6 @@
 [package]
 name = "ispc_compile"
-version = "1.0.2"
+version = "1.0.3"
 authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "http://www.willusher.io/ispc-rs/ispc/"
@@ -25,7 +25,7 @@ exclude = [
 ]
 
 [dependencies]
-bindgen = "0.47"
+bindgen = "0.46.0"
 gcc = "0.3.55"
 libc = "0.2.47"
 regex = "1.1.0"
