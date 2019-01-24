@@ -74,7 +74,11 @@ impl PackagedModule {
     /// Link with a previously built ISPC library packaged with the crate
     pub fn link(&self) {
         let libfile = self.lib.clone() + &env::var("HOST").unwrap();
+        let bindgen_file = self.lib.clone() + ".rs";
+        println!("cargo:rerun-if-changed={}", libfile);
+        println!("cargo:rerun-if-changed={}", bindgen_file);
         println!("cargo:rustc-link-lib=static={}", libfile);
+
         let path = self.get_lib_path();
         println!("cargo:rustc-link-search=native={}", path.display());
         println!("cargo:rustc-env=ISPC_OUT_DIR={}", path.display());
