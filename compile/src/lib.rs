@@ -448,7 +448,7 @@ impl Config {
             ispc_args.push(o.to_string());
         }
         for p in &self.include_paths {
-            ispc_args.push(format!("-I {}", p.display()));
+            ispc_args.push(format!("-I{}", p.display()));
         }
         if self.no_omit_frame_ptr {
             ispc_args.push(String::from("--no-omit-frame-pointer"));
@@ -482,6 +482,7 @@ impl Config {
             }
             ispc_args.push(isa_str);
         }
+        println!("cargo:warning=args={:?}", ispc_args);
         ispc_args
     }
     /// Returns the user-set output directory if they've set one, otherwise
