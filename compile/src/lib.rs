@@ -482,7 +482,6 @@ impl Config {
             }
             ispc_args.push(isa_str);
         }
-        println!("cargo:warning=args={:?}", ispc_args);
         ispc_args
     }
     /// Returns the user-set output directory if they've set one, otherwise
