@@ -2,6 +2,8 @@ sudo: false
 language: rust
 cache: cargo
 matrix:
+    allow_failures:
+        - os: windows
     include:
         - os: linux
           dist: xenial
@@ -21,7 +23,9 @@ matrix:
                       - ubuntu-toolchain-r-test
         - os: linux
           dist: xenial
-          env: LLVM_VERSION=7.0.1
+          env:
+              - LLVM_VERSION=7.0.1
+              - secure: WwruT8gXkwGD3iojTU2iemzttaAk2c2irIlocge27xSaOKUGzZWV7ZEDQR56VG8Y1fQBA9kEYB+G7yltPwWh8LRHNrKvjB6t+w0hXXIildbj1Wt7D+u5hRsgWYcYBTtlJLyCvNAbJVkeVImJwDaAjwAk0u3ZPLBM9NBkdlQfjj8=
           rust: stable
           addons:
               apt:
@@ -38,6 +42,8 @@ matrix:
         - os: osx
           osx_image: xcode9.4
           rust: stable
+        - os: windows
+          rust: stable
 before_script:
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
           export LLVM=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-16.04;
@@ -46,19 +52,25 @@ before_script:
           tar -xf ${LLVM}.tar.xz -C llvm --strip-components=1;
           export LIBCLANG_PATH=`pwd`/llvm/lib/;
       fi
-    - wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.10.0/ispc-v1.10.0-${TRAVIS_OS_NAME}.tar.gz;
-    - tar -xvf ispc.tar.gz
-    - export PATH=$PATH:`pwd`/ispc-1.10.0-Linux/bin/:`pwd`/ispc-1.10.0-Darwin/bin/
-    - ispc --version
-    - pip install 'travis-cargo<0.2' --user
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-          export PATH=$HOME/.local/bin:$PATH;
+    - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then
+          wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.10.0/ispc-v1.10.0-${TRAVIS_OS_NAME}.tar.gz;
+          tar -xvf ispc.tar.gz;
       else
-          export PATH=$HOME/Library/Python/2.7/bin:$PATH;
+          wget https://www.dl.dropboxusercontent.com/s/hynz0m0kw6xjpay/LLVM-7.0.1.zip?dl=1;
+          7z x LLVM-7.0.1.zip -y;
+          export PATH=$PATH:`pwd`/LLVM-7.0.1/;
+          wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.10.0/ispc-v1.10.0-${TRAVIS_OS_NAME}.zip;
+          7z x ispc.tar.gz -y;
+      fi
+    - export PATH=$PATH:`pwd`/ispc-1.10.0-Linux/bin/:`pwd`/ispc-1.10.0-Darwin/bin/:`pwd`/ispc-1.10.0-win32/bin
+    - ispc --version
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+          pip install 'travis-cargo<0.2' --user;
+          export PATH=$HOME/.local/bin:$PATH;
       fi
 script:
-    - travis-cargo build
-    - travis-cargo doc
+    - cargo build
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cargo doc; fi
     - for d in `ls examples/`; do
           cd examples/${d}/;
           pwd;
@@ -73,7 +85,4 @@ after_success:
     - git config user.name "Travis-CI Doc Bot"
     - git config user.email "willusher.life@gmail.com"
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then travis-cargo --only stable doc-upload; fi
-env:
-  global:
-    secure: WwruT8gXkwGD3iojTU2iemzttaAk2c2irIlocge27xSaOKUGzZWV7ZEDQR56VG8Y1fQBA9kEYB+G7yltPwWh8LRHNrKvjB6t+w0hXXIildbj1Wt7D+u5hRsgWYcYBTtlJLyCvNAbJVkeVImJwDaAjwAk0u3ZPLBM9NBkdlQfjj8=
 
