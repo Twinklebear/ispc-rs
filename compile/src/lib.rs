@@ -319,7 +319,11 @@ impl Config {
                 .expect(&format!("Failed to open dependencies list for {}", s.display())[..]);
             let reader = BufReader::new(deps_list);
             for d in reader.lines() {
-                self.print(&format!("cargo:rerun-if-changed={}", d.unwrap()));
+                // Don't depend on the ISPC "stdlib" file which is output as a dependecy
+                let dep_name = d.unwrap();
+                if dep_name != "C:/iusers/aneshlya/ispc_upstream/stdlib.ispc" {
+                    self.print(&format!("cargo:rerun-if-changed={}", dep_name));
+                }
             }
 
             // Push on the additional ISA-specific object files if any were generated
