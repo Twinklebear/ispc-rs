@@ -55,6 +55,7 @@ before_script:
           pip install 'travis-cargo<0.2' --user;
           export PATH=$HOME/.local/bin:$PATH;
       fi
+    - if [[ "$TRAVIS_OS_NAME" == "macOS" ]]; then export TRAVIS_OS_NAME=osx; fi
 script:
     - cargo build
     - cargo test
