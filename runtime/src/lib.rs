@@ -115,7 +115,7 @@ pub fn set_task_system<F: FnOnce() -> Arc<TaskSystem>>(f: F) {
     TASK_INIT.call_once(|| {
         let task_sys = f();
         unsafe {
-            let s: *const TaskSystem = mem::transmute(&*task_sys);
+            let s = &*task_sys as *const (dyn TaskSystem + 'static);
             mem::forget(task_sys);
             TASK_SYSTEM = Some(&*s);
         }
@@ -129,7 +129,7 @@ fn get_task_system() -> &'static TaskSystem {
     TASK_INIT.call_once(|| {
         unsafe {
             let task_sys = Parallel::new() as Arc<TaskSystem>;
-            let s: *const TaskSystem = mem::transmute(&*task_sys);
+            let s = &*task_sys as *const (dyn TaskSystem + 'static);
             mem::forget(task_sys);
             TASK_SYSTEM = Some(&*s);
         }
@@ -145,7 +145,7 @@ pub fn set_instrument<F: FnOnce() -> Arc<Instrument>>(f: F) {
     INSTRUMENT_INIT.call_once(|| {
         let instrument = f();
         unsafe {
-            let s: *const Instrument = mem::transmute(&*instrument);
+            let s = &*instrument as *const (dyn Instrument + 'static);
             mem::forget(instrument);
             INSTRUMENT = Some(&*s);
         }
@@ -164,7 +164,7 @@ fn get_instrument() -> &'static Instrument {
     INSTRUMENT_INIT.call_once(|| {
         unsafe {
             let instrument = Arc::new(SimpleInstrument) as Arc<Instrument>;
-            let s: *const Instrument = mem::transmute(&*instrument);
+            let s = &*instrument as *const (dyn Instrument + 'static);
             mem::forget(instrument);
             INSTRUMENT = Some(&*s);
         }
