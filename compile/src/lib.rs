@@ -398,11 +398,11 @@ impl Config {
         self.bindgen_header = self.get_build_dir().join(format!("_{}_ispc_bindgen_header.h", lib));
         let mut include_file = File::create(&self.bindgen_header).unwrap();
        
-        write!(include_file, "#include <stdint.h>\n").unwrap();
-        write!(include_file, "#include <stdbool.h>\n").unwrap();
+        writeln!(include_file, "#include <stdint.h>").unwrap();
+        writeln!(include_file, "#include <stdbool.h>").unwrap();
 
         for h in &self.headers[..] {
-            write!(include_file, "#include \"{}\"\n", h.display()).unwrap();
+            writeln!(include_file, "#include \"{}\"", h.display()).unwrap();
         }
     }
     /// Build up list of basic args for each target, debug, opt level, etc.
@@ -419,7 +419,7 @@ impl Config {
             if *c != CPU::Generic || (*c == CPU::Generic && opt_level != 0) {
                 ispc_args.push(String::from("-O") + &opt_level.to_string());
             } else {
-                self.print(&format!("cargo:warning=ispc-rs: Omitting -O0 on CPU::Generic target, ispc bug 1223"));
+                self.print(&"cargo:warning=ispc-rs: Omitting -O0 on CPU::Generic target, ispc bug 1223");
             }
         } else {
             ispc_args.push(String::from("-O") + &opt_level.to_string());

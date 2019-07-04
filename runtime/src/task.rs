@@ -54,7 +54,7 @@ pub struct Context {
 impl Context {
     /// Create a new list of tasks for some function with id `id`
     pub fn new(id: usize) -> Context {
-        Context { tasks: RwLock::new(Vec::new()), mem: Mutex::new(Vec::new()), id: id }
+        Context { tasks: RwLock::new(Vec::new()), mem: Mutex::new(Vec::new()), id }
     }
     /// Add a task group for execution that was launched in this context
     pub fn launch(&self, total: (i32, i32, i32), data: *mut libc::c_void, fcn: ISPCTaskFn) {
@@ -68,7 +68,7 @@ impl Context {
     /// TODO: With this design we're essentially requiring the thread waiting on the context
     /// to busy wait since we provide no condition variable to block on.
     pub fn current_tasks_done(&self) -> bool {
-        self.tasks.read().unwrap().iter().fold(true, |done, t| done && t.is_finished())
+        self.tasks.read().unwrap().iter().all(|t| t.is_finished())
     }
     /// Allocate some memory for this Context's task groups, returns a pointer to the allocated memory.
     pub unsafe fn alloc(&self, size: usize, align: usize) -> *mut libc::c_void {
@@ -175,12 +175,12 @@ impl Group {
     /// Create a new task group for execution of the function
     pub fn new(total: (i32, i32, i32), data: AtomicPtr<libc::c_void>, fcn: ISPCTaskFn) -> Group {
         Group { start: AtomicUsize::new(0), end: (total.0 * total.1 * total.2) as usize,
-                total: total, data: data, fcn: fcn,
+                total, data, fcn,
                 chunks_launched: AtomicUsize::new(0), chunks_finished: AtomicUsize::new(0) }
     }
     /// Get an iterator over `chunk_size` chunks of tasks to be executed for this group
     pub fn chunks(&self, chunk_size: usize) -> GroupChunks {
-        GroupChunks { group: self, chunk_size: chunk_size }
+        GroupChunks { group: self, chunk_size }
     }
     /// Check if all tasks for this group have been completed
     pub fn is_finished(&self) -> bool {
@@ -254,7 +254,7 @@ impl<'a> Chunk<'a> {
     pub fn new(group: &'a Group, start: usize, end: usize) -> Chunk {
         let d = AtomicPtr::new(group.data.load(atomic::Ordering::SeqCst));
         Chunk { start: start as i32, end: end as i32, total: group.total,
-                fcn: group.fcn, data: d, group: group
+                fcn: group.fcn, data: d, group
         }
     }
     /// Execute all tasks in this chunk

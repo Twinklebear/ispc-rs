@@ -175,8 +175,8 @@ fn get_instrument() -> &'static Instrument {
 #[allow(non_snake_case)]
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: libc::int64_t,
-                                   align: libc::int32_t) -> *mut libc::c_void {
+pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: i64,
+                                   align: i32) -> *mut libc::c_void {
     get_task_system().alloc(handle_ptr, size, align)
 }
 
@@ -201,7 +201,7 @@ pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
 #[doc(hidden)]
 #[no_mangle]
 pub unsafe extern "C" fn ISPCInstrument(cfile: *const libc::c_char, cnote: *const libc::c_char,
-                                        line: libc::c_int, mask: libc::uint64_t) {
+                                        line: libc::c_int, mask: u64) {
 
     let file_name = CStr::from_ptr(cfile);
     let note = CStr::from_ptr(cnote);
