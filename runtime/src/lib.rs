@@ -97,10 +97,10 @@ impl PackagedModule {
     }
 }
 
-static mut TASK_SYSTEM: Option<&'static TaskSystem> = None;
+static mut TASK_SYSTEM: Option<&'static dyn TaskSystem> = None;
 static TASK_INIT: Once = ONCE_INIT;
 
-static mut INSTRUMENT: Option<&'static Instrument> = None;
+static mut INSTRUMENT: Option<&'static dyn Instrument> = None;
 static INSTRUMENT_INIT: Once = ONCE_INIT;
 
 /// If you have implemented your own task system you can provide it for use instead
@@ -111,7 +111,7 @@ static INSTRUMENT_INIT: Once = ONCE_INIT;
 /// Use the function to do any extra initialization for your task system. Note that
 /// the task system will be leaked and not destroyed until the program exits and the
 /// memory space is cleaned up.
-pub fn set_task_system<F: FnOnce() -> Arc<TaskSystem>>(f: F) {
+pub fn set_task_system<F: FnOnce() -> Arc<dyn TaskSystem>>(f: F) {
     TASK_INIT.call_once(|| {
         let task_sys = f();
         unsafe {
@@ -122,13 +122,13 @@ pub fn set_task_system<F: FnOnce() -> Arc<TaskSystem>>(f: F) {
     });
 }
 
-fn get_task_system() -> &'static TaskSystem {
+fn get_task_system() -> &'static dyn TaskSystem {
     // TODO: This is a bit nasty, but I'm not sure on a nicer solution. Maybe something that
     // would let the user register the desired (or default) task system? But if
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
     TASK_INIT.call_once(|| {
         unsafe {
-            let task_sys = Parallel::new() as Arc<TaskSystem>;
+            let task_sys = Parallel::new() as Arc<dyn TaskSystem>;
             let s = &*task_sys as *const (dyn TaskSystem + 'static);
             mem::forget(task_sys);
             TASK_SYSTEM = Some(&*s);
@@ -141,7 +141,7 @@ fn get_task_system() -> &'static TaskSystem {
 /// data you can use this function to provide it for use instead of the
 /// default one. This function **must** be called before calling into ISPC code,
 /// otherwise the instrumenter will already be set to the default.
-pub fn set_instrument<F: FnOnce() -> Arc<Instrument>>(f: F) {
+pub fn set_instrument<F: FnOnce() -> Arc<dyn Instrument>>(f: F) {
     INSTRUMENT_INIT.call_once(|| {
         let instrument = f();
         unsafe {
@@ -159,11 +159,11 @@ pub fn print_instrumenting_summary() {
     get_instrument().print_summary();
 }
 
-fn get_instrument() -> &'static Instrument {
+fn get_instrument() -> &'static dyn Instrument {
     // TODO: This is a bit nasty, like above
     INSTRUMENT_INIT.call_once(|| {
         unsafe {
-            let instrument = Arc::new(SimpleInstrument) as Arc<Instrument>;
+            let instrument = Arc::new(SimpleInstrument) as Arc<dyn Instrument>;
             let s = &*instrument as *const (dyn Instrument + 'static);
             mem::forget(instrument);
             INSTRUMENT = Some(&*s);
