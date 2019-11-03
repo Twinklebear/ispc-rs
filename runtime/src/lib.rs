@@ -20,7 +20,7 @@ pub mod instrument;
 
 use std::mem;
 use std::env;
-use std::sync::{Once, ONCE_INIT, Arc};
+use std::sync::{Once, Arc};
 use std::ffi::CStr;
 use std::path::{Path, PathBuf};
 
@@ -98,10 +98,10 @@ impl PackagedModule {
 }
 
 static mut TASK_SYSTEM: Option<&'static dyn TaskSystem> = None;
-static TASK_INIT: Once = ONCE_INIT;
+static TASK_INIT: Once = Once::new();
 
 static mut INSTRUMENT: Option<&'static dyn Instrument> = None;
-static INSTRUMENT_INIT: Once = ONCE_INIT;
+static INSTRUMENT_INIT: Once = Once::new();
 
 /// If you have implemented your own task system you can provide it for use instead
 /// of the default threaded one. This must be done prior to calling ISPC code which

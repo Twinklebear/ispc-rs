@@ -39,7 +39,7 @@ use std::collections::BTreeSet;
 use regex::Regex;
 use semver::Version;
 
-pub use opt::{MathLib, Addressing, CPU, OptimizationOpt, TargetISA};
+pub use opt::{MathLib, Addressing, Architecture, CPU, OptimizationOpt, TargetISA};
 
 /// Compile the list of ISPC files into a static library and generate bindings
 /// using bindgen. The library name should not contain a lib prefix or a lib
@@ -107,6 +107,7 @@ pub struct Config {
     wno_perf: bool,
     instrument: bool,
     target_isa: Option<Vec<TargetISA>>,
+    architecture: Option<Architecture>,
 }
 
 impl Config {
@@ -152,6 +153,7 @@ impl Config {
             wno_perf: false,
             instrument: false,
             target_isa: None,
+            architecture: None,
         }
     }
     /// Add an ISPC file to be compiled
@@ -278,6 +280,18 @@ impl Config {
         self.target_isa = Some(targets);
         self
     }
+    /// Select the CPU architecture to target
+    pub fn target_arch(&mut self, arch: Architecture) -> &mut Config {
+        self.architecture = Some(arch);
+        self
+    }
+    /*
+    /// Select the OS target
+    pub fn target_os(&mut self, TargetOS: os) -> &mut Config {
+        self.target_os = Some(os);
+        self
+    }
+    */
     /// Set whether Cargo metadata should be emitted to link to the compiled library
     pub fn cargo_metadata(&mut self, metadata: bool) -> &mut Config {
         self.cargo_metadata = metadata;
@@ -305,7 +319,7 @@ impl Config {
             if !output.stderr.is_empty() {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 for l in stderr.lines() {
-                    self.print(&format!("cargo:warning={}", l));
+                    self.print(&format!("cargo:warning=(ISPC) {}", l));
                 }
             }
             if !output.status.success() {
@@ -486,6 +500,14 @@ impl Config {
             }
             ispc_args.push(isa_str);
         }
+        if let Some(ref a) = self.architecture {
+            ispc_args.push(a.to_string());
+        }
+        /*
+        if let Some(ref o) = self.target_os {
+            ispc_args.push(o.to_string());
+        }
+        */
         ispc_args
     }
     /// Returns the user-set output directory if they've set one, otherwise

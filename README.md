@@ -39,6 +39,10 @@ use case is to include `ispc_compile` as an optional dependency behind a feature
 gate. When building with this feature gate the ISPC code will be built, otherwise
 the runtime crate will find and use the existing libraries.
 
+## Reporting Issues with ispc-rs
+
+Please report any issues or feature requests on the [GitHub Issue Tracker](https://github.com/Twinklebear/ispc-rs/issues).
+
 # Using ispc-rs as a Single Crate
 
 To use ispc-rs as a single crate, you'll want to add a build script to your
@@ -95,7 +99,8 @@ to link against a previously compiled library.
 
 You'll need Visual Studio and will have to use the MSVC ABI version of Rust since ISPC
 and Clang link with MSVC on Windows. For bindgen to find libclang you'll need to copy
-`libclang.lib` to `clang.lib` and place it in your path.
+`libclang.lib` to `clang.lib` and place it in your path. You'll also need to set the environment
+variable `LIBCLANG_PATH=<path to LLVM\bin>` so bindgen can find clang successfully.
 
 
 # Using the Separate Compile and Runtime Crates

@@ -24,6 +24,25 @@ impl ToString for MathLib {
     }
 }
 
+/// Select the target CPU architecture
+pub enum Architecture {
+    Arm,
+    Aarch64,
+    X86,
+    X64
+}
+
+impl ToString for Architecture {
+    fn to_string(&self) -> String {
+        match *self {
+            Architecture::Arm => String::from("--arch=arm"),
+            Architecture::Aarch64 => String::from("--arch=aarch64"),
+            Architecture::X86 => String::from("--arch=x86"),
+            Architecture::X64 => String::from("--arch=x86_64"),
+        }
+    }
+}
+
 /// Select 32 or 64 bit addressing to be used by ISPC. Note: 32-bit
 /// addressing calculations are done by default, even on 64 bit target
 /// architectures.
@@ -43,7 +62,7 @@ impl ToString for Addressing {
     }
 }
 
-/// ISPC target CPU type options, if none is set ISPC will
+/// ISPC target CPU ISA options, if none is set ISPC will
 /// target the machine being compile on.
 #[derive(Eq, PartialEq)]
 pub enum CPU {
@@ -54,6 +73,8 @@ pub enum CPU {
     Penryn,
     /// Synonym for corei7 target
     Nehalem,
+    /// Synonym for btver2
+    Ps4,
     /// Synonym for corei7-avx
     SandyBridge,
     /// Synonym for core-avx-i target
@@ -63,8 +84,14 @@ pub enum CPU {
     Broadwell,
     Knl,
     Skx,
+    Icl,
     /// Synonym for slm target
     Silvermont,
+    CoretexA15,
+    CoretexA9,
+    CoretexA35,
+    CoretexA53,
+    CoretexA57,
 }
 
 impl ToString for CPU {
@@ -75,13 +102,20 @@ impl ToString for CPU {
             CPU::Core2 => String::from("--cpu=core2"),
             CPU::Penryn => String::from("--cpu=penryn"),
             CPU::Nehalem => String::from("--cpu=nehalem"),
+            CPU::Ps4 => String::from("--cpu=ps4"),
             CPU::SandyBridge => String::from("--cpu=sandybridge"),
             CPU::IvyBridge => String::from("--cpu=ivybridge"),
             CPU::Haswell => String::from("--cpu=haswell"),
             CPU::Broadwell => String::from("--cpu=broadwell"),
             CPU::Knl => String::from("--cpu=knl"),
             CPU::Skx => String::from("--cpu=skx"),
+            CPU::Icl => String::from("--cpu=icl"),
             CPU::Silvermont => String::from("--cpu=silvermont"),
+            CPU::CoretexA15 => String::from("--cpu=cortex-a15"),
+            CPU::CoretexA9 => String::from("--cpu=cortex-a9"),
+            CPU::CoretexA35 => String::from("--cpu=cortex-a35"),
+            CPU::CoretexA53 => String::from("--cpu=cortex-a53"),
+            CPU::CoretexA57 => String::from("--cpu=cortex-a57"),
         }
     }
 }
@@ -130,15 +164,16 @@ pub enum TargetISA {
     AVX1i32x8,
     AVX1i32x16,
     AVX1i64x4,
-    AVX11i32x8,
-    AVX11i32x16,
-    AVX11i64x4,
     AVX2i32x8,
     AVX2i32x16,
     AVX2i64x4,
     AVX512KNLi32x16,
     AVX512SKXi32x16,
-    AVX512SKXi32x8
+    AVX512SKXi32x8,
+    Neoni8x16,
+    Neoni16x8,
+    Neoni32x4,
+    Neoni32x8,
 }
 
 impl TargetISA {
@@ -155,15 +190,16 @@ impl TargetISA {
             TargetISA::AVX1i32x8 => String::from("avx"),
             TargetISA::AVX1i32x16 => String::from("avx"),
             TargetISA::AVX1i64x4 => String::from("avx"),
-            TargetISA::AVX11i32x8 => String::from("avx11"),
-            TargetISA::AVX11i32x16 => String::from("avx11"),
-            TargetISA::AVX11i64x4 => String::from("avx11"),
             TargetISA::AVX2i32x8 => String::from("avx2"),
             TargetISA::AVX2i32x16 => String::from("avx2"),
             TargetISA::AVX2i64x4 => String::from("avx2"),
             TargetISA::AVX512KNLi32x16 => String::from("avx512knl"),
             TargetISA::AVX512SKXi32x16 => String::from("avx512skx"),
             TargetISA::AVX512SKXi32x8 => String::from("avx512skx"),
+            TargetISA::Neoni8x16 => String::from("neon"),
+            TargetISA::Neoni16x8 => String::from("neon"),
+            TargetISA::Neoni32x4 => String::from("neon"),
+            TargetISA::Neoni32x8 => String::from("neon"),
         }
     }
 }
@@ -182,15 +218,50 @@ impl ToString for TargetISA {
             TargetISA::AVX1i32x8 => String::from("avx1-i32x8"),
             TargetISA::AVX1i32x16 => String::from("avx1-i32x16"),
             TargetISA::AVX1i64x4 => String::from("avx1-i64x4"),
-            TargetISA::AVX11i32x8 => String::from("avx1.1-i32x8"),
-            TargetISA::AVX11i32x16 => String::from("avx1.1-i32x16"),
-            TargetISA::AVX11i64x4 => String::from("avx1.1-i64x4"),
             TargetISA::AVX2i32x8 => String::from("avx2-i32x8"),
             TargetISA::AVX2i32x16 => String::from("avx2-i32x16"),
             TargetISA::AVX2i64x4 => String::from("avx2-i64x4"),
             TargetISA::AVX512KNLi32x16 => String::from("avx512knl-i32x16"),
             TargetISA::AVX512SKXi32x16 => String::from("avx512skx-i32x16"),
             TargetISA::AVX512SKXi32x8 => String::from("avx512skx-i32x8"),
+            TargetISA::Neoni8x16 => String::from("neon-i8x16"),
+            TargetISA::Neoni16x8 => String::from("neon-i16x8"),
+            TargetISA::Neoni32x4 => String::from("neon-i32x4"),
+            TargetISA::Neoni32x8 => String::from("neon-i32x8"),
+        }
+    }
+}
+
+/// Target instruction sets and vector widths available to specialize for. The
+/// default if none is set will be the host CPU's ISA and vector width.
+pub enum TargetOS {
+    Windows,
+    Ps4,
+    Linux,
+    Macos,
+    Android,
+}
+
+impl TargetOS {
+    pub fn lib_suffix(&self) -> String {
+        match *self {
+            TargetOS::Windows => String::from("windows"),
+            TargetOS::Ps4 => String::from("ps4"),
+            TargetOS::Linux => String::from("linux"),
+            TargetOS::Macos => String::from("macos"),
+            TargetOS::Android => String::from("android"),
+        }
+    }
+}
+
+impl ToString for TargetOS {
+    fn to_string(&self) -> String {
+        match *self {
+            TargetOS::Windows => String::from("--target-os=windows"),
+            TargetOS::Ps4 => String::from("--target-os=ps4"),
+            TargetOS::Linux => String::from("--target-os=linux"),
+            TargetOS::Macos => String::from("--target-os=macos"),
+            TargetOS::Android => String::from("--target-os=android"),
         }
     }
 }
