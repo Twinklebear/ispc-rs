@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["windows_registry","A helper module to probe the Windows Registry when looking for windows-specific tools."]],"struct":[["Build","Extra configuration to pass to gcc."],["Error","Represents an internal error that occurred, with an explaination."],["Tool","Configuration used to represent an invocation of a C compiler."]]});

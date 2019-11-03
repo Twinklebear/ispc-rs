@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Parallel","A multithreaded execution environment for the tasks launched in ISPC"]],"trait":[["TaskSystem","Trait to be implemented to provide ISPC task execution functionality."]]});

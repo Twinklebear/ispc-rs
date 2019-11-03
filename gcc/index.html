@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `gcc` crate."><meta name="keywords" content="rust, rustlang, rust-lang, gcc"><title>gcc - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../dark.css"><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script src="../storage.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="shortcut icon" href="../favicon.ico"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../gcc/index.html'><div class='logo-container'><img src='../rust-logo.png' alt='logo'></div></a><p class='location'>Crate gcc</p><div class="sidebar-elems"><a id='all-types' href='all.html'><p>See all gcc's items</p></a><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'gcc', ty: 'mod', relpath: '../'};</script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../src/gcc/lib.rs.html#1-1686' title='goto source code'>[src]</a></span><span class='in-band'>Crate <a class="mod" href=''>gcc</a></span></h1><div class='docblock'><p>A library for build scripts to compile custom C code</p>
+<p>This library is intended to be used as a <code>build-dependencies</code> entry in
+<code>Cargo.toml</code>:</p>
+<pre><code class="language-toml">[build-dependencies]
+gcc = &quot;0.3&quot;
+</code></pre>
+<p>The purpose of this crate is to provide the utility functions necessary to
+compile C code into a static archive which is then linked into a Rust crate.
+Configuration is available through the <code>Build</code> struct.</p>
+<p>This crate will automatically detect situations such as cross compilation or
+other environment variables set by Cargo and will build code appropriately.</p>
+<p>The crate is not limited to C code, it can accept any source code that can
+be passed to a C or C++ compiler. As such, assembly files with extensions
+<code>.s</code> (gcc/clang) and <code>.asm</code> (MSVC) can also be compiled.</p>
+<h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1>
+<p>Use the <code>Build</code> struct to compile <code>src/foo.c</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">gcc</span>;
+
+<span class="kw">fn</span> <span class="ident">main</span>() {
+    <span class="ident">gcc</span>::<span class="ident">Build</span>::<span class="ident">new</span>()
+               .<span class="ident">file</span>(<span class="string">&quot;src/foo.c&quot;</span>)
+               .<span class="ident">define</span>(<span class="string">&quot;FOO&quot;</span>, <span class="prelude-val">Some</span>(<span class="string">&quot;bar&quot;</span>))
+               .<span class="ident">include</span>(<span class="string">&quot;src&quot;</span>)
+               .<span class="ident">compile</span>(<span class="string">&quot;foo&quot;</span>);
+}</pre></div>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr class='module-item'><td><a class="mod" href="windows_registry/index.html" title='gcc::windows_registry mod'>windows_registry</a></td><td class='docblock-short'><p>A helper module to probe the Windows Registry when looking for
+windows-specific tools.</p>
+</td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table><tr class='module-item'><td><a class="struct" href="struct.Build.html" title='gcc::Build struct'>Build</a></td><td class='docblock-short'><span class="stab deprecated">Deprecated</span><p>Extra configuration to pass to gcc.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.Error.html" title='gcc::Error struct'>Error</a></td><td class='docblock-short'><p>Represents an internal error that occurred, with an explaination.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.Tool.html" title='gcc::Tool struct'>Tool</a></td><td class='docblock-short'><p>Configuration used to represent an invocation of a C compiler.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g., <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g., <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g., <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../";window.currentCrate = "gcc";</script><script src="../aliases.js"></script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>
