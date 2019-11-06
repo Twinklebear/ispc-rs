@@ -7,17 +7,7 @@ matrix:
     include:
         - os: linux
           dist: xenial
-          env:
-              - LLVM_VERSION=7.0.1
-              - secure: WwruT8gXkwGD3iojTU2iemzttaAk2c2irIlocge27xSaOKUGzZWV7ZEDQR56VG8Y1fQBA9kEYB+G7yltPwWh8LRHNrKvjB6t+w0hXXIildbj1Wt7D+u5hRsgWYcYBTtlJLyCvNAbJVkeVImJwDaAjwAk0u3ZPLBM9NBkdlQfjj8=
-          rust: stable
-          addons:
-              apt:
-                  sources:
-                      - ubuntu-toolchain-r-test
-        - os: linux
-          dist: xenial
-          env: LLVM_VERSION=8.0.0
+          env: LLVM_VERSION=9.0.0
           rust: beta
           addons:
               apt:
@@ -43,12 +33,12 @@ before_script:
           wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.12.0/ispc-v1.12.0-${TRAVIS_OS_NAME}.tar.gz;
           tar -xvf ispc.tar.gz;
       else
-          wget https://www.dl.dropboxusercontent.com/s/2yrhzzf4xt0ov85/LLVM-8.0.0.zip?dl=1
-          7z x LLVM-8.0.0.zip -y;
-          export PATH=$PATH:`pwd`/LLVM-8.0.0/;
-          export LIBCLANG_PATH=`pwd`/LLVM-8.0.0/;
-          wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.12.0/ispc-v1.12.0-${TRAVIS_OS_NAME}.zip;
-          7z x ispc.tar.gz -y;
+          wget -O LLVM-9.0.0 https://www.dl.dropboxusercontent.com/s/qrfmt0uqkyn1dz2/LLVM-9.0.0.7z;
+          7z x LLVM-9.0.0.7z -y;
+          export PATH=$PATH:`pwd`/LLVM-9.0.0/;
+          export LIBCLANG_PATH=`pwd`/LLVM-9.0.0/;
+          wget -O ispc.zip https://downloads.sourceforge.net/project/ispcmirror/v1.12.0/ispc-v1.12.0-${TRAVIS_OS_NAME}.zip;
+          7z x ispc.zip -y;
       fi
     - export PATH=$PATH:`pwd`/ispc-v1.12.0-linux/bin/:`pwd`/ispc-v1.12.0-macOS/bin/:`pwd`/ispc-v1.12.0-windows/bin
     - ispc --version
