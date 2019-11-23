@@ -49,6 +49,8 @@ before_script:
     - if [[ "$TRAVIS_OS_NAME" == "macOS" ]]; then export TRAVIS_OS_NAME=osx; fi
     - rustup component add clippy
 script:
+    - export PATH=$PATH:`pwd`/ispc-v1.12.0-linux/bin/:`pwd`/ispc-v1.12.0-macOS/bin/:`pwd`/ispc-v1.12.0-windows/bin
+    - ispc --version
     - cargo build
     - cargo test
     - cargo clippy
