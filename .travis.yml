@@ -56,9 +56,6 @@ script:
     - for d in `ls examples/`; do
           cd examples/${d}/;
           pwd;
-          export PATH=$PATH:`pwd`/ispc-v1.12.0-linux/bin/:`pwd`/ispc-v1.12.0-macOS/bin/:`pwd`/ispc-v1.12.0-windows/bin;
-          ispc --version;
-          echo $PATH;
           if [[ "$d" == "simple" ]]; then
             cargo build --features ispc;
           fi;
