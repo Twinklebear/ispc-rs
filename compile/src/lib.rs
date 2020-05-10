@@ -120,7 +120,8 @@ impl Config {
             exit_failure!("Failed to get ISPC version, is it in your PATH?");
         }
         let ver_string = String::from_utf8_lossy(&cmd_output.stdout);
-        let re = Regex::new(r"Intel\(r\) SPMD Program Compiler \(ispc\), (\d+\.\d+\.\d+)").unwrap();
+        // The ISPC version will be the first version number printed
+        let re = Regex::new(r"(\d+\.\d+\.\d+)").unwrap();
         let ispc_ver = Version::parse(re.captures_iter(&ver_string).next()
                                       .expect("Failed to parse ISPC version").get(1)
                                       .expect("Failed to parse ISPC version").as_str())
