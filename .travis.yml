@@ -38,7 +38,7 @@ before_script:
           export PATH=$PATH:`pwd`/LLVM-9.0.0/;
           export LIBCLANG_PATH=`pwd`/LLVM-9.0.0/;
           wget -O ispc.zip https://github.com/ispc/ispc/releases/download/v1.13.0/ispc-v1.13.0-windows.zip;
-          7z x ispc.zip -y;
+          7z x ispc.zip -y -o"./ispc-v1.13.0-windows/";
           ls ./;
           ls `pwd`/ispc-v1.13.0-windows/bin/;
       fi
