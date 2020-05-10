@@ -30,14 +30,14 @@ before_script:
           export LIBCLANG_PATH=`pwd`/llvm/lib/;
       fi
     - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then
-          wget -O ispc.tar.gz https://downloads.sourceforge.net/project/ispcmirror/v1.13.0/ispc-v1.13.0-${TRAVIS_OS_NAME}.tar.gz;
+          wget -O ispc.tar.gz https://github.com/ispc/ispc/releases/download/v1.13.0/ispc-v1.13.0-${TRAVIS_OS_NAME}.tar.gz;
           tar -xvf ispc.tar.gz;
       else
           wget -O LLVM-9.0.0 https://www.dl.dropboxusercontent.com/s/qrfmt0uqkyn1dz2/LLVM-9.0.0.7z;
           7z x LLVM-9.0.0.7z -y;
           export PATH=$PATH:`pwd`/LLVM-9.0.0/;
           export LIBCLANG_PATH=`pwd`/LLVM-9.0.0/;
-          wget -O ispc.zip https://downloads.sourceforge.net/project/ispcmirror/v1.13.0/ispc-v1.13.0-${TRAVIS_OS_NAME}.zip;
+          wget -O ispc.zip https://github.com/ispc/ispc/releases/download/v1.13.0/ispc-v1.13.0-windows.zip
           7z x ispc.zip -y;
       fi
     - export PATH=$PATH:`pwd`/ispc-v1.13.0-linux/bin/:`pwd`/ispc-v1.13.0-macOS/bin/:`pwd`/ispc-v1.13.0-windows/bin
