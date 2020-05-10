@@ -39,8 +39,10 @@ before_script:
           export LIBCLANG_PATH=`pwd`/LLVM-9.0.0/;
           wget -O ispc.zip https://github.com/ispc/ispc/releases/download/v1.13.0/ispc-v1.13.0-windows.zip;
           7z x ispc.zip -y;
+          ls ./;
+          ls `pwd`/ispc-v1.13.0-windows/bin/;
       fi
-    - export PATH=$PATH:`pwd`/ispc-v1.13.0-linux/bin/:`pwd`/ispc-v1.13.0-macOS/bin/:`pwd`/ispc-v1.13.0-windows/bin
+    - export PATH=$PATH:`pwd`/ispc-v1.13.0-linux/bin/:`pwd`/ispc-v1.13.0-macOS/bin/:`pwd`/ispc-v1.13.0-windows/bin/
     - ispc --version
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
           pip install 'travis-cargo<0.2' --user;
