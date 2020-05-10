@@ -37,7 +37,7 @@ before_script:
           7z x LLVM-9.0.0.7z -y;
           export PATH=$PATH:`pwd`/LLVM-9.0.0/;
           export LIBCLANG_PATH=`pwd`/LLVM-9.0.0/;
-          wget -O ispc.zip https://github.com/ispc/ispc/releases/download/v1.13.0/ispc-v1.13.0-windows.zip
+          wget -O ispc.zip https://github.com/ispc/ispc/releases/download/v1.13.0/ispc-v1.13.0-windows.zip;
           7z x ispc.zip -y;
       fi
     - export PATH=$PATH:`pwd`/ispc-v1.13.0-linux/bin/:`pwd`/ispc-v1.13.0-macOS/bin/:`pwd`/ispc-v1.13.0-windows/bin
