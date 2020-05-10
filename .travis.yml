@@ -50,11 +50,11 @@ before_script:
           export PATH=$HOME/.local/bin:$PATH;
       fi
     - if [[ "$TRAVIS_OS_NAME" == "macOS" ]]; then export TRAVIS_OS_NAME=osx; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]];  rustup component add clippy; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then rustup component add clippy; fi
 script:
     - cargo build
     - cargo test
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cargo doc; cargo clipp; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cargo doc; cargo clippy; fi
     - for d in `ls examples/`; do
           cd examples/${d}/;
           pwd;
