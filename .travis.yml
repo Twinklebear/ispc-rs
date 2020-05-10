@@ -17,6 +17,7 @@ matrix:
           osx_image: xcode9.4
           rust: stable
         - os: windows
+          language: cpp
           rust: stable
 before_script:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
@@ -39,7 +40,7 @@ before_script:
           export LIBCLANG_PATH=`pwd`/LLVM-9.0.0/;
           wget -O ispc.zip https://github.com/ispc/ispc/releases/download/v1.13.0/ispc-v1.13.0-windows.zip;
           7z x ispc.zip -y -o"./ispc-v1.13.0-windows/";
-          choco install visualstudio2019buildtools;
+          choco install rust-ms;
       fi
     - export PATH=$PATH:`pwd`/ispc-v1.13.0-linux/bin/:`pwd`/ispc-v1.13.0-macOS/bin/:`pwd`/ispc-v1.13.0-windows/bin/
     - ispc --version
