@@ -135,6 +135,8 @@ pub enum OptimizationOpt {
     FastMath,
     /// Always issue aligned vector load and store instructions.
     ForceAlignedMemory,
+    /// Disable using zmm registers in favor of ymm on avx512skx-i32x16 (ISPC 1.13+)
+    DisableZmm,
 }
 
 impl ToString for OptimizationOpt {
@@ -146,6 +148,7 @@ impl ToString for OptimizationOpt {
             OptimizationOpt::FastMaskedVload => String::from("--opt=fast-masked-vload"),
             OptimizationOpt::FastMath => String::from("--opt=fast-math"),
             OptimizationOpt::ForceAlignedMemory => String::from("--opt=force-aligned-memory"),
+            OptimizationOpt::DisableZmm => String::from("--opt=disable-zmm"),
         }
     }
 }
