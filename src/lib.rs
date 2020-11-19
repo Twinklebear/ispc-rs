@@ -8,7 +8,7 @@
 //! 
 //! # Documentation
 //! 
-//! Rust doc can be found [here](http://www.willusher.io/ispc-rs/ispc), ISPC documentation can
+//! Rust doc can be found [here](https://docs.rs/ispc/), ISPC documentation can
 //! be found [here](https://ispc.github.io).
 //! 
 //! # Using ispc-rs
