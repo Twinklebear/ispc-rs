@@ -1,0 +1,45 @@
+name: CI
+on: [push, pull_request]
+env:
+    CARGO_TERM_COLOR: always
+    ISPC_VERSION: 1.14.1
+jobs:
+    build_linux:
+        runs-on: ubuntu-20.04
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+            - run: wget -O ispc.tar.gz https://github.com/ispc/ispc/releases/download/v${ISPC_VERSION}/ispc-v${ISPC_VERSION}-linux.tar.gz
+            - run: tar -xf ispc.tar.gz
+            - run: echo "PATH=$PATH:`pwd`/ispc-v${ISPC_VERSION}-linux/bin/" >> $GITHUB_ENV
+            - run: cargo build
+            - run: cargo test
+            - run: cargo doc
+            - run: scripts/build-examples-linux.sh
+    build_mac:
+        runs-on: macos-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+            - run: brew install ispc
+            - run: cargo build
+            - run: cargo test
+            - run: scripts/build-examples-linux.sh
+    build_windows:
+        runs-on: windows-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+            - run: choco install wget
+            - run: wget -O LLVM-11.0.0.7z https://www.dl.dropboxusercontent.com/s/vontvxjexyk417e/LLVM-11.0.0.7z
+            - run: 7z x LLVM-11.0.0.7z -y;
+            - run: wget -O ispc.zip https://github.com/ispc/ispc/releases/download/v${env:ISPC_VERSION}/ispc-v${env:ISPC_VERSION}-windows.zip
+            - run: 7z x ispc.zip -y -o"ispc"
+            - run: scripts/build-test-windows.ps1
+
