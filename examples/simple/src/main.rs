@@ -11,9 +11,7 @@ fn main() {
     unsafe {
         // We use the generated bindings in the simple module to call
         // our ISPC function add_lists
-        simple::add_lists(a.as_ptr(), b.as_ptr(),
-                        result.as_mut_ptr(), a.len() as i32);
+        simple::add_lists(a.as_ptr(), b.as_ptr(), result.as_mut_ptr(), a.len() as i32);
     }
     println!("a + b = {:?}", result);
 }
-

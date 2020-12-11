@@ -8,4 +8,3 @@ fn main() {
         simple_tasks::run_tasks();
     }
 }
-

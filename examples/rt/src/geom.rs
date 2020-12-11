@@ -3,9 +3,9 @@
 
 use std::ptr;
 
+use material::Lambertian;
 use rt;
 use vec3f::Vec3f;
-use material::Lambertian;
 
 /// Type alias for the Geometry base struct in ISPC
 pub type Geometry = ::rt::Geometry;
@@ -31,10 +31,19 @@ impl Sphere {
         // whatever a bit awkward.
         let mut geom: *const Geometry = ptr::null();
         unsafe {
-            rt::make_sphere(&mut geom as *mut *const Geometry, &center as *const Vec3f, radius,
-                           mat.ispc_equiv());
+            rt::make_sphere(
+                &mut geom as *mut *const Geometry,
+                &center as *const Vec3f,
+                radius,
+                mat.ispc_equiv(),
+            );
         }
-        Sphere { center: center, radius: radius, material: mat, ispc_geom: geom }
+        Sphere {
+            center: center,
+            radius: radius,
+            material: mat,
+            ispc_geom: geom,
+        }
     }
 }
 
@@ -46,10 +55,11 @@ impl ISPCGeometry for Sphere {
 
 impl Drop for Sphere {
     fn drop(&mut self) {
-        unsafe { rt::drop_sphere(self.ispc_geom); }
+        unsafe {
+            rt::drop_sphere(self.ispc_geom);
+        }
     }
 }
-
 
 /// A simple infinite plane "centered" at center
 pub struct Plane {
@@ -64,10 +74,19 @@ impl Plane {
         let mut geom: *const Geometry = ptr::null();
         let n = normal.normalized();
         unsafe {
-            rt::make_plane(&mut geom as *mut *const Geometry, &center as *const Vec3f,
-                          &n as *const Vec3f, mat.ispc_equiv());
+            rt::make_plane(
+                &mut geom as *mut *const Geometry,
+                &center as *const Vec3f,
+                &n as *const Vec3f,
+                mat.ispc_equiv(),
+            );
         }
-        Plane { center: center, normal: n, material: mat, ispc_geom: geom }
+        Plane {
+            center: center,
+            normal: n,
+            material: mat,
+            ispc_geom: geom,
+        }
     }
 }
 
@@ -79,7 +98,8 @@ impl ISPCGeometry for Plane {
 
 impl Drop for Plane {
     fn drop(&mut self) {
-        unsafe { rt::drop_plane(self.ispc_geom); }
+        unsafe {
+            rt::drop_plane(self.ispc_geom);
+        }
     }
 }
-

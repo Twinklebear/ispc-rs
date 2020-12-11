@@ -10,4 +10,3 @@ fn main() {
         multi_file::fcn_b();
     }
 }
-

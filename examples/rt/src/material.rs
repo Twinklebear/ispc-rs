@@ -20,7 +20,10 @@ impl Lambertian {
         unsafe {
             rt::make_lambertian(&mut mat as *mut *const Material, &albedo as *const Vec3f);
         }
-        Lambertian { albedo: albedo, ispc_equiv: mat }
+        Lambertian {
+            albedo: albedo,
+            ispc_equiv: mat,
+        }
     }
     pub fn ispc_equiv(&self) -> *const Material {
         self.ispc_equiv
@@ -29,7 +32,8 @@ impl Lambertian {
 
 impl Drop for Lambertian {
     fn drop(&mut self) {
-        unsafe { rt::drop_lambertian(self.ispc_equiv); }
+        unsafe {
+            rt::drop_lambertian(self.ispc_equiv);
+        }
     }
 }
-

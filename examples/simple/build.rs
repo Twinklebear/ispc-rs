@@ -1,6 +1,6 @@
-extern crate ispc_rt;
 #[cfg(feature = "ispc")]
 extern crate ispc_compile;
+extern crate ispc_rt;
 
 #[cfg(feature = "ispc")]
 fn link_ispc() {
@@ -11,12 +11,13 @@ fn link_ispc() {
     ispc_compile::Config::new()
         .file("src/simple.ispc")
         .target_isas(vec![
-                     TargetISA::SSE2i32x4,
-                     TargetISA::SSE4i32x4,
-                     TargetISA::AVX1i32x8,
-                     TargetISA::AVX2i32x8,
-                     TargetISA::AVX512KNLi32x16,
-                     TargetISA::AVX512SKXi32x8])
+            TargetISA::SSE2i32x4,
+            TargetISA::SSE4i32x4,
+            TargetISA::AVX1i32x8,
+            TargetISA::AVX2i32x8,
+            TargetISA::AVX512KNLi32x16,
+            TargetISA::AVX512SKXi32x8,
+        ])
         .out_dir("src/")
         .compile("simple");
 }
@@ -31,4 +32,3 @@ fn link_ispc() {
 fn main() {
     link_ispc();
 }
-

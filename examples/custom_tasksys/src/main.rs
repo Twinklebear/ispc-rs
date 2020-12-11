@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate ispc;
-extern crate libc;
 extern crate aligned_alloc;
+extern crate libc;
 
 use std::mem;
 use std::sync::Arc;
 
-use ispc::task::ISPCTaskFn;
 use ispc::exec::TaskSystem;
+use ispc::task::ISPCTaskFn;
 
 ispc_module!(custom_tasksys);
 
@@ -17,18 +17,22 @@ ispc_module!(custom_tasksys);
 struct CustomTaskSys;
 
 impl TaskSystem for CustomTaskSys {
-    unsafe fn alloc(&self, handle_ptr: *mut *mut libc::c_void, size: i64, align: i32) -> *mut libc::c_void {
+    unsafe fn alloc(
+        &self,
+        handle_ptr: *mut *mut libc::c_void,
+        size: i64,
+        align: i32,
+    ) -> *mut libc::c_void {
         println!("CustomTaskSys::alloc: size = {}, align = {}", size, align);
         // If the handle ptr is null we need a new container to store the allocations made in
         // this execution context
-        let mut ctx =
-            if (*handle_ptr).is_null() {
-                // Allocate a new vector we can store this context's allocations in
-                Box::new(Vec::new())
-            } else {
-                // Get the vector containing the context's memory allocations and add a new allocation
-                mem::transmute(*handle_ptr)
-            };
+        let mut ctx = if (*handle_ptr).is_null() {
+            // Allocate a new vector we can store this context's allocations in
+            Box::new(Vec::new())
+        } else {
+            // Get the vector containing the context's memory allocations and add a new allocation
+            mem::transmute(*handle_ptr)
+        };
         let buf = aligned_alloc::aligned_alloc(size as usize, align as usize) as *mut libc::c_void;
         ctx.push(buf);
         // Set the handle ptr to our list of allocations that we need to free in ISPCSync so sync
@@ -37,9 +41,19 @@ impl TaskSystem for CustomTaskSys {
         *handle_ptr = Box::into_raw(ctx) as *mut libc::c_void;
         buf
     }
-    unsafe fn launch(&self, handle_ptr: *mut *mut libc::c_void, f: ISPCTaskFn, data: *mut libc::c_void,
-                     count0: i32, count1: i32, count2: i32) {
-        println!("CustomTaskSys::launch: counts = [{}, {}, {}]", count0, count1, count2);
+    unsafe fn launch(
+        &self,
+        handle_ptr: *mut *mut libc::c_void,
+        f: ISPCTaskFn,
+        data: *mut libc::c_void,
+        count0: i32,
+        count1: i32,
+        count2: i32,
+    ) {
+        println!(
+            "CustomTaskSys::launch: counts = [{}, {}, {}]",
+            count0, count1, count2
+        );
         // This task system simply executes the tasks serially in a nested loop
         let total_tasks = count0 * count1 * count2;
         for z in 0..count2 {
@@ -47,7 +61,19 @@ impl TaskSystem for CustomTaskSys {
                 for x in 0..count0 {
                     let task_id = x + y * count0 + z * count0 * count1;
                     // Our thread id is 0 and there's only 1 thread running here
-                    (f)(data, 0, 1, task_id, total_tasks, x, y, z, count0, count1, count2);
+                    (f)(
+                        data,
+                        0,
+                        1,
+                        task_id,
+                        total_tasks,
+                        x,
+                        y,
+                        z,
+                        count0,
+                        count1,
+                        count2,
+                    );
                 }
             }
         }
@@ -74,4 +100,3 @@ fn main() {
         custom_tasksys::custom_tasksys(4);
     }
 }
-

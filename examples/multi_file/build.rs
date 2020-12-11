@@ -9,5 +9,3 @@ fn main() {
     }
     cfg.compile("multi_file")
 }
-
-

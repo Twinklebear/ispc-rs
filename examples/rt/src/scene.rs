@@ -38,16 +38,16 @@
 //! }
 //! ```
 
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::prelude::*;
 
 use serde_json::{self, Value};
 
-use vec3f::Vec3f;
 use camera::Camera;
-use geom::{Sphere, Plane, ISPCGeometry};
+use geom::{ISPCGeometry, Plane, Sphere};
 use lights::PointLight;
 use material::Lambertian;
+use vec3f::Vec3f;
 
 pub struct Scene {
     /// Image width
@@ -77,19 +77,39 @@ impl Scene {
         if !data.is_object() {
             panic!("Expected a root JSON object. See example scenes");
         }
-        let img_width = data.get("width").expect("image width must be set")
-            .as_u64().expect("image width must be a uint") as usize;
-        let img_height = data.get("height").expect("image height must be set")
-            .as_u64().expect("image height must be a uint") as usize;
-        let n_samples = data.get("n_samples").expect("n_samples must be set")
-            .as_u64().expect("n_samples must be a uint") as usize;
-        let camera = Scene::load_camera(data.get("camera").expect("A camera must be specified"),
-                                        img_width, img_height);
-        let geom = Scene::load_geometry(data.get("geometry").expect("A list of geometry must be set"));
+        let img_width = data
+            .get("width")
+            .expect("image width must be set")
+            .as_u64()
+            .expect("image width must be a uint") as usize;
+        let img_height = data
+            .get("height")
+            .expect("image height must be set")
+            .as_u64()
+            .expect("image height must be a uint") as usize;
+        let n_samples = data
+            .get("n_samples")
+            .expect("n_samples must be set")
+            .as_u64()
+            .expect("n_samples must be a uint") as usize;
+        let camera = Scene::load_camera(
+            data.get("camera").expect("A camera must be specified"),
+            img_width,
+            img_height,
+        );
+        let geom = Scene::load_geometry(
+            data.get("geometry")
+                .expect("A list of geometry must be set"),
+        );
         let light = Scene::load_light(data.get("light").expect("A light must be specified"));
-        Scene { width: img_width, height: img_height, n_samples: n_samples,
-                camera: camera, geometry: geom, light: light }
-                
+        Scene {
+            width: img_width,
+            height: img_height,
+            n_samples: n_samples,
+            camera: camera,
+            geometry: geom,
+            light: light,
+        }
     }
     fn load_camera(e: &Value, width: usize, height: usize) -> Camera {
         let pos = Scene::load_vec3f(e.get("pos").expect("Camera view position must be set"))
@@ -98,46 +118,67 @@ impl Scene {
             .expect("Invalid camera target");
         let up = Scene::load_vec3f(e.get("up").expect("Camera up vector must be set"))
             .expect("Invalid camera up");
-        let fovy = e.get("fovy").expect("Camera FOV Y must be set").as_f64()
+        let fovy = e
+            .get("fovy")
+            .expect("Camera FOV Y must be set")
+            .as_f64()
             .expect("FOV Y must be a float") as f32;
         Camera::new(pos, target, up, fovy, width, height)
     }
     fn load_geometry(e: &Value) -> Vec<Box<ISPCGeometry>> {
         let geom = e.as_array().expect("Geometry must be an array of objects");
-        geom.iter().map(|x| {
-            if !x.is_object() {
-                panic!("Geometry must be specified as JSON objects, see the examples");
-            }
-            let ty = x.get("type").expect("A geometry type must be set").as_str()
-                .expect("Geometry type must be a string");
-            let lambertian = Scene::load_vec3f(x.get("lambertian").expect("A lambertian color must be set"))
+        geom.iter()
+            .map(|x| {
+                if !x.is_object() {
+                    panic!("Geometry must be specified as JSON objects, see the examples");
+                }
+                let ty = x
+                    .get("type")
+                    .expect("A geometry type must be set")
+                    .as_str()
+                    .expect("Geometry type must be a string");
+                let lambertian =
+                    Scene::load_vec3f(x.get("lambertian").expect("A lambertian color must be set"))
+                        .unwrap();
+                let mat = Lambertian::new(lambertian);
+                if ty == "sphere" {
+                    let center =
+                        Scene::load_vec3f(x.get("center").expect("A sphere center must be set"))
                             .unwrap();
-            let mat = Lambertian::new(lambertian);
-            if ty == "sphere" {
-                let center = Scene::load_vec3f(x.get("center").expect("A sphere center must be set")).unwrap();
-                let radius = x.get("radius").expect("A sphere radius must be set").as_f64().unwrap() as f32;
-                Box::new(Sphere::new(center, radius, mat)) as Box<ISPCGeometry>
-            } else if ty == "plane" {
-                let center = Scene::load_vec3f(x.get("center").expect("A plane center must be set")).unwrap();
-                let normal = Scene::load_vec3f(x.get("normal").expect("A plane normal must be set")).unwrap();
-                Box::new(Plane::new(center, normal, mat)) as Box<ISPCGeometry>
-            } else {
-                panic!("Unrecognized geometry type {}", ty);
-            }
-        }).collect()
+                    let radius = x
+                        .get("radius")
+                        .expect("A sphere radius must be set")
+                        .as_f64()
+                        .unwrap() as f32;
+                    Box::new(Sphere::new(center, radius, mat)) as Box<ISPCGeometry>
+                } else if ty == "plane" {
+                    let center =
+                        Scene::load_vec3f(x.get("center").expect("A plane center must be set"))
+                            .unwrap();
+                    let normal =
+                        Scene::load_vec3f(x.get("normal").expect("A plane normal must be set"))
+                            .unwrap();
+                    Box::new(Plane::new(center, normal, mat)) as Box<ISPCGeometry>
+                } else {
+                    panic!("Unrecognized geometry type {}", ty);
+                }
+            })
+            .collect()
     }
     fn load_light(e: &Value) -> PointLight {
         let pos = Scene::load_vec3f(e.get("pos").expect("A light position must be set")).unwrap();
-        let intensity = Scene::load_vec3f(e.get("intensity").expect("A light intensity must be set")).unwrap();
+        let intensity =
+            Scene::load_vec3f(e.get("intensity").expect("A light intensity must be set")).unwrap();
         PointLight::new(pos, intensity)
     }
     fn load_vec3f(e: &Value) -> Option<Vec3f> {
         e.as_array().map(|x| {
             assert_eq!(x.len(), 3);
-            Vec3f::new(x[0].as_f64().unwrap() as f32,
-                       x[1].as_f64().unwrap() as f32,
-                       x[2].as_f64().unwrap() as f32)
+            Vec3f::new(
+                x[0].as_f64().unwrap() as f32,
+                x[1].as_f64().unwrap() as f32,
+                x[2].as_f64().unwrap() as f32,
+            )
         })
     }
 }
-

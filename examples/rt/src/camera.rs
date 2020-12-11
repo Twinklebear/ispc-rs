@@ -6,7 +6,14 @@ pub type Camera = ::rt::Camera;
 
 impl Camera {
     /// Create a new camera at some orientation in the world
-    pub fn new(pos: Vec3f, target: Vec3f, up: Vec3f, fovy: f32, width: usize, height: usize) -> Camera {
+    pub fn new(
+        pos: Vec3f,
+        target: Vec3f,
+        up: Vec3f,
+        fovy: f32,
+        width: usize,
+        height: usize,
+    ) -> Camera {
         let dir = target - pos;
         let dz = dir.normalized();
         let dx = -dz.cross(&up).normalized();
@@ -17,9 +24,15 @@ impl Camera {
         let screen_du = dx * dim_x;
         let screen_dv = dy * dim_y;
         let dir_top_left = dz - 0.5 * screen_du - 0.5 * screen_dv;
-        Camera { pos: pos, dir: dir.normalized(), up: up.normalized(),
-                 dir_top_left: dir_top_left, screen_du: screen_du,
-                 screen_dv: screen_dv, width: width as i32, height: height as i32 }
+        Camera {
+            pos: pos,
+            dir: dir.normalized(),
+            up: up.normalized(),
+            dir_top_left: dir_top_left,
+            screen_du: screen_du,
+            screen_dv: screen_dv,
+            width: width as i32,
+            height: height as i32,
+        }
     }
 }
-

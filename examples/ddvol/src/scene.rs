@@ -21,24 +21,24 @@
 //!	    "n_samples": 4
 //! }
 //! ```
-//! 
+//!
 //! The `transfer_function` element can be one of the default ones `jet`, `cool_warm` or
 //! `gray_scale` or the name of a ParaView exported transfer function (any string ending in
 //! .json). ParaView transfer function importing is still a TODO though.
 
+use std::ffi::OsStr;
+use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use std::fs::File;
-use std::ffi::OsStr;
 
 use serde_json::{self, Value};
 
-use ddvol;
 use camera::Camera;
+use ddvol;
+use raw;
+use tfn::TransferFunction;
 use vec3::{Vec3f, Vec3i};
 use vol::Volume;
-use tfn::TransferFunction;
-use raw;
 
 pub type RenderParams = ddvol::RenderParams;
 
@@ -73,33 +73,63 @@ impl Scene {
             Some(p) => p,
             None => Path::new(file),
         };
-        let img_width = data.get("width").expect("image width must be set")
-            .as_u64().expect("image width must be an int") as usize;
-        let img_height = data.get("height").expect("image height must be set")
-            .as_u64().expect("image height must be an int") as usize;
-        let mut volume = Scene::load_volume(data.get("volume").expect("A volume must be specified"), &base_path);
-        let tfn = Scene::load_transfer_function(data.get("transfer_function")
-                                                .expect("A transfer function must be specified"), &base_path);
+        let img_width = data
+            .get("width")
+            .expect("image width must be set")
+            .as_u64()
+            .expect("image width must be an int") as usize;
+        let img_height = data
+            .get("height")
+            .expect("image height must be set")
+            .as_u64()
+            .expect("image height must be an int") as usize;
+        let mut volume = Scene::load_volume(
+            data.get("volume").expect("A volume must be specified"),
+            &base_path,
+        );
+        let tfn = Scene::load_transfer_function(
+            data.get("transfer_function")
+                .expect("A transfer function must be specified"),
+            &base_path,
+        );
         volume.set_transfer_function(tfn);
 
-        let camera = Scene::load_camera(data.get("camera").expect("A camera must be specified"),
-                                        img_width, img_height);
+        let camera = Scene::load_camera(
+            data.get("camera").expect("A camera must be specified"),
+            img_width,
+            img_height,
+        );
         let render_params = Scene::load_render_params(&data);
-        Scene { width: img_width, height: img_height, camera: camera,
-                volume: volume, params: render_params }
+        Scene {
+            width: img_width,
+            height: img_height,
+            camera: camera,
+            volume: volume,
+            params: render_params,
+        }
     }
     fn load_volume(e: &Value, base_path: &Path) -> Volume {
-        let mut vol_file = Path::new(e.get("file").expect("A volume filename must be set")
-                                 .as_str().expect("Volume filename must be a string")).to_owned();
+        let mut vol_file = Path::new(
+            e.get("file")
+                .expect("A volume filename must be set")
+                .as_str()
+                .expect("Volume filename must be a string"),
+        )
+        .to_owned();
         if !vol_file.is_absolute() {
             vol_file = base_path.join(vol_file);
         }
-        let dimensions = Scene::load_vec3i(e.get("dimensions")
-                                           .expect("Volume dims must be set for RAW volume"))
-            .expect("Invalid dimensions specified");
+        let dimensions = Scene::load_vec3i(
+            e.get("dimensions")
+                .expect("Volume dims must be set for RAW volume"),
+        )
+        .expect("Invalid dimensions specified");
 
-        let dtype = e.get("data_type").expect("A data type must be specified for RAW volumes")
-                     .as_str().expect("data type must be a string");
+        let dtype = e
+            .get("data_type")
+            .expect("A data type must be specified for RAW volumes")
+            .as_str()
+            .expect("data type must be a string");
         if dtype == "u8" {
             raw::import::<u8>(vol_file.as_path(), dimensions)
         } else if dtype == "u16" {
@@ -109,11 +139,17 @@ impl Scene {
         } else if dtype == "f64" {
             raw::import::<f64>(vol_file.as_path(), dimensions)
         } else {
-            panic!("Unrecognized data type {}! Valid options are u8, u16, f32, f64", dtype);
+            panic!(
+                "Unrecognized data type {}! Valid options are u8, u16, f32, f64",
+                dtype
+            );
         }
     }
     fn load_transfer_function(e: &Value, base_path: &Path) -> TransferFunction {
-        let tfn_file = Path::new(e.as_str().expect("transfer_function filename/name must be a string"));
+        let tfn_file = Path::new(
+            e.as_str()
+                .expect("transfer_function filename/name must be a string"),
+        );
         // Load the ParaView transfer function file if it's one, otherwise
         // see if it's one of our defaults we can provide
         if tfn_file.extension() == Some(OsStr::new("json")) {
@@ -131,7 +167,10 @@ impl Scene {
             } else if tfn_name == "cool_warm" {
                 TransferFunction::cool_warm()
             } else {
-                panic!("Scene error: {} is not a built in transfer function", tfn_name);
+                panic!(
+                    "Scene error: {} is not a built in transfer function",
+                    tfn_name
+                );
             }
         }
     }
@@ -149,26 +188,43 @@ impl Scene {
             Ok(d) => d,
             Err(e) => panic!("JSON parsing error: {}", e),
         };
-        let pv_tfn = &data.as_array().expect("Expected a root JSON array in ParaView function")[0];
-        let color_space = pv_tfn.get("ColorSpace").expect("Expected a color space from ParaView function")
-            .as_str().expect("ColorSpace must be a string");
+        let pv_tfn = &data
+            .as_array()
+            .expect("Expected a root JSON array in ParaView function")[0];
+        let color_space = pv_tfn
+            .get("ColorSpace")
+            .expect("Expected a color space from ParaView function")
+            .as_str()
+            .expect("ColorSpace must be a string");
         if color_space == "Diverging" {
-            println!("Warning: ParaView's diverging colormap interpolation is not supported, \
-                      you may see some incorrect colors");
+            println!(
+                "Warning: ParaView's diverging colormap interpolation is not supported, \
+                      you may see some incorrect colors"
+            );
         }
-        let name = pv_tfn.get("Name").expect("Expected a name for ParaView function");
+        let name = pv_tfn
+            .get("Name")
+            .expect("Expected a name for ParaView function");
         if pv_tfn.get("Points").is_some() {
-            println!("Warning: Opacity values in ParaView transfer functions are currently ignored");
+            println!(
+                "Warning: Opacity values in ParaView transfer functions are currently ignored"
+            );
         }
-        let rgb_data = pv_tfn.get("RGBPoints").expect("Expected RGBPoints specifying the transfer function")
-            .as_array().expect("RGBPoints must be an array");
-        let rgb_points: Vec<_> = rgb_data.chunks(4).map(|x| {
-            let val = x[0].as_f64().unwrap() as f32;
-            let r = x[1].as_f64().unwrap() as f32;
-            let g = x[2].as_f64().unwrap() as f32;
-            let b = x[3].as_f64().unwrap() as f32;
-            (val, Vec3f::new(r, g, b))
-        }).collect();
+        let rgb_data = pv_tfn
+            .get("RGBPoints")
+            .expect("Expected RGBPoints specifying the transfer function")
+            .as_array()
+            .expect("RGBPoints must be an array");
+        let rgb_points: Vec<_> = rgb_data
+            .chunks(4)
+            .map(|x| {
+                let val = x[0].as_f64().unwrap() as f32;
+                let r = x[1].as_f64().unwrap() as f32;
+                let g = x[2].as_f64().unwrap() as f32;
+                let b = x[3].as_f64().unwrap() as f32;
+                (val, Vec3f::new(r, g, b))
+            })
+            .collect();
         // Re-sample the ParaView transfer function into an evenly spaced linear transfer function
         let mut colors = Vec::new();
         let mut lo = 0;
@@ -182,12 +238,11 @@ impl Scene {
             }
             let delta = x - rgb_points[lo].0;
             let interval = rgb_points[hi].0 - rgb_points[lo].0;
-            let col =
-                if delta == 0.0 || interval == 0.0 {
-                    rgb_points[lo].1
-                } else {
-                    rgb_points[lo].1 + delta / interval * (rgb_points[hi].1 - rgb_points[lo].1)
-                };
+            let col = if delta == 0.0 || interval == 0.0 {
+                rgb_points[lo].1
+            } else {
+                rgb_points[lo].1 + delta / interval * (rgb_points[hi].1 - rgb_points[lo].1)
+            };
             colors.push(col);
         }
         colors.push(rgb_points.last().unwrap().1);
@@ -201,32 +256,45 @@ impl Scene {
             .expect("Invalid camera target");
         let up = Scene::load_vec3f(e.get("up").expect("Camera up vector must be set"))
             .expect("Invalid camera up");
-        let fovy = e.get("fovy").expect("Camera FOV Y must be set").as_f64()
+        let fovy = e
+            .get("fovy")
+            .expect("Camera FOV Y must be set")
+            .as_f64()
             .expect("FOV Y must be a float") as f32;
         Camera::new(pos, target, up, fovy, width as u32, height as u32)
     }
     fn load_render_params(e: &Value) -> RenderParams {
-        let background = Scene::load_vec3f(e.get("background").expect("Background color must be set"))
-            .expect("Background color must be a vec3f");
-        let n_samples = e.get("n_samples").expect("n_samples per pixel must be set")
-            .as_i64().expect("n_samples must be an int") as i32;
-        RenderParams { background: background, n_samples: n_samples }
+        let background =
+            Scene::load_vec3f(e.get("background").expect("Background color must be set"))
+                .expect("Background color must be a vec3f");
+        let n_samples = e
+            .get("n_samples")
+            .expect("n_samples per pixel must be set")
+            .as_i64()
+            .expect("n_samples must be an int") as i32;
+        RenderParams {
+            background: background,
+            n_samples: n_samples,
+        }
     }
     fn load_vec3i(e: &Value) -> Option<Vec3i> {
         e.as_array().map(|x| {
             assert_eq!(x.len(), 3);
-            Vec3i::new(x[0].as_i64().unwrap() as i32,
-                       x[1].as_i64().unwrap() as i32,
-                       x[2].as_i64().unwrap() as i32)
+            Vec3i::new(
+                x[0].as_i64().unwrap() as i32,
+                x[1].as_i64().unwrap() as i32,
+                x[2].as_i64().unwrap() as i32,
+            )
         })
     }
     fn load_vec3f(e: &Value) -> Option<Vec3f> {
         e.as_array().map(|x| {
             assert_eq!(x.len(), 3);
-            Vec3f::new(x[0].as_f64().unwrap() as f32,
-                       x[1].as_f64().unwrap() as f32,
-                       x[2].as_f64().unwrap() as f32)
+            Vec3f::new(
+                x[0].as_f64().unwrap() as f32,
+                x[1].as_f64().unwrap() as f32,
+                x[2].as_f64().unwrap() as f32,
+            )
         })
     }
 }
-
