@@ -1,6 +1,6 @@
 [package]
 name = "ispc_rt"
-version = "1.0.4"
+version = "1.0.5"
 authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "https://docs.rs/ispc_rt/"
@@ -24,7 +24,7 @@ exclude = [
 ]
 
 [dependencies]
-libc = "0.2"
+libc = "0.2.117"
 aligned_alloc = "0.1.3"
-num_cpus = "1.11"
+num_cpus = "1.13.1"
 
