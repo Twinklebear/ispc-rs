@@ -37,7 +37,7 @@ use std::env;
 use std::collections::BTreeSet;
 
 use regex::Regex;
-use semver::Version;
+use semver::{Version, Prerelease, BuildMetadata};
 
 pub use opt::{MathLib, Addressing, Architecture, CPU, OptimizationOpt, TargetISA};
 
@@ -259,7 +259,7 @@ impl Config {
     /// Emit instrumentation code for ISPC to gather performance data such
     /// as vector utilization.
     pub fn instrument(&mut self) -> &mut Config {
-        let min_ver = Version { major: 1, minor: 9, patch: 1, pre: vec![], build: vec![] };
+        let min_ver = Version { major: 1, minor: 9, patch: 1, pre: Prerelease::EMPTY, build: BuildMetadata::EMPTY };
         if self.ispc_version < min_ver {
             exit_failure!("Error: instrumentation is not supported on ISPC versions \
                           older than 1.9.1 as it generates a non-C compatible header");
@@ -412,7 +412,7 @@ impl Config {
     fn generate_bindgen_header(&mut self, lib: &str) {
         self.bindgen_header = self.get_build_dir().join(format!("_{}_ispc_bindgen_header.h", lib));
         let mut include_file = File::create(&self.bindgen_header).unwrap();
-       
+
         writeln!(include_file, "#include <stdint.h>").unwrap();
         writeln!(include_file, "#include <stdbool.h>").unwrap();
 
