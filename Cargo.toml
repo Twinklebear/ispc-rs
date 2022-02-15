@@ -26,6 +26,6 @@ exclude = [
 ]
 
 [dependencies]
-ispc_compile = { path = "./compile/", version = "1.0.10" }
+ispc_compile = { path = "./compile/", version = "1.0.11" }
 ispc_rt = { path = "./runtime/", version = "1.0.5" }
 
