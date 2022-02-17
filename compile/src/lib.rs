@@ -352,7 +352,7 @@ impl Config {
                 }
             }
         }
-        let libfile = lib.to_owned() + &env::var("HOST").unwrap();
+        let libfile = lib.to_owned() + &self.get_target();
         if !self.assemble(&libfile).success() {
             exit_failure!("Failed to assemble ISPC objects into library {}", lib);
         }
@@ -449,6 +449,8 @@ impl Config {
             ispc_args.push(String::from("--arch=x86"));
         } else if target.starts_with("x86_64") {
             ispc_args.push(String::from("--arch=x86-64"));
+        } else if target.starts_with("aarch64") {
+            ispc_args.push(String::from("--arch=aarch64"));
         }
         for d in &self.defines {
             match d.1 {
@@ -500,6 +502,12 @@ impl Config {
                 isa_str.push_str(&format!(",{}", isa.to_string()));
             }
             ispc_args.push(isa_str);
+        } else if target.starts_with("aarch64") {
+            // For arm we may need to override the default target ISA,
+            // e.g. on macOS with ISPC running in Rosetta, ISPC will default to
+            // SSE4, but we need NEON
+
+            ispc_args.push(String::from("--target=neon-i32x4"));
         }
         if let Some(ref a) = self.architecture {
             ispc_args.push(a.to_string());
