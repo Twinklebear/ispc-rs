@@ -29,7 +29,7 @@ pub enum Architecture {
     Arm,
     Aarch64,
     X86,
-    X64
+    X64,
 }
 
 impl ToString for Architecture {
@@ -271,4 +271,3 @@ impl ToString for TargetOS {
         }
     }
 }
-

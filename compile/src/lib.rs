@@ -28,18 +28,18 @@ extern crate semver;
 
 pub mod opt;
 
-use std::path::{Path, PathBuf};
-use std::fs::File;
-use std::io::{Write, BufRead, BufReader};
-use std::process::{Command, ExitStatus};
-use std::fmt::Display;
-use std::env;
 use std::collections::BTreeSet;
+use std::env;
+use std::fmt::Display;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Write};
+use std::path::{Path, PathBuf};
+use std::process::{Command, ExitStatus};
 
 use regex::Regex;
-use semver::{Version, Prerelease, BuildMetadata};
+use semver::{BuildMetadata, Prerelease, Version};
 
-pub use opt::{MathLib, Addressing, Architecture, CPU, OptimizationOpt, TargetISA, TargetOS};
+pub use opt::{Addressing, Architecture, MathLib, OptimizationOpt, TargetISA, TargetOS, CPU};
 
 /// Compile the list of ISPC files into a static library and generate bindings
 /// using bindgen. The library name should not contain a lib prefix or a lib
@@ -115,7 +115,9 @@ impl Config {
     pub fn new() -> Config {
         // Query the ISPC compiler version. This also acts as a check that we can
         // find the ISPC compiler when we need it later.
-        let cmd_output = Command::new("ispc").arg("--version").output()
+        let cmd_output = Command::new("ispc")
+            .arg("--version")
+            .output()
             .expect("Failed to find ISPC compiler in PATH");
         if !cmd_output.status.success() {
             exit_failure!("Failed to get ISPC version, is it in your PATH?");
@@ -123,10 +125,15 @@ impl Config {
         let ver_string = String::from_utf8_lossy(&cmd_output.stdout);
         // The ISPC version will be the first version number printed
         let re = Regex::new(r"(\d+\.\d+\.\d+)").unwrap();
-        let ispc_ver = Version::parse(re.captures_iter(&ver_string).next()
-                                      .expect("Failed to parse ISPC version").get(1)
-                                      .expect("Failed to parse ISPC version").as_str())
-                                      .expect("Failed to parse ISPC version");
+        let ispc_ver = Version::parse(
+            re.captures_iter(&ver_string)
+                .next()
+                .expect("Failed to parse ISPC version")
+                .get(1)
+                .expect("Failed to parse ISPC version")
+                .as_str(),
+        )
+        .expect("Failed to parse ISPC version");
 
         Config {
             ispc_version: ispc_ver,
@@ -187,8 +194,9 @@ impl Config {
     }
     /// Add a define to be passed to the ISPC compiler, e.g. `-DFOO`
     /// or `-DBAR=FOO` if a value should also be set.
-    pub fn add_define(&mut self, define: &str, value: Option<&str>)  -> &mut Config {
-        self.defines.push((define.to_string(), value.map(|s| s.to_string())));
+    pub fn add_define(&mut self, define: &str, value: Option<&str>) -> &mut Config {
+        self.defines
+            .push((define.to_string(), value.map(|s| s.to_string())));
         self
     }
     /// Select the 32 or 64 bit addressing calculations for addressing calculations in ISPC.
@@ -261,10 +269,18 @@ impl Config {
     /// Emit instrumentation code for ISPC to gather performance data such
     /// as vector utilization.
     pub fn instrument(&mut self) -> &mut Config {
-        let min_ver = Version { major: 1, minor: 9, patch: 1, pre: Prerelease::EMPTY, build: BuildMetadata::EMPTY };
+        let min_ver = Version {
+            major: 1,
+            minor: 9,
+            patch: 1,
+            pre: Prerelease::EMPTY,
+            build: BuildMetadata::EMPTY,
+        };
         if self.ispc_version < min_ver {
-            exit_failure!("Error: instrumentation is not supported on ISPC versions \
-                          older than 1.9.1 as it generates a non-C compatible header");
+            exit_failure!(
+                "Error: instrumentation is not supported on ISPC versions \
+                          older than 1.9.1 as it generates a non-C compatible header"
+            );
         }
         self.instrument = true;
         self
@@ -305,17 +321,28 @@ impl Config {
         let build_dir = self.get_build_dir();
         let default_args = self.default_args();
         for s in &self.ispc_files[..] {
-            let fname = s.file_stem().expect("ISPC source files must be files")
-                .to_str().expect("ISPC source file names must be valid UTF-8");
+            let fname = s
+                .file_stem()
+                .expect("ISPC source files must be files")
+                .to_str()
+                .expect("ISPC source file names must be valid UTF-8");
             self.print(&format!("cargo:rerun-if-changed={}", s.display()));
 
             let ispc_fname = String::from(fname) + "_ispc";
             let object = build_dir.join(ispc_fname.clone()).with_extension("o");
             let header = build_dir.join(ispc_fname.clone()).with_extension("h");
             let deps = build_dir.join(ispc_fname.clone()).with_extension("idep");
-            let output = Command::new("ispc").args(&default_args[..])
-                .arg(s).arg("-o").arg(&object).arg("-h").arg(&header)
-                .arg("-MMM").arg(&deps).output().unwrap();
+            let output = Command::new("ispc")
+                .args(&default_args[..])
+                .arg(s)
+                .arg("-o")
+                .arg(&object)
+                .arg("-h")
+                .arg(&header)
+                .arg("-MMM")
+                .arg(&deps)
+                .output()
+                .unwrap();
 
             if !output.stderr.is_empty() {
                 let stderr = String::from_utf8_lossy(&output.stderr);
@@ -360,8 +387,7 @@ impl Config {
 
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
-        let bindings = bindgen::Builder::default()
-            .header(self.bindgen_header.to_str().unwrap());
+        let bindings = bindgen::Builder::default().header(self.bindgen_header.to_str().unwrap());
 
         let bindgen_file = dst.join(lib).with_extension("rs");
 
@@ -375,7 +401,8 @@ impl Config {
         };
         file.write_all("#[allow(non_camel_case_types,dead_code,non_upper_case_globals,non_snake_case,improper_ctypes)]\n"
                        .as_bytes()).unwrap();
-        file.write_all(format!("pub mod {} {{\n", lib).as_bytes()).unwrap();
+        file.write_all(format!("pub mod {} {{\n", lib).as_bytes())
+            .unwrap();
         file.write_all(generated_bindings.as_bytes()).unwrap();
         file.write_all(b"}").unwrap();
 
@@ -389,11 +416,13 @@ impl Config {
     /// Link the ISPC code into a static library on Unix using `ar`
     #[cfg(unix)]
     fn assemble(&self, lib: &str) -> ExitStatus {
-        Command::new("ar").arg("crus")
+        Command::new("ar")
+            .arg("crus")
             .arg(format!("lib{}.a", lib))
             .args(&self.objects[..])
             .current_dir(&self.get_out_dir())
-            .status().unwrap()
+            .status()
+            .unwrap()
     }
     /// Link the ISPC code into a static library on Windows using `lib.exe`
     #[cfg(windows)]
@@ -402,15 +431,19 @@ impl Config {
         let mut lib_cmd = gcc::windows_registry::find_tool(&target[..], "lib.exe")
             .expect("Failed to find lib.exe for MSVC toolchain, aborting")
             .to_command();
-        lib_cmd.arg(format!("/OUT:{}.lib", lib))
+        lib_cmd
+            .arg(format!("/OUT:{}.lib", lib))
             .args(&self.objects[..])
             .current_dir(&self.get_out_dir())
-            .status().unwrap()
+            .status()
+            .unwrap()
     }
     /// Generate a single header that includes all of our ISPC headers which we can
     /// pass to bindgen
     fn generate_bindgen_header(&mut self, lib: &str) {
-        self.bindgen_header = self.get_build_dir().join(format!("_{}_ispc_bindgen_header.h", lib));
+        self.bindgen_header = self
+            .get_build_dir()
+            .join(format!("_{}_ispc_bindgen_header.h", lib));
         let mut include_file = File::create(&self.bindgen_header).unwrap();
 
         writeln!(include_file, "#include <stdint.h>").unwrap();
@@ -434,7 +467,9 @@ impl Config {
             if *c != CPU::Generic || (*c == CPU::Generic && opt_level != 0) {
                 ispc_args.push(String::from("-O") + &opt_level.to_string());
             } else {
-                self.print(&"cargo:warning=ispc-rs: Omitting -O0 on CPU::Generic target, ispc bug 1223");
+                self.print(
+                    &"cargo:warning=ispc-rs: Omitting -O0 on CPU::Generic target, ispc bug 1223",
+                );
             }
         } else {
             ispc_args.push(String::from("-O") + &opt_level.to_string());
@@ -520,9 +555,10 @@ impl Config {
     /// Returns the user-set output directory if they've set one, otherwise
     /// returns env("OUT_DIR")
     fn get_out_dir(&self) -> PathBuf {
-        let p = self.out_dir.clone().unwrap_or_else(|| {
-            env::var_os("OUT_DIR").map(PathBuf::from).unwrap()
-        });
+        let p = self
+            .out_dir
+            .clone()
+            .unwrap_or_else(|| env::var_os("OUT_DIR").map(PathBuf::from).unwrap());
         if p.is_relative() {
             env::current_dir().unwrap().join(p)
         } else {
@@ -536,9 +572,8 @@ impl Config {
     /// Returns the user-set debug flag if they've set one, otherwise returns
     /// env("DEBUG")
     fn get_debug(&self) -> bool {
-        self.debug.unwrap_or_else(|| {
-            env::var("DEBUG").map(|x| x == "true").unwrap()
-        })
+        self.debug
+            .unwrap_or_else(|| env::var("DEBUG").map(|x| x == "true").unwrap())
     }
     /// Returns the user-set optimization level if they've set one, otherwise
     /// returns env("OPT_LEVEL")
@@ -551,9 +586,9 @@ impl Config {
     /// Returns the user-set target triple if they're set one, otherwise
     /// returns env("TARGET")
     fn get_target(&self) -> String {
-        self.target.clone().unwrap_or_else(|| {
-            env::var("TARGET").unwrap()
-        })
+        self.target
+            .clone()
+            .unwrap_or_else(|| env::var("TARGET").unwrap())
     }
     /// Print out cargo metadata if enabled
     fn print<T: Display>(&self, s: &T) {
@@ -564,6 +599,7 @@ impl Config {
 }
 
 impl Default for Config {
-    fn default() -> Config { Config::new() }
+    fn default() -> Config {
+        Config::new()
+    }
 }
-
