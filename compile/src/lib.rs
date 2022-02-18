@@ -39,7 +39,7 @@ use std::collections::BTreeSet;
 use regex::Regex;
 use semver::{Version, Prerelease, BuildMetadata};
 
-pub use opt::{MathLib, Addressing, Architecture, CPU, OptimizationOpt, TargetISA};
+pub use opt::{MathLib, Addressing, Architecture, CPU, OptimizationOpt, TargetISA, TargetOS};
 
 /// Compile the list of ISPC files into a static library and generate bindings
 /// using bindgen. The library name should not contain a lib prefix or a lib
@@ -108,6 +108,7 @@ pub struct Config {
     instrument: bool,
     target_isa: Option<Vec<TargetISA>>,
     architecture: Option<Architecture>,
+    target_os: Option<TargetOS>,
 }
 
 impl Config {
@@ -155,6 +156,7 @@ impl Config {
             instrument: false,
             target_isa: None,
             architecture: None,
+            target_os: None,
         }
     }
     /// Add an ISPC file to be compiled
@@ -286,13 +288,11 @@ impl Config {
         self.architecture = Some(arch);
         self
     }
-    /*
-    /// Select the OS target
-    pub fn target_os(&mut self, TargetOS: os) -> &mut Config {
+    /// Select the target OS for cross compilation
+    pub fn target_os(&mut self, os: TargetOS) -> &mut Config {
         self.target_os = Some(os);
         self
     }
-    */
     /// Set whether Cargo metadata should be emitted to link to the compiled library
     pub fn cargo_metadata(&mut self, metadata: bool) -> &mut Config {
         self.cargo_metadata = metadata;
@@ -512,11 +512,9 @@ impl Config {
         if let Some(ref a) = self.architecture {
             ispc_args.push(a.to_string());
         }
-        /*
         if let Some(ref o) = self.target_os {
             ispc_args.push(o.to_string());
         }
-        */
         ispc_args
     }
     /// Returns the user-set output directory if they've set one, otherwise

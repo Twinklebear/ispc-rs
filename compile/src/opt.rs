@@ -243,6 +243,7 @@ pub enum TargetOS {
     Linux,
     Macos,
     Android,
+    Ios,
 }
 
 impl TargetOS {
@@ -253,6 +254,7 @@ impl TargetOS {
             TargetOS::Linux => String::from("linux"),
             TargetOS::Macos => String::from("macos"),
             TargetOS::Android => String::from("android"),
+            TargetOS::Ios => String::from("ios"),
         }
     }
 }
@@ -265,6 +267,7 @@ impl ToString for TargetOS {
             TargetOS::Linux => String::from("--target-os=linux"),
             TargetOS::Macos => String::from("--target-os=macos"),
             TargetOS::Android => String::from("--target-os=android"),
+            TargetOS::Ios => String::from("--target-os=ios"),
         }
     }
 }
