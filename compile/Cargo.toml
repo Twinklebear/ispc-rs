@@ -1,6 +1,6 @@
 [package]
 name = "ispc_compile"
-version = "1.0.11"
+version = "1.0.12"
 authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "https://docs.rs/ispc_compile/"
