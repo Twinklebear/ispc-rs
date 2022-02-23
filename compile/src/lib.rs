@@ -363,9 +363,7 @@ impl Config {
             for d in reader.lines() {
                 // Don't depend on the ISPC "stdlib" file which is output as a dependecy
                 let dep_name = d.unwrap();
-                if dep_name != "C:/iusers/aneshlya/ispc_upstream/stdlib.ispc" {
-                    self.print(&format!("cargo:rerun-if-changed={}", dep_name));
-                }
+                self.print(&format!("cargo:rerun-if-changed={}", dep_name));
             }
 
             // Push on the additional ISA-specific object files if any were generated
