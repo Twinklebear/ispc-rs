@@ -11,7 +11,6 @@
 #![allow(dead_code)]
 
 extern crate libc;
-extern crate aligned_alloc;
 extern crate num_cpus;
 
 pub mod task;
