@@ -1,6 +1,6 @@
 [package]
 name = "ispc"
-version = "1.0.11"
+version = "1.0.12"
 authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "https://docs.rs/ispc/"
@@ -26,6 +26,6 @@ exclude = [
 ]
 
 [dependencies]
-ispc_compile = { path = "./compile/", version = "1.0.12" }
+ispc_compile = { path = "./compile/", version = "1.0.13" }
 ispc_rt = { path = "./runtime/", version = "1.0.6" }
 
