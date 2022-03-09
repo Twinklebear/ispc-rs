@@ -155,6 +155,7 @@ impl ToString for OptimizationOpt {
 
 /// Target instruction sets and vector widths available to specialize for. The
 /// default if none is set will be the host CPU's ISA and vector width.
+#[derive(Clone, Copy, PartialEq)]
 pub enum TargetISA {
     Host,
     SSE2i32x4,
