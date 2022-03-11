@@ -2,7 +2,6 @@
 //! of a task to be scheduled on to threads
 
 use libc;
-use aligned_alloc;
 
 use std::cmp;
 use std::iter::Iterator;
@@ -46,7 +45,7 @@ pub struct Context {
     /// Chunk get the Arc?
     tasks: RwLock<Vec<Arc<Group>>>,
     /// The memory allocated for the various task group's parameters
-    mem: Mutex<Vec<AtomicPtr<libc::c_void>>>,
+    mem: Mutex<Vec<(AtomicPtr<libc::c_void>, std::alloc::Layout)>>,
     /// A unique identifier for this context
     pub id: usize,
 }
@@ -73,9 +72,11 @@ impl Context {
     /// Allocate some memory for this Context's task groups, returns a pointer to the allocated memory.
     pub unsafe fn alloc(&self, size: usize, align: usize) -> *mut libc::c_void {
         // TODO: The README for this lib mentions it may be slow. Maybe use some other allocator?
-        let ptr = aligned_alloc::aligned_alloc(size as usize, align as usize) as *mut libc::c_void;
+        let layout = std::alloc::Layout::from_size_align(size as usize, align as usize)
+            .expect("std::alloc::Layout is invalid. Make sure the align is a power of 2");
+        let ptr = std::alloc::alloc(layout) as *mut libc::c_void;
         let mut mem = self.mem.lock().unwrap();
-        mem.push(AtomicPtr::new(ptr));
+        mem.push((AtomicPtr::new(ptr), layout));
         ptr
     }
     /// An iterator over the **current** groups in the context which have remaining tasks to
@@ -111,9 +112,11 @@ impl Drop for Context {
     /// completed execution.
     fn drop(&mut self) {
         let mut mem = self.mem.lock().unwrap();
-        for ptr in mem.drain(0..) {
+        for tup in mem.drain(0..) {
+            let ptr = tup.0;
+            let layout = tup.1;
             let m = ptr.load(atomic::Ordering::SeqCst);
-            unsafe { aligned_alloc::aligned_free(m as *mut ()); }
+            unsafe { std::alloc::dealloc(m as *mut u8, layout) };
         }
     }
 }
