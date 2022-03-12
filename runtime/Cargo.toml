@@ -1,6 +1,6 @@
 [package]
 name = "ispc_rt"
-version = "1.0.6"
+version = "1.0.7"
 authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "https://docs.rs/ispc_rt/"
@@ -25,6 +25,5 @@ exclude = [
 
 [dependencies]
 libc = "0.2.117"
-# aligned_alloc = "0.1.3" Remove because deprecated in favor of std::alloc
 num_cpus = "1.13.1"
 
