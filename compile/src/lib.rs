@@ -455,7 +455,7 @@ impl Config {
     fn default_args(&self) -> Vec<String> {
         let mut ispc_args = Vec::new();
         let opt_level = self.get_opt_level();
-        if self.get_debug() && opt_level == 0 {
+        if self.get_debug() {
             ispc_args.push(String::from("-g"));
         }
         if let Some(ref c) = self.cpu_target {
