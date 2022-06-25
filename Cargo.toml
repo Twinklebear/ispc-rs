@@ -11,7 +11,7 @@ description = """
 A build-time dependency for Cargo build scripts to help with compiling
 and linking to ISPC code and generating Rust bindings for the resulting library.
 This crate is a meta-crate for the ispc_compile and ispc_rt crates, which provide
-the actual functionality for building ISPC code and generating bindgs, and
+the actual functionality for building ISPC code and generating bindings, and
 importing those bindings into Rust.
 """
 keywords = ["build-dependencies", "ispc", "simd"]
@@ -20,12 +20,18 @@ exclude = [
 	".travis.yml",
 	"*.png",
 	".gitignore",
-    ".github",
-    "scripts/*",
-	"examples/*"
+	".github",
+	"scripts/*",
+	"examples/*",
 ]
 
 [dependencies]
 ispc_compile = { path = "./compile/", version = "1.0.14" }
 ispc_rt = { path = "./runtime/", version = "1.0.7" }
 
+[workspace]
+members = [
+	"compile",
+	"runtime",
+	"examples/*",
+]
