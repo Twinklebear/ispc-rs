@@ -5,8 +5,8 @@ use libc;
 
 use std::cmp;
 use std::iter::Iterator;
-use std::sync::{Mutex, RwLock, Arc};
-use std::sync::atomic::{self, AtomicUsize, AtomicPtr};
+use std::sync::atomic::{self, AtomicPtr, AtomicUsize};
+use std::sync::{Arc, Mutex, RwLock};
 
 /// A pointer to an ISPC task function.
 ///
@@ -17,10 +17,19 @@ use std::sync::atomic::{self, AtomicUsize, AtomicPtr};
 ///                     int taskIndex0, int taskIndex1, int taskIndex2,
 ///                     int taskCount0, int taskCount1, int taskCount2);
 /// ```
-pub type ISPCTaskFn = extern "C" fn(data: *mut libc::c_void, thread_idx: libc::c_int, thread_cnt: libc::c_int,
-                                    task_idx: libc::c_int, task_cnt: libc::c_int, task_idx0: libc::c_int,
-                                    task_idx1: libc::c_int, task_idx2: libc::c_int, task_cnt0: libc::c_int,
-                                    task_cnt1: libc::c_int, task_cnt2: libc::c_int);
+pub type ISPCTaskFn = extern "C" fn(
+    data: *mut libc::c_void,
+    thread_idx: libc::c_int,
+    thread_cnt: libc::c_int,
+    task_idx: libc::c_int,
+    task_cnt: libc::c_int,
+    task_idx0: libc::c_int,
+    task_idx1: libc::c_int,
+    task_idx2: libc::c_int,
+    task_cnt0: libc::c_int,
+    task_cnt1: libc::c_int,
+    task_cnt2: libc::c_int,
+);
 
 /// A list of all task groups spawned by a function in some launch context which
 /// will be sync'd at an explicit `sync` call or function exit.
@@ -53,11 +62,18 @@ pub struct Context {
 impl Context {
     /// Create a new list of tasks for some function with id `id`
     pub fn new(id: usize) -> Context {
-        Context { tasks: RwLock::new(Vec::new()), mem: Mutex::new(Vec::new()), id }
+        Context {
+            tasks: RwLock::new(Vec::new()),
+            mem: Mutex::new(Vec::new()),
+            id,
+        }
     }
     /// Add a task group for execution that was launched in this context
     pub fn launch(&self, total: (i32, i32, i32), data: *mut libc::c_void, fcn: ISPCTaskFn) {
-        self.tasks.write().unwrap().push(Arc::new(Group::new(total, AtomicPtr::new(data), fcn)));
+        self.tasks
+            .write()
+            .unwrap()
+            .push(Arc::new(Group::new(total, AtomicPtr::new(data), fcn)));
     }
     /// Check if all tasks currently in the task list are completed
     ///
@@ -177,13 +193,22 @@ pub struct Group {
 impl Group {
     /// Create a new task group for execution of the function
     pub fn new(total: (i32, i32, i32), data: AtomicPtr<libc::c_void>, fcn: ISPCTaskFn) -> Group {
-        Group { start: AtomicUsize::new(0), end: (total.0 * total.1 * total.2) as usize,
-                total, data, fcn,
-                chunks_launched: AtomicUsize::new(0), chunks_finished: AtomicUsize::new(0) }
+        Group {
+            start: AtomicUsize::new(0),
+            end: (total.0 * total.1 * total.2) as usize,
+            total,
+            data,
+            fcn,
+            chunks_launched: AtomicUsize::new(0),
+            chunks_finished: AtomicUsize::new(0),
+        }
     }
     /// Get an iterator over `chunk_size` chunks of tasks to be executed for this group
     pub fn chunks(&self, chunk_size: usize) -> GroupChunks {
-        GroupChunks { group: self, chunk_size }
+        GroupChunks {
+            group: self,
+            chunk_size,
+        }
     }
     /// Check if all tasks for this group have been completed
     pub fn is_finished(&self) -> bool {
@@ -206,10 +231,16 @@ impl Group {
     /// you get is the last chunk to be executed (`chunk.end == total.0 * total.1 * total.2`)
     /// you must mark this group as finished upon completing execution of the chunk
     fn get_chunk(&self, desired_tasks: usize) -> Option<Chunk> {
-        let start = self.start.fetch_add(desired_tasks, atomic::Ordering::SeqCst);
+        let start = self
+            .start
+            .fetch_add(desired_tasks, atomic::Ordering::SeqCst);
         if start < self.end {
             // Give the chunk 4 tasks or whatever remain
-            let c = Some(Chunk::new(self, start, cmp::min(start + desired_tasks, self.end)));
+            let c = Some(Chunk::new(
+                self,
+                start,
+                cmp::min(start + desired_tasks, self.end),
+            ));
             self.chunks_launched.fetch_add(1, atomic::Ordering::SeqCst);
             c
         } else {
@@ -256,8 +287,13 @@ impl<'a> Chunk<'a> {
     /// Create a new chunk to execute tasks in the group from [start, end)
     pub fn new(group: &'a Group, start: usize, end: usize) -> Chunk {
         let d = AtomicPtr::new(group.data.load(atomic::Ordering::SeqCst));
-        Chunk { start: start as i32, end: end as i32, total: group.total,
-                fcn: group.fcn, data: d, group
+        Chunk {
+            start: start as i32,
+            end: end as i32,
+            total: group.total,
+            fcn: group.fcn,
+            data: d,
+            group,
         }
     }
     /// Execute all tasks in this chunk
@@ -266,18 +302,31 @@ impl<'a> Chunk<'a> {
         let data = self.data.load(atomic::Ordering::SeqCst);
         for t in self.start..self.end {
             let id = self.task_indices(t);
-            (self.fcn)(data, thread_id as libc::c_int, total_threads as libc::c_int,
-                       t as libc::c_int, total_tasks as libc::c_int,
-                       id.0 as libc::c_int, id.1 as libc::c_int, id.2 as libc::c_int,
-                       self.total.0 as libc::c_int, self.total.1 as libc::c_int,
-                       self.total.2 as libc::c_int);
+            (self.fcn)(
+                data,
+                thread_id as libc::c_int,
+                total_threads as libc::c_int,
+                t as libc::c_int,
+                total_tasks as libc::c_int,
+                id.0 as libc::c_int,
+                id.1 as libc::c_int,
+                id.2 as libc::c_int,
+                self.total.0 as libc::c_int,
+                self.total.1 as libc::c_int,
+                self.total.2 as libc::c_int,
+            );
         }
         // Tell the group this chunk is done
-        self.group.chunks_finished.fetch_add(1, atomic::Ordering::SeqCst);
+        self.group
+            .chunks_finished
+            .fetch_add(1, atomic::Ordering::SeqCst);
     }
     /// Get the global task id for the task index
     fn task_indices(&self, id: i32) -> (i32, i32, i32) {
-        (id % self.total.0, (id / self.total.0) % self.total.1, id / (self.total.0 * self.total.1))
+        (
+            id % self.total.0,
+            (id / self.total.0) % self.total.1,
+            id / (self.total.0 * self.total.1),
+        )
     }
 }
-

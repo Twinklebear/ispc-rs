@@ -13,19 +13,19 @@
 extern crate libc;
 extern crate num_cpus;
 
-pub mod task;
 pub mod exec;
 pub mod instrument;
+pub mod task;
 
-use std::mem;
 use std::env;
-use std::sync::{Once, Arc};
 use std::ffi::CStr;
+use std::mem;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Once};
 
-pub use task::ISPCTaskFn;
-pub use exec::{TaskSystem, Parallel};
+pub use exec::{Parallel, TaskSystem};
 pub use instrument::{Instrument, SimpleInstrument};
+pub use task::ISPCTaskFn;
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///
@@ -44,9 +44,9 @@ pub use instrument::{Instrument, SimpleInstrument};
 /// ```
 #[macro_export]
 macro_rules! ispc_module {
-    ($lib:ident) => (
+    ($lib:ident) => {
         include!(concat!(env!("ISPC_OUT_DIR"), "/", stringify!($lib), ".rs"));
-    )
+    };
 }
 
 /// A `PackagedModule` refers to an ISPC module which was previously
@@ -63,7 +63,10 @@ impl PackagedModule {
     /// have any prefix or suffix. For example, instead of `libexample.a` or
     /// `example.lib`, simple pass `example`
     pub fn new(lib: &str) -> PackagedModule {
-        PackagedModule {path: None, lib: lib.to_owned()}
+        PackagedModule {
+            path: None,
+            lib: lib.to_owned(),
+        }
     }
     /// Specify the path to search for the packaged ISPC libraries and bindings
     pub fn lib_path<P: AsRef<Path>>(&mut self, path: P) -> &mut PackagedModule {
@@ -75,19 +78,26 @@ impl PackagedModule {
         let path = self.get_lib_path();
         let libfile = self.lib.clone() + &env::var("TARGET").unwrap();
         let bindgen_file = self.lib.clone() + ".rs";
-        
+
         println!("cargo:rustc-link-lib=static={}", libfile);
-        println!("cargo:rerun-if-changed={}", path.join(get_lib_filename(&libfile)).display());
-        println!("cargo:rerun-if-changed={}", path.join(bindgen_file).display());
+        println!(
+            "cargo:rerun-if-changed={}",
+            path.join(get_lib_filename(&libfile)).display()
+        );
+        println!(
+            "cargo:rerun-if-changed={}",
+            path.join(bindgen_file).display()
+        );
         println!("cargo:rustc-link-search=native={}", path.display());
         println!("cargo:rustc-env=ISPC_OUT_DIR={}", path.display());
     }
     /// Returns the user-set output directory if they've set one, otherwise
     /// returns env("OUT_DIR")
     fn get_lib_path(&self) -> PathBuf {
-        let p = self.path.clone().unwrap_or_else(|| {
-            env::var_os("OUT_DIR").map(PathBuf::from).unwrap()
-        });
+        let p = self
+            .path
+            .clone()
+            .unwrap_or_else(|| env::var_os("OUT_DIR").map(PathBuf::from).unwrap());
         if p.is_relative() {
             env::current_dir().unwrap().join(p)
         } else {
@@ -133,13 +143,11 @@ fn get_task_system() -> &'static dyn TaskSystem {
     // TODO: This is a bit nasty, but I'm not sure on a nicer solution. Maybe something that
     // would let the user register the desired (or default) task system? But if
     // mutable statics can't have destructors we still couldn't have an Arc or Box to something?
-    TASK_INIT.call_once(|| {
-        unsafe {
-            let task_sys = Parallel::new() as Arc<dyn TaskSystem>;
-            let s = &*task_sys as *const (dyn TaskSystem + 'static);
-            mem::forget(task_sys);
-            TASK_SYSTEM = Some(&*s);
-        }
+    TASK_INIT.call_once(|| unsafe {
+        let task_sys = Parallel::new() as Arc<dyn TaskSystem>;
+        let s = &*task_sys as *const (dyn TaskSystem + 'static);
+        mem::forget(task_sys);
+        TASK_SYSTEM = Some(&*s);
     });
     unsafe { TASK_SYSTEM.unwrap() }
 }
@@ -168,13 +176,11 @@ pub fn print_instrumenting_summary() {
 
 fn get_instrument() -> &'static dyn Instrument {
     // TODO: This is a bit nasty, like above
-    INSTRUMENT_INIT.call_once(|| {
-        unsafe {
-            let instrument = Arc::new(SimpleInstrument) as Arc<dyn Instrument>;
-            let s = &*instrument as *const (dyn Instrument + 'static);
-            mem::forget(instrument);
-            INSTRUMENT = Some(&*s);
-        }
+    INSTRUMENT_INIT.call_once(|| unsafe {
+        let instrument = Arc::new(SimpleInstrument) as Arc<dyn Instrument>;
+        let s = &*instrument as *const (dyn Instrument + 'static);
+        mem::forget(instrument);
+        INSTRUMENT = Some(&*s);
     });
     unsafe { INSTRUMENT.unwrap() }
 }
@@ -182,37 +188,54 @@ fn get_instrument() -> &'static dyn Instrument {
 #[allow(non_snake_case)]
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn ISPCAlloc(handle_ptr: *mut *mut libc::c_void, size: i64,
-                                   align: i32) -> *mut libc::c_void {
+pub unsafe extern "C" fn ISPCAlloc(
+    handle_ptr: *mut *mut libc::c_void,
+    size: i64,
+    align: i32,
+) -> *mut libc::c_void {
     get_task_system().alloc(handle_ptr, size, align)
 }
 
 #[allow(non_snake_case)]
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn ISPCLaunch(handle_ptr: *mut *mut libc::c_void, f: *mut libc::c_void,
-                                    data: *mut libc::c_void, count0: libc::c_int,
-                                    count1: libc::c_int, count2: libc::c_int) {
+pub unsafe extern "C" fn ISPCLaunch(
+    handle_ptr: *mut *mut libc::c_void,
+    f: *mut libc::c_void,
+    data: *mut libc::c_void,
+    count0: libc::c_int,
+    count1: libc::c_int,
+    count2: libc::c_int,
+) {
     let task_fn: ISPCTaskFn = mem::transmute(f);
-    get_task_system().launch(handle_ptr, task_fn, data, count0 as i32, count1 as i32, count2 as i32);
+    get_task_system().launch(
+        handle_ptr,
+        task_fn,
+        data,
+        count0 as i32,
+        count1 as i32,
+        count2 as i32,
+    );
 }
 
 #[allow(non_snake_case)]
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void){
+pub unsafe extern "C" fn ISPCSync(handle: *mut libc::c_void) {
     get_task_system().sync(handle);
 }
 
 #[allow(non_snake_case)]
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn ISPCInstrument(cfile: *const libc::c_char, cnote: *const libc::c_char,
-                                        line: libc::c_int, mask: u64) {
-
+pub unsafe extern "C" fn ISPCInstrument(
+    cfile: *const libc::c_char,
+    cnote: *const libc::c_char,
+    line: libc::c_int,
+    mask: u64,
+) {
     let file_name = CStr::from_ptr(cfile);
     let note = CStr::from_ptr(cnote);
     let active_count = (mask as u64).count_ones();
     get_instrument().instrument(file_name, note, line as i32, mask as u64, active_count);
 }
-
