@@ -1,6 +1,6 @@
 {
 	"volume": {
-		"note":"You can get csafe from http://www.ospray.org/ examples",
+		"note": "You can get the volume from http://www.ospray.org/ examples",
 		"file": "tacc-turbulence-256-volume/tacc-turbulence-256-volume.raw",
 		"data_type": "f32",
 		"dimensions": [256, 256, 256]

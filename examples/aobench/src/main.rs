@@ -42,7 +42,7 @@ fn main() {
         &img[..],
         width as u32,
         height as u32,
-        image::Gray(8),
+        image::ColorType::L8,
     ) {
         Ok(_) => println!("AO Bench image saved to ao.png"),
         Err(e) => panic!("Error saving AO Bench image: {}", e),

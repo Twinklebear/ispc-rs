@@ -32,7 +32,7 @@ fn main() {
         &img[..],
         width as u32,
         height as u32,
-        image::Gray(8),
+        image::ColorType::L8,
     ) {
         Ok(_) => println!("Mandelbrot image saved to mandelbrot.png"),
         Err(e) => panic!("Error saving Mandelbrot image: {}", e),
