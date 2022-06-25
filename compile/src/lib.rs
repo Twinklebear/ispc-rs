@@ -28,6 +28,7 @@ extern crate semver;
 
 pub mod opt;
 
+use std::borrow::Cow;
 use std::collections::BTreeSet;
 use std::env;
 use std::fmt::Display;
@@ -76,6 +77,23 @@ macro_rules! exit_failure {
     }}
 }
 
+/// Custom subset of [`bindgen::Builder`] properties that can repeatedly construct
+/// [`bindgen::Builder`], which itself isn't [`Clone`]able.
+#[derive(Debug, Default)]
+pub struct BindgenOptions {
+    pub allowlist_functions: Vec<Cow<'static, str>>,
+}
+
+impl BindgenOptions {
+    fn to_builder(&self) -> bindgen::Builder {
+        let mut builder = bindgen::builder();
+        for f in &self.allowlist_functions {
+            builder = builder.allowlist_function(f.as_ref());
+        }
+        builder
+    }
+}
+
 /// Extra configuration to be passed to ISPC
 pub struct Config {
     ispc_version: Version,
@@ -109,6 +127,7 @@ pub struct Config {
     target_isa: Option<Vec<TargetISA>>,
     architecture: Option<Architecture>,
     target_os: Option<TargetOS>,
+    bindgen_options: BindgenOptions,
 }
 
 impl Config {
@@ -164,6 +183,7 @@ impl Config {
             target_isa: None,
             architecture: None,
             target_os: None,
+            bindgen_options: Default::default(),
         }
     }
     /// Add an ISPC file to be compiled
@@ -314,6 +334,10 @@ impl Config {
         self.cargo_metadata = metadata;
         self
     }
+    pub fn bindgen_options(&mut self, bindgen_options: BindgenOptions) -> &mut Self {
+        self.bindgen_options = bindgen_options;
+        self
+    }
     /// The library name should not have any prefix or suffix, e.g. instead of
     /// `libexample.a` or `example.lib` simply pass `example`
     pub fn compile(&mut self, lib: &str) {
@@ -385,7 +409,10 @@ impl Config {
 
         // Now generate a header we can give to bindgen and generate bindings
         self.generate_bindgen_header(lib);
-        let bindings = bindgen::Builder::default().header(self.bindgen_header.to_str().unwrap());
+        let bindings = self
+            .bindgen_options
+            .to_builder()
+            .header(self.bindgen_header.to_str().unwrap());
 
         let bindgen_file = dst.join(lib).with_extension("rs");
 
