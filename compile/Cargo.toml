@@ -21,8 +21,8 @@ exclude = [
 	".travis.yml",
 	"*.png",
 	".gitignore",
-    ".github",
-    "scripts/*",
+	".github",
+	"scripts/*",
 	"examples/*"
 ]
 
