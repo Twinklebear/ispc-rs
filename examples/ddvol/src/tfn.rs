@@ -1,7 +1,7 @@
-use ddvol;
-use empty_handle;
-use vec3::Vec3f;
-use ISPCHandle;
+use crate::ddvol;
+use crate::empty_handle;
+use crate::vec3::Vec3f;
+use crate::ISPCHandle;
 
 /// A transfer function used to map values of the volume to colors
 pub struct TransferFunction {

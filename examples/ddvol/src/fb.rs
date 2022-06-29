@@ -1,6 +1,6 @@
 //! Provides a Framebuffer type for writing tiles of the rendered image
 
-use ddvol;
+use crate::ddvol;
 
 /// An RGBA_F32 framebuffer
 pub struct Framebuffer {

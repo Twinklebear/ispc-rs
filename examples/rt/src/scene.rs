@@ -43,11 +43,11 @@ use std::io::prelude::*;
 
 use serde_json::{self, Value};
 
-use camera::Camera;
-use geom::{ISPCGeometry, Plane, Sphere};
-use lights::PointLight;
-use material::Lambertian;
-use vec3f::Vec3f;
+use crate::camera::Camera;
+use crate::geom::{ISPCGeometry, Plane, Sphere};
+use crate::lights::PointLight;
+use crate::material::Lambertian;
+use crate::vec3f::Vec3f;
 
 pub struct Scene {
     /// Image width

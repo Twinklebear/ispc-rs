@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use task::{Context, ISPCTaskFn};
+use crate::task::{Context, ISPCTaskFn};
 
 /// Trait to be implemented to provide ISPC task execution functionality.
 ///

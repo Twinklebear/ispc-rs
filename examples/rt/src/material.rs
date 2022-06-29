@@ -2,11 +2,11 @@
 
 use std::ptr;
 
-use rt;
-use vec3f::Vec3f;
+use crate::rt;
+use crate::vec3f::Vec3f;
 
 /// Type alias for the Geometry base struct in ISPC
-pub type Material = ::rt::Material;
+pub type Material = crate::rt::Material;
 
 /// A simple Lambertian material
 pub struct Lambertian {

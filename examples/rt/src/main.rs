@@ -16,8 +16,8 @@ use docopt::Docopt;
 use rand::distributions::Standard;
 use rand::{thread_rng, Rng};
 
-use camera::Camera;
-use scene::Scene;
+use crate::camera::Camera;
+use crate::scene::Scene;
 
 mod camera;
 mod geom;

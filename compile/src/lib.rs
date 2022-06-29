@@ -40,7 +40,9 @@ use std::process::{Command, ExitStatus};
 use regex::Regex;
 use semver::{BuildMetadata, Prerelease, Version};
 
-pub use opt::{Addressing, Architecture, MathLib, OptimizationOpt, TargetISA, TargetOS, CPU};
+pub use crate::opt::{
+    Addressing, Architecture, MathLib, OptimizationOpt, TargetISA, TargetOS, CPU,
+};
 
 /// Compile the list of ISPC files into a static library and generate bindings
 /// using bindgen. The library name should not contain a lib prefix or a lib

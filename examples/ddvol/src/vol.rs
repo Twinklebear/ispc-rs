@@ -1,8 +1,8 @@
-use ddvol;
-use empty_handle;
-use tfn::TransferFunction;
-use vec3::Vec3i;
-use ISPCHandle;
+use crate::ddvol;
+use crate::empty_handle;
+use crate::tfn::TransferFunction;
+use crate::vec3::Vec3i;
+use crate::ISPCHandle;
 
 /// A volume dataset being rendered with its ISPC handle
 pub struct Volume {

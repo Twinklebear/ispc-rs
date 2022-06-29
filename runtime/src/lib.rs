@@ -23,9 +23,9 @@ use std::mem;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Once};
 
-pub use exec::{Parallel, TaskSystem};
-pub use instrument::{Instrument, SimpleInstrument};
-pub use task::ISPCTaskFn;
+pub use crate::exec::{Parallel, TaskSystem};
+pub use crate::instrument::{Instrument, SimpleInstrument};
+pub use crate::task::ISPCTaskFn;
 
 /// Convenience macro for generating the module to hold the raw/unsafe ISPC bindings.
 ///

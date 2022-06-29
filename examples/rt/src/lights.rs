@@ -4,8 +4,8 @@
 use std::os::raw::c_void;
 use std::ptr;
 
-use rt;
-use vec3f::Vec3f;
+use crate::rt;
+use crate::vec3f::Vec3f;
 
 /// A simple point light with some emissive color
 pub struct PointLight {

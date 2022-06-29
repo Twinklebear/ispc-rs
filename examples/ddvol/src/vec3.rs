@@ -4,8 +4,8 @@ use std::f32;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 /// Set a nicer type alias for the exported ISPC struct
-pub type Vec3f = ::ddvol::Vec3f;
-pub type Vec3i = ::ddvol::Vec3i;
+pub type Vec3f = crate::ddvol::Vec3f;
+pub type Vec3i = crate::ddvol::Vec3i;
 
 impl Vec3f {
     pub fn broadcast(x: f32) -> Vec3f {

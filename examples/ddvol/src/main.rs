@@ -15,8 +15,8 @@ use docopt::Docopt;
 use rand::distributions::Standard;
 use rand::{thread_rng, Rng};
 
-use fb::Framebuffer;
-use scene::{RenderParams, Scene};
+use crate::fb::Framebuffer;
+use crate::scene::{RenderParams, Scene};
 
 mod camera;
 mod fb;

@@ -33,12 +33,12 @@ use std::path::Path;
 
 use serde_json::{self, Value};
 
-use camera::Camera;
-use ddvol;
-use raw;
-use tfn::TransferFunction;
-use vec3::{Vec3f, Vec3i};
-use vol::Volume;
+use crate::camera::Camera;
+use crate::ddvol;
+use crate::raw;
+use crate::tfn::TransferFunction;
+use crate::vec3::{Vec3f, Vec3i};
+use crate::vol::Volume;
 
 pub type RenderParams = ddvol::RenderParams;
 

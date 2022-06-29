@@ -3,12 +3,12 @@
 
 use std::ptr;
 
-use material::Lambertian;
-use rt;
-use vec3f::Vec3f;
+use crate::material::Lambertian;
+use crate::rt;
+use crate::vec3f::Vec3f;
 
 /// Type alias for the Geometry base struct in ISPC
-pub type Geometry = ::rt::Geometry;
+pub type Geometry = crate::rt::Geometry;
 
 pub trait ISPCGeometry {
     fn ispc_equiv(&self) -> *const Geometry;

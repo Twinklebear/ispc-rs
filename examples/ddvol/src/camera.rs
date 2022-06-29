@@ -1,7 +1,7 @@
-use ddvol;
-use empty_handle;
-use vec3::Vec3f;
-use ISPCHandle;
+use crate::ddvol;
+use crate::empty_handle;
+use crate::vec3::Vec3f;
+use crate::ISPCHandle;
 
 /// The camera that the scene is being rendered from
 pub struct Camera {

@@ -10,8 +10,8 @@ use std::path::Path;
 
 use num::{self, NumCast};
 
-use vec3::Vec3i;
-use vol::Volume;
+use crate::vec3::Vec3i;
+use crate::vol::Volume;
 
 /// Import a RAW volume file with the set dimensions. The volume data is
 /// expected to be of type T which should be a primitive scalar type
