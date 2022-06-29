@@ -4,13 +4,13 @@
 use libc;
 use num_cpus;
 
-use std::time::Duration;
 use std::cell::RefCell;
-use std::sync::{Arc, RwLock, Mutex};
 use std::sync::atomic::{self, AtomicUsize};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
-use task::{ISPCTaskFn, Context};
+use task::{Context, ISPCTaskFn};
 
 /// Trait to be implemented to provide ISPC task execution functionality.
 ///
@@ -26,7 +26,12 @@ pub trait TaskSystem {
     /// The `handle_ptr` should be set to some context tracking facility so that you can later
     /// track task groups launched in the context and perform finer grained synchronization in
     /// `sync`.
-    unsafe fn alloc(&self, handle_ptr: *mut *mut libc::c_void, size: i64, align: i32) -> *mut libc::c_void;
+    unsafe fn alloc(
+        &self,
+        handle_ptr: *mut *mut libc::c_void,
+        size: i64,
+        align: i32,
+    ) -> *mut libc::c_void;
     /// Launch is called when a new group of tasks is being launched and should schedule them to
     /// be executed in some way.
     ///
@@ -50,8 +55,15 @@ pub trait TaskSystem {
     ///     }
     /// }
     /// ```
-    unsafe fn launch(&self, handle_ptr: *mut *mut libc::c_void, f: ISPCTaskFn, data: *mut libc::c_void,
-                     count0: i32, count1: i32, count2: i32);
+    unsafe fn launch(
+        &self,
+        handle_ptr: *mut *mut libc::c_void,
+        f: ISPCTaskFn,
+        data: *mut libc::c_void,
+        count0: i32,
+        count1: i32,
+        count2: i32,
+    );
     /// Synchronize an execution context with the tasks it's launched. Use `handle` to determine
     /// the task context that's being synchronized.
     ///
@@ -77,15 +89,19 @@ pub struct Parallel {
 impl Parallel {
     /// Create a parallel task execution environment that will use `num_cpus` threads
     /// to run tasks.
-    pub fn new() -> Arc<Parallel> { Parallel::oversubscribed(1.0) }
+    pub fn new() -> Arc<Parallel> {
+        Parallel::oversubscribed(1.0)
+    }
     /// Create an oversubscribued parallel task execution environment that will use
     /// `oversubscribe * num_cpus` threads to run tasks.
     pub fn oversubscribed(oversubscribe: f32) -> Arc<Parallel> {
         assert!(oversubscribe >= 1.0);
-        let par = Arc::new(Parallel { context_list: RwLock::new(Vec::new()),
-                                      next_context_id: AtomicUsize::new(0),
-                                      threads: Mutex::new(Vec::new()),
-                                      chunk_size: 8 });
+        let par = Arc::new(Parallel {
+            context_list: RwLock::new(Vec::new()),
+            next_context_id: AtomicUsize::new(0),
+            threads: Mutex::new(Vec::new()),
+            chunk_size: 8,
+        });
         {
             let mut threads = par.threads.lock().unwrap();
             let num_threads = (oversubscribe * num_cpus::get() as f32) as usize;
@@ -93,8 +109,9 @@ impl Parallel {
             for i in 0..num_threads {
                 let task_sys = Arc::clone(&par);
                 // Note that the spawned thread ids start at 1 since the main thread is 0
-                threads.push(thread::spawn(move || Parallel::worker_thread(task_sys, i + 1, num_threads + 1,
-                                                                           chunk_size)));
+                threads.push(thread::spawn(move || {
+                    Parallel::worker_thread(task_sys, i + 1, num_threads + 1, chunk_size)
+                }));
             }
         }
         par
@@ -105,9 +122,19 @@ impl Parallel {
     /// Note that due to threading issues you shouldn't assume the context returned actually has
     /// outstanding tasks by the time it's returned to the caller and a chunk is requested.
     fn get_context(&self) -> Option<Arc<Context>> {
-        self.context_list.read().unwrap().iter().find(|c| !c.current_tasks_done()).cloned()
+        self.context_list
+            .read()
+            .unwrap()
+            .iter()
+            .find(|c| !c.current_tasks_done())
+            .cloned()
     }
-    fn worker_thread(task_sys: Arc<Parallel>, thread: usize, total_threads: usize, chunk_size: usize) {
+    fn worker_thread(
+        task_sys: Arc<Parallel>,
+        thread: usize,
+        total_threads: usize,
+        chunk_size: usize,
+    ) {
         THREAD_ID.with(|f| *f.borrow_mut() = thread);
         loop {
             // Get a task group to run
@@ -129,7 +156,12 @@ impl Parallel {
 }
 
 impl TaskSystem for Parallel {
-    unsafe fn alloc(&self, handle_ptr: *mut *mut libc::c_void, size: i64, align: i32) -> *mut libc::c_void {
+    unsafe fn alloc(
+        &self,
+        handle_ptr: *mut *mut libc::c_void,
+        size: i64,
+        align: i32,
+    ) -> *mut libc::c_void {
         // If the handle is null this is the first time this function has spawned tasks
         // and we should create a new Context structure in the TASK_LIST for it, otherwise
         // it's the pointer to where we should append the new Group
@@ -139,7 +171,9 @@ impl TaskSystem for Parallel {
             // unbox it into a raw ptr to get a ptr we can pass back to ISPC through
             // the handle_ptr and then re-box it into our TASK_LIST so it will
             // be free'd properly when we erase it from the vector in ISPCSync
-            let c = Arc::new(Context::new(self.next_context_id.fetch_add(1, atomic::Ordering::SeqCst)));
+            let c = Arc::new(Context::new(
+                self.next_context_id.fetch_add(1, atomic::Ordering::SeqCst),
+            ));
             {
                 let h = &*c;
                 *handle_ptr = h as *const Context as *mut libc::c_void;
@@ -150,12 +184,22 @@ impl TaskSystem for Parallel {
         } else {
             let context_list = self.context_list.read().unwrap();
             let handle_ctx = *handle_ptr as *mut Context;
-            let ctx = context_list.iter().find(|c| (*handle_ctx).id == c.id).unwrap();
+            let ctx = context_list
+                .iter()
+                .find(|c| (*handle_ctx).id == c.id)
+                .unwrap();
             ctx.alloc(size as usize, align as usize)
         }
     }
-    unsafe fn launch(&self, handle_ptr: *mut *mut libc::c_void, f: ISPCTaskFn, data: *mut libc::c_void,
-                     count0: i32, count1: i32, count2: i32) {
+    unsafe fn launch(
+        &self,
+        handle_ptr: *mut *mut libc::c_void,
+        f: ISPCTaskFn,
+        data: *mut libc::c_void,
+        count0: i32,
+        count1: i32,
+        count2: i32,
+    ) {
         // Push the tasks being launched on to the list of task groups for this function
         let context: &mut Context = &mut *(*handle_ptr as *mut Context);
         context.launch((count0, count1, count2), data, f);
@@ -209,8 +253,10 @@ impl TaskSystem for Parallel {
         }
         // Now erase this context from our vector
         let mut context_list = self.context_list.write().unwrap();
-        let pos = context_list.iter().position(|c| context.id == c.id).unwrap();
+        let pos = context_list
+            .iter()
+            .position(|c| context.id == c.id)
+            .unwrap();
         context_list.remove(pos);
     }
 }
-

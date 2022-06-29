@@ -22,9 +22,14 @@ pub struct SimpleInstrument;
 
 impl Instrument for SimpleInstrument {
     fn instrument(&self, file: &CStr, note: &CStr, line: i32, mask: u64, active_count: u32) {
-        println!("SimpleInstrument:\n\tFile: {}\n\tNote: {}\
+        println!(
+            "SimpleInstrument:\n\tFile: {}\n\tNote: {}\
                  \n\tLine: {}\n\tActive: {}\nt\tMask: 0x{:x}",
-                 file.to_str().unwrap(), note.to_str().unwrap(), line, active_count, mask);
+            file.to_str().unwrap(),
+            note.to_str().unwrap(),
+            line,
+            active_count,
+            mask
+        );
     }
 }
-
