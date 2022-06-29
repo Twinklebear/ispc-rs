@@ -37,7 +37,7 @@ fn main() {
         &img[..],
         img_width as u32,
         img_height as u32,
-        image::Gray(8),
+        image::ColorType::L8,
     ) {
         Ok(_) => println!("Perlin noise saved to perlin.png"),
         Err(e) => panic!("Error saving Perlin noise image: {}", e),

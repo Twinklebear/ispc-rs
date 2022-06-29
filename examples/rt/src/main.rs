@@ -91,7 +91,7 @@ fn main() {
         &srgb_img_buf[..],
         scene.width as u32,
         scene.height as u32,
-        image::RGB(8),
+        image::ColorType::Rgb8,
     ) {
         Ok(_) => println!("Rendered image saved to {}", out_file),
         Err(e) => panic!("Error saving image: {}", e),
