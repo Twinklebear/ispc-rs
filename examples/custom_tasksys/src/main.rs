@@ -1,9 +1,8 @@
 #[macro_use]
 extern crate ispc;
-extern crate aligned_alloc;
 extern crate libc;
 
-use std::mem;
+use std::alloc::{alloc, dealloc, Layout};
 use std::sync::Arc;
 
 use ispc::exec::TaskSystem;
@@ -31,19 +30,26 @@ impl TaskSystem for CustomTaskSys {
             Box::new(Vec::new())
         } else {
             // Get the vector containing the context's memory allocations and add a new allocation
-            mem::transmute(*handle_ptr)
+            Box::from_raw(*handle_ptr as *mut Vec<_>)
         };
-        let buf = aligned_alloc::aligned_alloc(size as usize, align as usize) as *mut libc::c_void;
-        ctx.push(buf);
+        let layout = match Layout::from_size_align(size as usize, align as usize) {
+            Ok(layout) => layout,
+            Err(e) => {
+                eprintln!("Invalid memory layout: {}", e);
+                return std::ptr::null_mut();
+            }
+        };
+        let buf = alloc(layout);
+        ctx.push((buf, layout));
         // Set the handle ptr to our list of allocations that we need to free in ISPCSync so sync
         // will be called and we can find the ptrs to free. We also will release the box at that
         // point by going through `from_raw`.
         *handle_ptr = Box::into_raw(ctx) as *mut libc::c_void;
-        buf
+        buf as *mut libc::c_void
     }
     unsafe fn launch(
         &self,
-        handle_ptr: *mut *mut libc::c_void,
+        _handle_ptr: *mut *mut libc::c_void,
         f: ISPCTaskFn,
         data: *mut libc::c_void,
         count0: i32,
@@ -80,10 +86,10 @@ impl TaskSystem for CustomTaskSys {
     }
     unsafe fn sync(&self, handle: *mut libc::c_void) {
         println!("CustomTaskSys::sync");
-        let ctx: Box<Vec<*mut libc::c_void>> = Box::from_raw(handle as *mut Vec<*mut libc::c_void>);
+        let mut ctx = Box::from_raw(handle as *mut Vec<(*mut u8, Layout)>);
         // Free each buffer allocated in `alloc` for this context
-        for buf in *ctx {
-            aligned_alloc::aligned_free(buf as *mut ());
+        for (buf, layout) in ctx.drain(..) {
+            dealloc(buf, layout);
         }
         // We're done with the context so it can be dropped and free'd automatically for us now
     }
