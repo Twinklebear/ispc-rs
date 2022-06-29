@@ -1,6 +1,7 @@
 [package]
 name = "mandelbrot"
 version = "0.1.0"
+edition = "2021"
 authors = ["Will Usher <willusher.life@gmail.com>"]
 build = "build.rs"
 
