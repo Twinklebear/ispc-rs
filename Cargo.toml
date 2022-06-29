@@ -1,6 +1,7 @@
 [package]
 name = "ispc"
 version = "1.0.14"
+edition = "2021"
 authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
 documentation = "https://docs.rs/ispc/"
@@ -30,6 +31,7 @@ ispc_compile = { path = "./compile/", version = "1.0.14" }
 ispc_rt = { path = "./runtime/", version = "1.0.7" }
 
 [workspace]
+edition = "2021"
 resolver = "2"
 members = [
 	"compile",

@@ -56,7 +56,7 @@ pub struct Scene {
     pub height: usize,
     pub n_samples: usize,
     pub camera: Camera,
-    pub geometry: Vec<Box<ISPCGeometry>>,
+    pub geometry: Vec<Box<dyn ISPCGeometry>>,
     pub light: PointLight,
 }
 
@@ -125,7 +125,7 @@ impl Scene {
             .expect("FOV Y must be a float") as f32;
         Camera::new(pos, target, up, fovy, width, height)
     }
-    fn load_geometry(e: &Value) -> Vec<Box<ISPCGeometry>> {
+    fn load_geometry(e: &Value) -> Vec<Box<dyn ISPCGeometry>> {
         let geom = e.as_array().expect("Geometry must be an array of objects");
         geom.iter()
             .map(|x| {
@@ -150,7 +150,7 @@ impl Scene {
                         .expect("A sphere radius must be set")
                         .as_f64()
                         .unwrap() as f32;
-                    Box::new(Sphere::new(center, radius, mat)) as Box<ISPCGeometry>
+                    Box::new(Sphere::new(center, radius, mat)) as Box<dyn ISPCGeometry>
                 } else if ty == "plane" {
                     let center =
                         Scene::load_vec3f(x.get("center").expect("A plane center must be set"))
@@ -158,7 +158,7 @@ impl Scene {
                     let normal =
                         Scene::load_vec3f(x.get("normal").expect("A plane normal must be set"))
                             .unwrap();
-                    Box::new(Plane::new(center, normal, mat)) as Box<ISPCGeometry>
+                    Box::new(Plane::new(center, normal, mat)) as Box<dyn ISPCGeometry>
                 } else {
                     panic!("Unrecognized geometry type {}", ty);
                 }
