@@ -2,10 +2,10 @@ name: CI
 on: [push, pull_request]
 env:
     CARGO_TERM_COLOR: always
-    ISPC_VERSION: 1.14.1
+    ISPC_VERSION: 1.18.0
 jobs:
     build_linux:
-        runs-on: ubuntu-20.04
+        runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
             - uses: actions-rs/toolchain@v1
@@ -39,7 +39,7 @@ jobs:
                   toolchain: stable
             - run: |
                   curl -LO https://github.com/ispc/ispc/releases/download/v${{ env.ISPC_VERSION }}/ispc-v${{ env.ISPC_VERSION }}-windows.zip
-                  unzip ispc-v${{ env.ISPC_VERSION }}-windows.zip bin/ispc.exe
-                  Resolve-Path "./bin" | Add-Content -Path $env:GITHUB_PATH
+                  unzip ispc-v${{ env.ISPC_VERSION }}-windows.zip ispc-v${{ env.ISPC_VERSION }}-windows/bin/ispc.exe
+                  Resolve-Path "ispc-v${{ env.ISPC_VERSION }}-windows/bin" | Add-Content -Path $env:GITHUB_PATH
             - run: cargo build --all --all-targets --features ispc
             - run: cargo test --all
