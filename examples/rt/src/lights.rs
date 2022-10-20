@@ -25,8 +25,8 @@ impl PointLight {
             );
         }
         PointLight {
-            position: position,
-            emission: emission,
+            position,
+            emission,
             ispc_equiv: light,
         }
     }

@@ -21,7 +21,7 @@ impl Lambertian {
             rt::make_lambertian(&mut mat as *mut *const Material, &albedo as *const Vec3f);
         }
         Lambertian {
-            albedo: albedo,
+            albedo,
             ispc_equiv: mat,
         }
     }

@@ -9,16 +9,16 @@ pub type Vec3i = crate::ddvol::Vec3i;
 
 impl Vec3f {
     pub fn broadcast(x: f32) -> Vec3f {
-        Vec3f { x: x, y: x, z: x }
+        Vec3f { x, y: x, z: x }
     }
     pub fn new(x: f32, y: f32, z: f32) -> Vec3f {
-        Vec3f { x: x, y: y, z: z }
+        Vec3f { x, y, z }
     }
     pub fn dot(&self, b: &Vec3f) -> f32 {
         self.x * b.x + self.y * b.y + self.z * b.z
     }
     pub fn length(&self) -> f32 {
-        f32::sqrt(self.dot(&self))
+        f32::sqrt(self.dot(self))
     }
     pub fn normalized(&self) -> Vec3f {
         let inv_len = 1.0 / self.length();
@@ -131,10 +131,10 @@ impl Div<f32> for Vec3f {
 
 impl Vec3i {
     pub fn broadcast(x: i32) -> Vec3i {
-        Vec3i { x: x, y: x, z: x }
+        Vec3i { x, y: x, z: x }
     }
     pub fn new(x: i32, y: i32, z: i32) -> Vec3i {
-        Vec3i { x: x, y: y, z: z }
+        Vec3i { x, y, z }
     }
 }
 

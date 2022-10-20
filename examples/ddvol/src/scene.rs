@@ -85,12 +85,12 @@ impl Scene {
             .expect("image height must be an int") as usize;
         let mut volume = Scene::load_volume(
             data.get("volume").expect("A volume must be specified"),
-            &base_path,
+            base_path,
         );
         let tfn = Scene::load_transfer_function(
             data.get("transfer_function")
                 .expect("A transfer function must be specified"),
-            &base_path,
+            base_path,
         );
         volume.set_transfer_function(tfn);
 
@@ -103,8 +103,8 @@ impl Scene {
         Scene {
             width: img_width,
             height: img_height,
-            camera: camera,
-            volume: volume,
+            camera,
+            volume,
             params: render_params,
         }
     }
@@ -273,8 +273,8 @@ impl Scene {
             .as_i64()
             .expect("n_samples must be an int") as i32;
         RenderParams {
-            background: background,
-            n_samples: n_samples,
+            background,
+            n_samples,
         }
     }
     fn load_vec3i(e: &Value) -> Option<Vec3i> {

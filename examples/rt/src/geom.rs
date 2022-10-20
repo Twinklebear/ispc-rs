@@ -39,8 +39,8 @@ impl Sphere {
             );
         }
         Sphere {
-            center: center,
-            radius: radius,
+            center,
+            radius,
             material: mat,
             ispc_geom: geom,
         }
@@ -82,7 +82,7 @@ impl Plane {
             );
         }
         Plane {
-            center: center,
+            center,
             normal: n,
             material: mat,
             ispc_geom: geom,
