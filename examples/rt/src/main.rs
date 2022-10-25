@@ -28,7 +28,7 @@ mod vec3f;
 
 ispc_module!(rt);
 
-const USAGE: &'static str = "
+const USAGE: &str = "
 Usage:
   rt <scene> [options]
   rt (-h | --help)
@@ -83,7 +83,7 @@ fn main() {
         );
     }
     let out_file = match args.flag_o {
-        Some(s) => s.clone(),
+        Some(s) => s,
         None => String::from("rt.png"),
     };
     match image::save_buffer(

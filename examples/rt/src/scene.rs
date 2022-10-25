@@ -105,10 +105,10 @@ impl Scene {
         Scene {
             width: img_width,
             height: img_height,
-            n_samples: n_samples,
-            camera: camera,
+            n_samples,
+            camera,
             geometry: geom,
-            light: light,
+            light,
         }
     }
     fn load_camera(e: &Value, width: usize, height: usize) -> Camera {

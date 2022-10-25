@@ -116,7 +116,7 @@ impl Context {
         let tasks = self.tasks.read().unwrap();
         for group in tasks.iter() {
             if group.has_tasks() {
-                return Some(Arc::clone(&group));
+                return Some(Arc::clone(group));
             }
         }
         None

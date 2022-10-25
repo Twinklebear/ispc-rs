@@ -25,12 +25,12 @@ impl Camera {
         let screen_dv = dy * dim_y;
         let dir_top_left = dz - 0.5 * screen_du - 0.5 * screen_dv;
         Camera {
-            pos: pos,
+            pos,
             dir: dir.normalized(),
             up: up.normalized(),
-            dir_top_left: dir_top_left,
-            screen_du: screen_du,
-            screen_dv: screen_dv,
+            dir_top_left,
+            screen_du,
+            screen_dv,
             width: width as i32,
             height: height as i32,
         }
