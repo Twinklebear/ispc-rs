@@ -19,9 +19,7 @@ fn link_ispc() {
     #[cfg(target_arch = "aarch64")]
     let target_isas = vec![TargetISA::Neoni32x4];
 
-    let bindgen_opts = ispc_compile::BindgenOptions {
-        allowlist_functions: vec![std::borrow::Cow::Borrowed(&"add_lists")],
-    };
+    let bindgen_builder = ispc_compile::bindgen::builder().allowlist_function("add_lists");
 
     // For a portable program we can explicitly compile for each target ISA
     // we want. Then ISPC will pick the correct ISA at runtime to call
@@ -29,7 +27,7 @@ fn link_ispc() {
     ispc_compile::Config::new()
         .file("src/simple.ispc")
         .target_isas(target_isas)
-        .bindgen_options(bindgen_opts)
+        .bindgen_builder(bindgen_builder)
         .out_dir("src/")
         .compile("simple");
 }
