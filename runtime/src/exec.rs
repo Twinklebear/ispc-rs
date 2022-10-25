@@ -26,6 +26,11 @@ pub trait TaskSystem {
     /// The `handle_ptr` should be set to some context tracking facility so that you can later
     /// track task groups launched in the context and perform finer grained synchronization in
     /// `sync`.
+    ///
+    /// # Safety
+    /// This function is unsafe as it is called directly from ISPC and must work with
+    /// the raw pointers passed from ISPC to perform the allocation. Your implementation of the
+    /// allocation operations can be safe internally depending on how you choose to implement it.
     unsafe fn alloc(
         &self,
         handle_ptr: *mut *mut libc::c_void,
@@ -55,6 +60,10 @@ pub trait TaskSystem {
     ///     }
     /// }
     /// ```
+    ///
+    /// # Safety
+    /// This function is unsafe as it is called directly from ISPC and must operate on the raw
+    /// pointers passed by ISPC.
     unsafe fn launch(
         &self,
         handle_ptr: *mut *mut libc::c_void,
@@ -70,6 +79,10 @@ pub trait TaskSystem {
     /// This function should not return until all tasks launched within the context being
     /// synchronized with have been completed. You can use the `handle` to determine which context
     /// is being synchronized with and thus which tasks must be completed before returning.
+    ///
+    /// # Safety
+    /// This function is unsafe as it is called directly from ISPC and must operate on the raw
+    /// pointers passed by ISPC.
     unsafe fn sync(&self, handle: *mut libc::c_void);
 }
 

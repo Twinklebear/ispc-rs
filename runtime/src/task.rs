@@ -86,6 +86,10 @@ impl Context {
         self.tasks.read().unwrap().iter().all(|t| t.is_finished())
     }
     /// Allocate some memory for this Context's task groups, returns a pointer to the allocated memory.
+    ///
+    /// # Safety
+    /// This function is unsafe as it is used to perform a raw memory allocation to be passed back
+    /// to ISPC
     pub unsafe fn alloc(&self, size: usize, align: usize) -> *mut libc::c_void {
         // TODO: The README for this lib mentions it may be slow. Maybe use some other allocator?
         let layout = std::alloc::Layout::from_size_align(size as usize, align as usize)
