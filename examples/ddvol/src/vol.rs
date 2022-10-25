@@ -25,7 +25,7 @@ impl Volume {
         }
         Volume {
             ispc_handle: vol,
-            tfn: tfn,
+            tfn,
         }
     }
     /// Set the transfer function used by the volume, overriding the default cool/warm.

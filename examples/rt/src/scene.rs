@@ -8,33 +8,33 @@
 //!
 //! ```json
 //! {
-//! 	"camera": {
-//! 		"pos": [0, 0, -3],
-//! 		"target": [0, 0, 0],
-//! 		"up": [0, 1, 0],
-//! 		"fovy": 60
-//! 	},
-//! 	"geometry": [
-//! 		{
-//! 			"type": "sphere",
-//! 			"center": [0, 0, 0],
-//! 			"radius": 0.5,
-//! 			"lambertian": [0.8, 0.1, 0.1]
-//! 		},
-//! 		{
-//! 			"type": "plane",
-//! 			"center": [0, -0.5, 0],
-//! 			"normal": [0, 1, 0],
-//! 			"lambertian": [0.9, 0.9, 0.9]
-//! 		}
-//! 	],
-//! 	"light": {
-//! 		"pos": [0.75, 0.75, -2],
-//! 		"intensity": [10, 10, 10]
-//! 	},
-//! 	"width": 512,
-//! 	"height": 512,
-//! 	"n_samples": 8
+//!     "camera": {
+//!         "pos": [0, 0, -3],
+//!         "target": [0, 0, 0],
+//!         "up": [0, 1, 0],
+//!         "fovy": 60
+//!     },
+//!     "geometry": [
+//!         {
+//!             "type": "sphere",
+//!             "center": [0, 0, 0],
+//!             "radius": 0.5,
+//!             "lambertian": [0.8, 0.1, 0.1]
+//!         },
+//!         {
+//!             "type": "plane",
+//!             "center": [0, -0.5, 0],
+//!             "normal": [0, 1, 0],
+//!             "lambertian": [0.9, 0.9, 0.9]
+//!         }
+//!     ],
+//!     "light": {
+//!         "pos": [0.75, 0.75, -2],
+//!         "intensity": [10, 10, 10]
+//!     },
+//!     "width": 512,
+//!     "height": 512,
+//!     "n_samples": 8
 //! }
 //! ```
 
@@ -105,10 +105,10 @@ impl Scene {
         Scene {
             width: img_width,
             height: img_height,
-            n_samples: n_samples,
-            camera: camera,
+            n_samples,
+            camera,
             geometry: geom,
-            light: light,
+            light,
         }
     }
     fn load_camera(e: &Value, width: usize, height: usize) -> Camera {

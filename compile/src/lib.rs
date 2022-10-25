@@ -60,7 +60,7 @@ pub use crate::opt::{
 /// ```
 pub fn compile_library(lib: &str, files: &[&str]) {
     let mut cfg = Config::new();
-    for f in &files[..] {
+    for f in files {
         cfg.file(*f);
     }
     cfg.compile(lib)

@@ -34,7 +34,7 @@ pub fn empty_handle() -> ISPCHandle {
     ptr::null::<*mut ::std::os::raw::c_void>() as ISPCHandle
 }
 
-const USAGE: &'static str = "
+const USAGE: &str = "
 Usage:
   ddvol <scene> [options]
   ddvol (-h | --help)
@@ -84,7 +84,7 @@ fn main() {
         );
     }
     let out_file = match args.flag_o {
-        Some(s) => s.clone(),
+        Some(s) => s,
         None => String::from("ddvol.png"),
     };
     let srgb_img = framebuffer.srgb8();

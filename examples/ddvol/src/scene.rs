@@ -4,21 +4,21 @@
 //! ```json
 //! {
 //!     "volume": {
-//!	    	"file": "csafe-heptane-302-volume.raw",
-//!	    	"data_type": "u8",
-//!	    	"dimensions": [302, 302, 302]
-//!	    },
-//!	    "transfer_function": "cool_warm",
-//!	    "camera": {
-//!		    "pos": [-0.5, 0.5, 1.5],
-//!		    "target": [0.5, 0.5, 0.5],
-//!		    "up": [0, 1, 0],
-//!		    "fovy": 60,
-//!	    },
-//!	    "width": 512,
-//!	    "height": 512,
-//!	    "background": [0.1, 0.1, 0.1],
-//!	    "n_samples": 4
+//!            "file": "csafe-heptane-302-volume.raw",
+//!            "data_type": "u8",
+//!            "dimensions": [302, 302, 302]
+//!        },
+//!        "transfer_function": "cool_warm",
+//!        "camera": {
+//!            "pos": [-0.5, 0.5, 1.5],
+//!            "target": [0.5, 0.5, 0.5],
+//!            "up": [0, 1, 0],
+//!            "fovy": 60,
+//!        },
+//!        "width": 512,
+//!        "height": 512,
+//!        "background": [0.1, 0.1, 0.1],
+//!        "n_samples": 4
 //! }
 //! ```
 //!
@@ -85,12 +85,12 @@ impl Scene {
             .expect("image height must be an int") as usize;
         let mut volume = Scene::load_volume(
             data.get("volume").expect("A volume must be specified"),
-            &base_path,
+            base_path,
         );
         let tfn = Scene::load_transfer_function(
             data.get("transfer_function")
                 .expect("A transfer function must be specified"),
-            &base_path,
+            base_path,
         );
         volume.set_transfer_function(tfn);
 
@@ -103,8 +103,8 @@ impl Scene {
         Scene {
             width: img_width,
             height: img_height,
-            camera: camera,
-            volume: volume,
+            camera,
+            volume,
             params: render_params,
         }
     }
@@ -273,8 +273,8 @@ impl Scene {
             .as_i64()
             .expect("n_samples must be an int") as i32;
         RenderParams {
-            background: background,
-            n_samples: n_samples,
+            background,
+            n_samples,
         }
     }
     fn load_vec3i(e: &Value) -> Option<Vec3i> {
