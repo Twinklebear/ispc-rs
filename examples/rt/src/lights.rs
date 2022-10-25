@@ -8,6 +8,7 @@ use crate::rt;
 use crate::vec3f::Vec3f;
 
 /// A simple point light with some emissive color
+#[allow(dead_code)]
 pub struct PointLight {
     position: Vec3f,
     emission: Vec3f,

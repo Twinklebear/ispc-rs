@@ -4,21 +4,21 @@
 //! ```json
 //! {
 //!     "volume": {
-//!	    	"file": "csafe-heptane-302-volume.raw",
-//!	    	"data_type": "u8",
-//!	    	"dimensions": [302, 302, 302]
-//!	    },
-//!	    "transfer_function": "cool_warm",
-//!	    "camera": {
-//!		    "pos": [-0.5, 0.5, 1.5],
-//!		    "target": [0.5, 0.5, 0.5],
-//!		    "up": [0, 1, 0],
-//!		    "fovy": 60,
-//!	    },
-//!	    "width": 512,
-//!	    "height": 512,
-//!	    "background": [0.1, 0.1, 0.1],
-//!	    "n_samples": 4
+//!            "file": "csafe-heptane-302-volume.raw",
+//!            "data_type": "u8",
+//!            "dimensions": [302, 302, 302]
+//!        },
+//!        "transfer_function": "cool_warm",
+//!        "camera": {
+//!            "pos": [-0.5, 0.5, 1.5],
+//!            "target": [0.5, 0.5, 0.5],
+//!            "up": [0, 1, 0],
+//!            "fovy": 60,
+//!        },
+//!        "width": 512,
+//!        "height": 512,
+//!        "background": [0.1, 0.1, 0.1],
+//!        "n_samples": 4
 //! }
 //! ```
 //!

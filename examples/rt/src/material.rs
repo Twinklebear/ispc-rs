@@ -9,6 +9,7 @@ use crate::vec3f::Vec3f;
 pub type Material = crate::rt::Material;
 
 /// A simple Lambertian material
+#[allow(dead_code)]
 pub struct Lambertian {
     albedo: Vec3f,
     ispc_equiv: *const Material,

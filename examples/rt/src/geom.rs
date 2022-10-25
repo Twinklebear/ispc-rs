@@ -15,6 +15,8 @@ pub trait ISPCGeometry {
 }
 
 /// A simple sphere with some radius located at `center`
+
+#[allow(dead_code)]
 pub struct Sphere {
     center: Vec3f,
     radius: f32,
@@ -62,6 +64,7 @@ impl Drop for Sphere {
 }
 
 /// A simple infinite plane "centered" at center
+#[allow(dead_code)]
 pub struct Plane {
     center: Vec3f,
     normal: Vec3f,
