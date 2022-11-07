@@ -83,11 +83,7 @@ macro_rules! exit_failure {
 pub struct Config {
     ispc_version: Version,
     ispc_files: Vec<PathBuf>,
-    objects: Vec<PathBuf>,
-    headers: Vec<PathBuf>,
     include_paths: Vec<PathBuf>,
-    // We need to generate a single header so we have one header to give bindgen
-    bindgen_header: PathBuf,
     // These options are set from the environment if not set by the user
     out_dir: Option<PathBuf>,
     debug: Option<bool>,
@@ -142,10 +138,7 @@ impl Config {
         Config {
             ispc_version: ispc_ver,
             ispc_files: Vec::new(),
-            objects: Vec::new(),
-            headers: Vec::new(),
             include_paths: Vec::new(),
-            bindgen_header: PathBuf::new(),
             out_dir: None,
             debug: None,
             opt_level: None,
@@ -325,10 +318,12 @@ impl Config {
     }
     /// The library name should not have any prefix or suffix, e.g. instead of
     /// `libexample.a` or `example.lib` simply pass `example`
-    pub fn compile(&mut self, lib: &str) {
+    pub fn compile(&self, lib: &str) {
         let dst = self.get_out_dir();
         let build_dir = self.get_build_dir();
         let default_args = self.default_args();
+        let mut objects = vec![];
+        let mut headers = vec![];
         for s in &self.ispc_files[..] {
             let fname = s
                 .file_stem()
@@ -362,8 +357,8 @@ impl Config {
             if !output.status.success() {
                 exit_failure!("Failed to compile ISPC source file {}", s.display());
             }
-            self.objects.push(object);
-            self.headers.push(header);
+            objects.push(object);
+            headers.push(header);
 
             // Go this files dependencies and add them to Cargo's watch list
             let deps_list = File::open(deps)
@@ -381,23 +376,23 @@ impl Config {
                     for isa in t.iter() {
                         let isa_fname = ispc_fname.clone() + "_" + &isa.lib_suffix();
                         let isa_obj = build_dir.join(isa_fname).with_extension("o");
-                        self.objects.push(isa_obj);
+                        objects.push(isa_obj);
                     }
                 }
             }
         }
         let libfile = lib.to_owned() + &self.get_target();
-        if !self.assemble(&libfile).success() {
+        if !self.assemble(&libfile, &objects[..]).success() {
             exit_failure!("Failed to assemble ISPC objects into library {}", lib);
         }
         self.print(&format!("cargo:rustc-link-lib=static={}", libfile));
 
         // Now generate a header we can give to bindgen and generate bindings
-        self.generate_bindgen_header(lib);
+        let bindgen_header = self.generate_bindgen_header(lib, &headers[..]);
         let bindings = self
             .bindgen_builder
             .clone()
-            .header(self.bindgen_header.to_str().unwrap());
+            .header(bindgen_header.to_str().unwrap());
 
         let bindgen_file = dst.join(lib).with_extension("rs");
 
@@ -425,43 +420,44 @@ impl Config {
     }
     /// Link the ISPC code into a static library on Unix using `ar`
     #[cfg(unix)]
-    fn assemble(&self, lib: &str) -> ExitStatus {
+    fn assemble(&self, lib: &str, objects: &[PathBuf]) -> ExitStatus {
         Command::new("ar")
             .arg("crus")
             .arg(format!("lib{}.a", lib))
-            .args(&self.objects[..])
+            .args(objects)
             .current_dir(&self.get_out_dir())
             .status()
             .unwrap()
     }
     /// Link the ISPC code into a static library on Windows using `lib.exe`
     #[cfg(windows)]
-    fn assemble(&self, lib: &str) -> ExitStatus {
+    fn assemble(&self, lib: &str, objects: &[PathBuf]) -> ExitStatus {
         let target = self.get_target();
         let mut lib_cmd = gcc::windows_registry::find_tool(&target[..], "lib.exe")
             .expect("Failed to find lib.exe for MSVC toolchain, aborting")
             .to_command();
         lib_cmd
             .arg(format!("/OUT:{}.lib", lib))
-            .args(&self.objects[..])
+            .args(objects)
             .current_dir(&self.get_out_dir())
             .status()
             .unwrap()
     }
     /// Generate a single header that includes all of our ISPC headers which we can
     /// pass to bindgen
-    fn generate_bindgen_header(&mut self, lib: &str) {
-        self.bindgen_header = self
+    fn generate_bindgen_header(&self, lib: &str, headers: &[PathBuf]) -> PathBuf {
+        let bindgen_header = self
             .get_build_dir()
             .join(format!("_{}_ispc_bindgen_header.h", lib));
-        let mut include_file = File::create(&self.bindgen_header).unwrap();
+        let mut include_file = File::create(&bindgen_header).unwrap();
 
         writeln!(include_file, "#include <stdint.h>").unwrap();
         writeln!(include_file, "#include <stdbool.h>").unwrap();
 
-        for h in &self.headers[..] {
+        for h in headers {
             writeln!(include_file, "#include \"{}\"", h.display()).unwrap();
         }
+        bindgen_header
     }
     /// Build up list of basic args for each target, debug, opt level, etc.
     fn default_args(&self) -> Vec<String> {
