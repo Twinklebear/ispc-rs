@@ -1,7 +1,8 @@
 {
 	"volume": {
-		"note": "You can get the volume from http://www.ospray.org/ examples",
-		"file": "csafe-heptane-302-volume/csafe-heptane-302-volume.raw",
+		"note": "You can get the volume from https://klacansky.com/open-scivis-datasets/",
+        "url": "https://klacansky.com/open-scivis-datasets/csafe_heptane/csafe_heptane_302x302x302_uint8.raw",
+		"file": "csafe_heptane_302x302x302_uint8.raw",
 		"data_type": "u8",
 		"dimensions": [302, 302, 302]
 	},

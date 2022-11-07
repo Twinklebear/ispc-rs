@@ -2,10 +2,7 @@ target
 *.swp
 Cargo.lock
 *.png
-examples/ddvol/scenes/csafe-heptane-302-volume/
-examples/ddvol/scenes/magnetic-512-volume/
-examples/ddvol/scenes/tacc-turbulence-256-volume/
+examples/ddvol/scenes/*.raw
 examples/simple/src/simple.rs
 examples/simple/src/simple.rs
 examples/simple/src/simplex86_64-pc-windows-msvc.lib
-

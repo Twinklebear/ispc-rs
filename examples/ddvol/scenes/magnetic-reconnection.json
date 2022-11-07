@@ -1,7 +1,8 @@
 {
 	"volume": {
-		"note": "You can get the volume from http://www.ospray.org/ examples",
-		"file": "magnetic-512-volume/magnetic-512-volume.raw",
+		"note": "You can get the volume from https://klacansky.com/open-scivis-datasets/",
+        "url:": "https://klacansky.com/open-scivis-datasets/magnetic_reconnection/magnetic_reconnection_512x512x512_float32.raw",
+		"file": "magnetic_reconnection_512x512x512_float32.raw",
 		"data_type": "f32",
 		"dimensions": [512, 512, 512]
 	},
