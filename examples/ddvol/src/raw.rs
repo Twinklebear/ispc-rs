@@ -16,7 +16,7 @@ use crate::vol::Volume;
 /// Import a RAW volume file with the set dimensions. The volume data is
 /// expected to be of type T which should be a primitive scalar type
 pub fn import<T: NumCast>(path: &Path, dims: Vec3i) -> Volume {
-    let mut f = match File::open(&path) {
+    let mut f = match File::open(path) {
         Ok(f) => BufReader::new(f),
         Err(e) => panic!("Error opening volume `{:?}`: {}", path, e),
     };
