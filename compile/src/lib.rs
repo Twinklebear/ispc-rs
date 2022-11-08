@@ -324,7 +324,7 @@ impl Config {
         let default_args = self.default_args();
         let mut objects = vec![];
         let mut headers = vec![];
-        for s in &self.ispc_files[..] {
+        for s in &self.ispc_files {
             let fname = s
                 .file_stem()
                 .expect("ISPC source files must be files")
@@ -337,7 +337,7 @@ impl Config {
             let header = build_dir.join(ispc_fname.clone()).with_extension("h");
             let deps = build_dir.join(ispc_fname.clone()).with_extension("idep");
             let output = Command::new("ispc")
-                .args(&default_args[..])
+                .args(&default_args)
                 .arg(s)
                 .arg("-o")
                 .arg(&object)
@@ -361,8 +361,10 @@ impl Config {
             headers.push(header);
 
             // Go this files dependencies and add them to Cargo's watch list
-            let deps_list = File::open(deps)
-                .expect(&format!("Failed to open dependencies list for {}", s.display())[..]);
+            let deps_list = File::open(deps).expect(&format!(
+                "Failed to open dependencies list for {}",
+                s.display()
+            ));
             let reader = BufReader::new(deps_list);
             for d in reader.lines() {
                 // Don't depend on the ISPC "stdlib" file which is output as a dependency
@@ -382,13 +384,13 @@ impl Config {
             }
         }
         let libfile = lib.to_owned() + &self.get_target();
-        if !self.assemble(&libfile, &objects[..]).success() {
+        if !self.assemble(&libfile, &objects).success() {
             exit_failure!("Failed to assemble ISPC objects into library {}", lib);
         }
         self.print(&format!("cargo:rustc-link-lib=static={}", libfile));
 
         // Now generate a header we can give to bindgen and generate bindings
-        let bindgen_header = self.generate_bindgen_header(lib, &headers[..]);
+        let bindgen_header = self.generate_bindgen_header(lib, &headers);
         let bindings = self
             .bindgen_builder
             .clone()
@@ -433,7 +435,7 @@ impl Config {
     #[cfg(windows)]
     fn assemble(&self, lib: &str, objects: &[PathBuf]) -> ExitStatus {
         let target = self.get_target();
-        let mut lib_cmd = gcc::windows_registry::find_tool(&target[..], "lib.exe")
+        let mut lib_cmd = gcc::windows_registry::find_tool(&target, "lib.exe")
             .expect("Failed to find lib.exe for MSVC toolchain, aborting")
             .to_command();
         lib_cmd
