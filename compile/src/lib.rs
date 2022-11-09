@@ -361,10 +361,8 @@ impl Config {
             headers.push(header);
 
             // Go this files dependencies and add them to Cargo's watch list
-            let deps_list = File::open(deps).expect(&format!(
-                "Failed to open dependencies list for {}",
-                s.display()
-            ));
+            let deps_list = File::open(deps)
+                .unwrap_or_else(|_| panic!("Failed to open dependencies list for {}", s.display()));
             let reader = BufReader::new(deps_list);
             for d in reader.lines() {
                 // Don't depend on the ISPC "stdlib" file which is output as a dependency
