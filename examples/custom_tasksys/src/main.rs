@@ -27,7 +27,7 @@ impl TaskSystem for CustomTaskSys {
         // this execution context
         let mut ctx = if (*handle_ptr).is_null() {
             // Allocate a new vector we can store this context's allocations in
-            Box::new(Vec::new())
+            Box::<Vec<(*mut u8, Layout)>>::default()
         } else {
             // Get the vector containing the context's memory allocations and add a new allocation
             Box::from_raw(*handle_ptr as *mut Vec<_>)

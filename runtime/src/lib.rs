@@ -208,14 +208,7 @@ pub unsafe extern "C" fn ISPCLaunch(
     count2: libc::c_int,
 ) {
     let task_fn: ISPCTaskFn = mem::transmute(f);
-    get_task_system().launch(
-        handle_ptr,
-        task_fn,
-        data,
-        count0 as i32,
-        count1 as i32,
-        count2 as i32,
-    );
+    get_task_system().launch(handle_ptr, task_fn, data, count0, count1, count2);
 }
 
 #[allow(non_snake_case)]
@@ -236,6 +229,6 @@ pub unsafe extern "C" fn ISPCInstrument(
 ) {
     let file_name = CStr::from_ptr(cfile);
     let note = CStr::from_ptr(cnote);
-    let active_count = (mask as u64).count_ones();
-    get_instrument().instrument(file_name, note, line as i32, mask as u64, active_count);
+    let active_count = mask.count_ones();
+    get_instrument().instrument(file_name, note, line, mask, active_count);
 }

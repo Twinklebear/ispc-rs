@@ -92,7 +92,7 @@ impl Context {
     /// to ISPC
     pub unsafe fn alloc(&self, size: usize, align: usize) -> *mut libc::c_void {
         // TODO: The README for this lib mentions it may be slow. Maybe use some other allocator?
-        let layout = std::alloc::Layout::from_size_align(size as usize, align as usize)
+        let layout = std::alloc::Layout::from_size_align(size, align)
             .expect("std::alloc::Layout is invalid. Make sure the align is a power of 2");
         let ptr = std::alloc::alloc(layout) as *mut libc::c_void;
         let mut mem = self.mem.lock().unwrap();
