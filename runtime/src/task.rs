@@ -46,7 +46,7 @@ pub type ISPCTaskFn = extern "C" fn(
 pub struct Context {
     /// Task groups launched by this function
     /// TODO: Must be protected by a Reader-Writer lock, though I don't think we'd want to
-    /// protect each Group, it'd be an RwLock<Vec<Group>>
+    /// protect each Group, it'd be an `RwLock<Vec<Group>>`
     /// PROBLEM: If we're accessing this from multiple threads and have other threads
     /// working on the group when we want to push a new group on we'll get stuck until those
     /// tasks finish because they'll have a read lock on the vec to access the Group safely.
