@@ -18,7 +18,7 @@ use crate::vol::Volume;
 pub fn import<T: NumCast>(path: &Path, dims: Vec3i) -> Volume {
     let mut f = match File::open(path) {
         Ok(f) => BufReader::new(f),
-        Err(e) => panic!("Error opening volume `{:?}`: {}", path, e),
+        Err(e) => panic!("Error opening volume `{path:?}`: {e}"),
     };
     let mut data: Vec<_> = iter::repeat(0u8)
         .take((dims.x * dims.y * dims.z) as usize * mem::size_of::<T>())

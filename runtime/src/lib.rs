@@ -79,7 +79,7 @@ impl PackagedModule {
         let libfile = self.lib.clone() + &env::var("TARGET").unwrap();
         let bindgen_file = self.lib.clone() + ".rs";
 
-        println!("cargo:rustc-link-lib=static={}", libfile);
+        println!("cargo:rustc-link-lib=static={libfile}");
         println!(
             "cargo:rerun-if-changed={}",
             path.join(get_lib_filename(&libfile)).display()
@@ -108,9 +108,9 @@ impl PackagedModule {
 
 fn get_lib_filename(libfile: &str) -> String {
     if libfile.contains("windows") {
-        format!("{}.lib", libfile)
+        format!("{libfile}.lib")
     } else {
-        format!("lib{}.a", libfile)
+        format!("lib{libfile}.a")
     }
 }
 

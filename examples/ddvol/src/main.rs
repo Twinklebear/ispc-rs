@@ -95,7 +95,7 @@ fn main() {
         scene.height as u32,
         image::ColorType::Rgb8,
     ) {
-        Ok(_) => println!("Rendered image saved to {}", out_file),
-        Err(e) => panic!("Error saving image: {}", e),
+        Ok(_) => println!("Rendered image saved to {out_file}"),
+        Err(e) => panic!("Error saving image: {e}"),
     };
 }

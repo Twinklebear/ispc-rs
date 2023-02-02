@@ -64,15 +64,15 @@ impl Scene {
     pub fn load(file: &str) -> Scene {
         let mut f = match File::open(file) {
             Ok(f) => f,
-            Err(e) => panic!("Failed to open scene file: {}", e),
+            Err(e) => panic!("Failed to open scene file: {e}"),
         };
         let mut content = String::new();
         if let Err(e) = f.read_to_string(&mut content) {
-            panic!("Failed to read scene file: {}", e);
+            panic!("Failed to read scene file: {e}");
         }
         let data: Value = match serde_json::from_str(&content[..]) {
             Ok(d) => d,
-            Err(e) => panic!("JSON parsing error: {}", e),
+            Err(e) => panic!("JSON parsing error: {e}"),
         };
         if !data.is_object() {
             panic!("Expected a root JSON object. See example scenes");
@@ -160,7 +160,7 @@ impl Scene {
                             .unwrap();
                     Box::new(Plane::new(center, normal, mat)) as Box<dyn ISPCGeometry>
                 } else {
-                    panic!("Unrecognized geometry type {}", ty);
+                    panic!("Unrecognized geometry type {ty}");
                 }
             })
             .collect()

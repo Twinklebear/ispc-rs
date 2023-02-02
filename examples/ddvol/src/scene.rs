@@ -56,15 +56,15 @@ impl Scene {
     pub fn load(file: &str) -> Scene {
         let mut f = match File::open(file) {
             Ok(f) => f,
-            Err(e) => panic!("Failed to open scene file: {}", e),
+            Err(e) => panic!("Failed to open scene file: {e}"),
         };
         let mut content = String::new();
         if let Err(e) = f.read_to_string(&mut content) {
-            panic!("Failed to read scene file: {}", e);
+            panic!("Failed to read scene file: {e}");
         }
         let data: Value = match serde_json::from_str(&content[..]) {
             Ok(d) => d,
-            Err(e) => panic!("JSON parsing error: {}", e),
+            Err(e) => panic!("JSON parsing error: {e}"),
         };
         if !data.is_object() {
             panic!("Expected a root JSON object. See example scenes");
@@ -139,10 +139,7 @@ impl Scene {
         } else if dtype == "f64" {
             raw::import::<f64>(vol_file.as_path(), dimensions)
         } else {
-            panic!(
-                "Unrecognized data type {}! Valid options are u8, u16, f32, f64",
-                dtype
-            );
+            panic!("Unrecognized data type {dtype}! Valid options are u8, u16, f32, f64");
         }
     }
     fn load_transfer_function(e: &Value, base_path: &Path) -> TransferFunction {
@@ -167,10 +164,7 @@ impl Scene {
             } else if tfn_name == "cool_warm" {
                 TransferFunction::cool_warm()
             } else {
-                panic!(
-                    "Scene error: {} is not a built in transfer function",
-                    tfn_name
-                );
+                panic!("Scene error: {tfn_name} is not a built in transfer function");
             }
         }
     }
@@ -178,15 +172,15 @@ impl Scene {
         println!("Importing ParaView transfer function {}", path.display());
         let mut f = match File::open(path) {
             Ok(f) => f,
-            Err(e) => panic!("Failed to open ParaView transfer function file: {}", e),
+            Err(e) => panic!("Failed to open ParaView transfer function file: {e}"),
         };
         let mut content = String::new();
         if let Err(e) = f.read_to_string(&mut content) {
-            panic!("Failed to read ParaView transfer function file: {}", e);
+            panic!("Failed to read ParaView transfer function file: {e}");
         }
         let data: Value = match serde_json::from_str(&content[..]) {
             Ok(d) => d,
-            Err(e) => panic!("JSON parsing error: {}", e),
+            Err(e) => panic!("JSON parsing error: {e}"),
         };
         let pv_tfn = &data
             .as_array()
@@ -246,7 +240,7 @@ impl Scene {
             colors.push(col);
         }
         colors.push(rgb_points.last().unwrap().1);
-        println!("Imported ParaView transfer function {}", name);
+        println!("Imported ParaView transfer function {name}");
         TransferFunction::new(&colors[..], &[0.0, 0.5])
     }
     fn load_camera(e: &Value, width: usize, height: usize) -> Camera {

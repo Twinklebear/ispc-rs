@@ -40,6 +40,6 @@ fn main() {
         image::ColorType::L8,
     ) {
         Ok(_) => println!("Perlin noise saved to perlin.png"),
-        Err(e) => panic!("Error saving Perlin noise image: {}", e),
+        Err(e) => panic!("Error saving Perlin noise image: {e}"),
     };
 }

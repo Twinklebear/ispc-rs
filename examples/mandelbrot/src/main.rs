@@ -35,6 +35,6 @@ fn main() {
         image::ColorType::L8,
     ) {
         Ok(_) => println!("Mandelbrot image saved to mandelbrot.png"),
-        Err(e) => panic!("Error saving Mandelbrot image: {}", e),
+        Err(e) => panic!("Error saving Mandelbrot image: {e}"),
     };
 }

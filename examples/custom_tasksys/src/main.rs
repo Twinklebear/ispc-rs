@@ -22,7 +22,7 @@ impl TaskSystem for CustomTaskSys {
         size: i64,
         align: i32,
     ) -> *mut libc::c_void {
-        println!("CustomTaskSys::alloc: size = {}, align = {}", size, align);
+        println!("CustomTaskSys::alloc: size = {size}, align = {align}");
         // If the handle ptr is null we need a new container to store the allocations made in
         // this execution context
         let mut ctx = if (*handle_ptr).is_null() {
@@ -35,7 +35,7 @@ impl TaskSystem for CustomTaskSys {
         let layout = match Layout::from_size_align(size as usize, align as usize) {
             Ok(layout) => layout,
             Err(e) => {
-                eprintln!("Invalid memory layout: {}", e);
+                eprintln!("Invalid memory layout: {e}");
                 return std::ptr::null_mut();
             }
         };
@@ -56,10 +56,7 @@ impl TaskSystem for CustomTaskSys {
         count1: i32,
         count2: i32,
     ) {
-        println!(
-            "CustomTaskSys::launch: counts = [{}, {}, {}]",
-            count0, count1, count2
-        );
+        println!("CustomTaskSys::launch: counts = [{count0}, {count1}, {count2}]");
         // This task system simply executes the tasks serially in a nested loop
         let total_tasks = count0 * count1 * count2;
         for z in 0..count2 {

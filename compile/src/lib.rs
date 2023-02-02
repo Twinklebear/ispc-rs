@@ -351,7 +351,7 @@ impl Config {
             if !output.stderr.is_empty() {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 for l in stderr.lines() {
-                    self.print(&format!("cargo:warning=(ISPC) {}", l));
+                    self.print(&format!("cargo:warning=(ISPC) {l}"));
                 }
             }
             if !output.status.success() {
@@ -367,7 +367,7 @@ impl Config {
             for d in reader.lines() {
                 // Don't depend on the ISPC "stdlib" file which is output as a dependency
                 let dep_name = d.unwrap();
-                self.print(&format!("cargo:rerun-if-changed={}", dep_name));
+                self.print(&format!("cargo:rerun-if-changed={dep_name}"));
             }
 
             // Push on the additional ISA-specific object files if any were generated
@@ -383,9 +383,9 @@ impl Config {
         }
         let libfile = lib.to_owned() + &self.get_target();
         if !self.assemble(&libfile, &objects).success() {
-            exit_failure!("Failed to assemble ISPC objects into library {}", lib);
+            exit_failure!("Failed to assemble ISPC objects into library {lib}");
         }
-        self.print(&format!("cargo:rustc-link-lib=static={}", libfile));
+        self.print(&format!("cargo:rustc-link-lib=static={libfile}"));
 
         // Now generate a header we can give to bindgen and generate bindings
         let bindgen_header = self.generate_bindgen_header(lib, &headers);
@@ -406,7 +406,7 @@ impl Config {
         };
         file.write_all("#[allow(non_camel_case_types,dead_code,non_upper_case_globals,non_snake_case,improper_ctypes)]\n"
                        .as_bytes()).unwrap();
-        file.write_all(format!("pub mod {} {{\n", lib).as_bytes())
+        file.write_all(format!("pub mod {lib} {{\n").as_bytes())
             .unwrap();
         file.write_all(generated_bindings.as_bytes()).unwrap();
         file.write_all(b"}").unwrap();
@@ -423,7 +423,7 @@ impl Config {
     fn assemble(&self, lib: &str, objects: &[PathBuf]) -> ExitStatus {
         Command::new("ar")
             .arg("crus")
-            .arg(format!("lib{}.a", lib))
+            .arg(format!("lib{lib}.a"))
             .args(objects)
             .current_dir(&self.get_out_dir())
             .status()
@@ -437,7 +437,7 @@ impl Config {
             .expect("Failed to find lib.exe for MSVC toolchain, aborting")
             .to_command();
         lib_cmd
-            .arg(format!("/OUT:{}.lib", lib))
+            .arg(format!("/OUT:{lib}.lib"))
             .args(objects)
             .current_dir(&self.get_out_dir())
             .status()
@@ -448,7 +448,7 @@ impl Config {
     fn generate_bindgen_header(&self, lib: &str, headers: &[PathBuf]) -> PathBuf {
         let bindgen_header = self
             .get_build_dir()
-            .join(format!("_{}_ispc_bindgen_header.h", lib));
+            .join(format!("_{lib}_ispc_bindgen_header.h"));
         let mut include_file = File::create(&bindgen_header).unwrap();
 
         writeln!(include_file, "#include <stdint.h>").unwrap();
@@ -599,7 +599,7 @@ impl Config {
     /// Print out cargo metadata if enabled
     fn print<T: Display>(&self, s: &T) {
         if self.cargo_metadata {
-            println!("{}", s);
+            println!("{s}");
         }
     }
 }

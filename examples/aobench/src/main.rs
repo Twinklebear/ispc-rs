@@ -45,6 +45,6 @@ fn main() {
         image::ColorType::L8,
     ) {
         Ok(_) => println!("AO Bench image saved to ao.png"),
-        Err(e) => panic!("Error saving AO Bench image: {}", e),
+        Err(e) => panic!("Error saving AO Bench image: {e}"),
     };
 }
