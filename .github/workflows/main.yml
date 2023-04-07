@@ -12,9 +12,6 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
-            - uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: stable
             - run: curl -L https://github.com/ispc/ispc/releases/download/v${{ env.ISPC_VERSION }}/ispc-v${{ env.ISPC_VERSION }}-linux.tar.gz | tar xzv ispc-v${{ env.ISPC_VERSION }}-linux/bin/ispc
             - run: realpath "ispc-v${{ env.ISPC_VERSION }}-linux/bin/" >> $GITHUB_PATH
             - run: cargo build --all --all-targets --features ispc
@@ -29,9 +26,6 @@ jobs:
         runs-on: macos-latest
         steps:
             - uses: actions/checkout@v2
-            - uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: stable
             - run: brew install ispc
             - run: cargo build --all --all-targets --features ispc
             - run: cargo clippy --all --all-targets --features ispc -- -D warnings
@@ -40,9 +34,6 @@ jobs:
         runs-on: windows-latest
         steps:
             - uses: actions/checkout@v2
-            - uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: stable
             - run: |
                   curl -LO https://github.com/ispc/ispc/releases/download/v${{ env.ISPC_VERSION }}/ispc-v${{ env.ISPC_VERSION }}-windows.zip
                   unzip ispc-v${{ env.ISPC_VERSION }}-windows.zip ispc-v${{ env.ISPC_VERSION }}-windows/bin/ispc.exe
