@@ -1,5 +1,10 @@
 # ispc-rs
 
+[![Actions Status](https://github.com/Twinklebear/ispc-rs/workflows/CI/badge.svg)](https://github.com/Twinklebear/ispc-rs/actions)
+[![Latest version](https://img.shields.io/crates/v/ispc.svg?logo=rust)](https://crates.io/crates/ispc)
+[![Documentation](https://docs.rs/ispc/badge.svg)](https://docs.rs/ispc)
+![MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+
 A small library meant to be used as a build dependency with Cargo for easily
 integrating [ISPC](https://ispc.github.io/) code into Rust projects.
 ispc-rs is split into two crates: a compile time crate [ispc\_compile](https://crates.io/crates/ispc_compile)
@@ -9,15 +14,12 @@ plan to modify the ISPC code. The [ispc-rs](https://crates.io/crates/ispc) crate
 which bundles the compile time and runtime crates into a convenient single
 crate, if this separation isn't needed.
 
-[![Crates.io](https://img.shields.io/crates/v/ispc.svg)](https://crates.io/crates/ispc)
-[![Build Status](https://travis-ci.org/Twinklebear/ispc-rs.svg?branch=master)](https://travis-ci.org/Twinklebear/ispc-rs)
-
-# Documentation
+## Documentation
 
 Rust doc can be found [here](https://docs.rs/ispc/), ISPC documentation can
 be found [here](https://ispc.github.io).
 
-# Using ispc-rs
+## Using ispc-rs
 
 With ispc-rs you can compile your ISPC code from your build script to
 generate a native library and a Rust module containing bindings to
@@ -57,7 +59,7 @@ and Clang link with MSVC on Windows. For bindgen to find libclang you'll need to
 `libclang.lib` to `clang.lib` and place it in your path. You'll also need to set the environment
 variable `LIBCLANG_PATH=<path to LLVM\bin>` so bindgen can find clang successfully.
 
-# Using ispc-rs as a Single Crate
+## Using ispc-rs as a Single Crate
 
 To use ispc-rs as a single crate, you'll want to add a build script to your
 crate (`build.rs`), tell Cargo about it, and add ispc-rs as a build time and
@@ -102,7 +104,7 @@ extern crate ispc;
 ispc_module!(simple);
 ```
 
-# Using the Separate Compile and Runtime Crates
+### Using the Separate Compile and Runtime Crates
 
 The process of using the separate crates is similar to that of the single crate;
 however, you'll use the individual `ispc_compile` and `ispc_rt` crates, with the
@@ -191,4 +193,3 @@ ispc_module!(simple);
 Some more complete examples can be found in the
 [examples/](https://github.com/Twinklebear/ispc-rs/tree/master/examples) folder.
 The separate crates example is [here](https://github.com/Twinklebear/ispc-rs/tree/master/examples/simple)
-
