@@ -2,7 +2,7 @@ extern crate ispc;
 
 fn main() {
     let mut cfg = ispc::Config::new();
-    let ispc_files = vec![
+    let ispc_files = [
         "src/ddvol.ispc",
         "src/vol.ispc",
         "src/camera.ispc",
