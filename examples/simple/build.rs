@@ -7,7 +7,7 @@ fn link_ispc() {
     use ispc_compile::TargetISA;
 
     #[cfg(target_arch = "x86_64")]
-    let target_isas = [
+    let target_isas = vec![
         TargetISA::SSE2i32x4,
         TargetISA::SSE4i32x4,
         TargetISA::AVX1i32x8,
