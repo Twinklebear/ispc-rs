@@ -6,7 +6,7 @@ on:
         - cron: "0 0 * * 1"
 env:
     CARGO_TERM_COLOR: always
-    ISPC_VERSION: 1.21.0
+    ISPC_VERSION: 1.22.0
 jobs:
     build_linux:
         runs-on: ubuntu-latest
@@ -26,6 +26,7 @@ jobs:
         runs-on: macos-latest
         steps:
             - uses: actions/checkout@v2
+            - run: brew update
             - run: brew install ispc
             - run: cargo build --all --all-targets --features ispc
             - run: cargo clippy --all --all-targets --features ispc -- -D warnings
