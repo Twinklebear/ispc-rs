@@ -20,11 +20,6 @@
 //! `libclang.lib` to `clang.lib` and place it in your path.
 //!
 
-extern crate gcc;
-extern crate libc;
-extern crate regex;
-extern crate semver;
-
 pub mod opt;
 
 pub use bindgen;
@@ -433,7 +428,7 @@ impl Config {
     #[cfg(windows)]
     fn assemble(&self, lib: &str, objects: &[PathBuf]) -> ExitStatus {
         let target = self.get_target();
-        let mut lib_cmd = gcc::windows_registry::find_tool(&target, "lib.exe")
+        let mut lib_cmd = cc::windows_registry::find_tool(&target, "lib.exe")
             .expect("Failed to find lib.exe for MSVC toolchain, aborting")
             .to_command();
         lib_cmd
