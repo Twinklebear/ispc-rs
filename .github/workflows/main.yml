@@ -26,9 +26,6 @@ jobs:
         runs-on: macos-latest
         steps:
             - uses: actions/checkout@v4
-            - run: |
-                  brew uninstall --ignore-dependencies python
-                  brew install --force --overwrite python@3.11
             - run: brew update
             - run: brew install ispc
             - run: cargo build --all --all-targets --features ispc
