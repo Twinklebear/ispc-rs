@@ -1,6 +1,6 @@
 [package]
 name = "ispc"
-version = "2.0.0"
+version = "2.0.1"
 edition = "2021"
 authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
@@ -27,8 +27,8 @@ exclude = [
 ]
 
 [dependencies]
-ispc_compile = { path = "./compile/", version = "2.0" }
-ispc_rt = { path = "./runtime/", version = "2.0" }
+ispc_compile = { path = "./compile/", version = "2.0.1" }
+ispc_rt = { path = "./runtime/", version = "2.0.1" }
 
 [workspace]
 resolver = "2"
