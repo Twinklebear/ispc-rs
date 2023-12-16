@@ -26,8 +26,9 @@ jobs:
         runs-on: macos-latest
         steps:
             - uses: actions/checkout@v4
-            - run: brew update
-            - run: brew install ispc
+            - run: |
+                  curl -L https://github.com/ispc/ispc/releases/download/v${{ env.ISPC_VERSION }}/ispc-v${{ env.ISPC_VERSION }}-macOS.x86_64.tar.gz | tar xzv --strip-components=2 ispc-v${{ env.ISPC_VERSION }}-macOS.x86_64/bin/ispc
+                  echo "$PWD" >> $GITHUB_PATH
             - run: cargo build --all --all-targets --features ispc
             - run: cargo clippy --all --all-targets --features ispc -- -D warnings
             - run: cargo test --all
