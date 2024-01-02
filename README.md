@@ -1,6 +1,6 @@
 # ispc-rs
 
-[![Actions Status](https://github.com/Twinklebear/ispc-rs/workflows/CI/badge.svg)](https://github.com/Twinklebear/ispc-rs/actions)
+[![CI](https://github.com/Twinklebear/ispc-rs/actions/workflows/main.yml/badge.svg)](https://github.com/Twinklebear/ispc-rs/actions/workflows/main.yml)
 [![Latest version](https://img.shields.io/crates/v/ispc.svg?logo=rust)](https://crates.io/crates/ispc)
 [![Documentation](https://docs.rs/ispc/badge.svg)](https://docs.rs/ispc)
 ![MIT](https://img.shields.io/badge/license-MIT-blue.svg)
