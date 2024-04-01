@@ -89,7 +89,7 @@ pub trait TaskSystem {
 // Thread local storage to store the thread's id, otherwise we don't know
 // who we are in sync. The thread id starts at an invalid value but will be set
 // upon thread launch
-thread_local!(static THREAD_ID: RefCell<usize> = RefCell::new(0));
+thread_local!(static THREAD_ID: RefCell<usize> = const { RefCell::new(0) });
 
 /// A multithreaded execution environment for the tasks launched in ISPC
 pub struct Parallel {
