@@ -535,7 +535,7 @@ impl Config {
             let mut isa_str = String::from("--target=");
             isa_str.push_str(&t[0].to_string());
             for isa in t.iter().skip(1) {
-                isa_str.push_str(&format!(",{}", isa.to_string()));
+                isa_str.push_str(&format!(",{}", isa));
             }
             ispc_args.push(isa_str);
         } else if target.starts_with("aarch64") {
