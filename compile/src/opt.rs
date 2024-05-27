@@ -13,13 +13,13 @@ pub enum MathLib {
     System,
 }
 
-impl ToString for MathLib {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for MathLib {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            MathLib::ISPCDefault => String::from("--math-lib=default"),
-            MathLib::Fast => String::from("--math-lib=fast"),
-            MathLib::SVML => String::from("--math-lib=svml"),
-            MathLib::System => String::from("--math-lib=system"),
+            MathLib::ISPCDefault => write!(f, "--math-lib=default"),
+            MathLib::Fast => write!(f, "--math-lib=fast"),
+            MathLib::SVML => write!(f, "--math-lib=svml"),
+            MathLib::System => write!(f, "--math-lib=system"),
         }
     }
 }
@@ -32,13 +32,13 @@ pub enum Architecture {
     X64,
 }
 
-impl ToString for Architecture {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for Architecture {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            Architecture::Arm => String::from("--arch=arm"),
-            Architecture::Aarch64 => String::from("--arch=aarch64"),
-            Architecture::X86 => String::from("--arch=x86"),
-            Architecture::X64 => String::from("--arch=x86_64"),
+            Architecture::Arm => write!(f, "--arch=arm"),
+            Architecture::Aarch64 => write!(f, "--arch=aarch64"),
+            Architecture::X86 => write!(f, "--arch=x86"),
+            Architecture::X64 => write!(f, "--arch=x86_64"),
         }
     }
 }
@@ -53,11 +53,11 @@ pub enum Addressing {
     A64,
 }
 
-impl ToString for Addressing {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for Addressing {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            Addressing::A32 => String::from("--addressing=32"),
-            Addressing::A64 => String::from("--addressing=64"),
+            Addressing::A32 => write!(f, "--addressing=32"),
+            Addressing::A64 => write!(f, "--addressing=64"),
         }
     }
 }
@@ -94,28 +94,28 @@ pub enum CPU {
     CoretexA57,
 }
 
-impl ToString for CPU {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for CPU {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            CPU::Generic => String::from("--cpu=generic"),
-            CPU::Bonnell => String::from("--cpu=bonnell"),
-            CPU::Core2 => String::from("--cpu=core2"),
-            CPU::Penryn => String::from("--cpu=penryn"),
-            CPU::Nehalem => String::from("--cpu=nehalem"),
-            CPU::Ps4 => String::from("--cpu=ps4"),
-            CPU::SandyBridge => String::from("--cpu=sandybridge"),
-            CPU::IvyBridge => String::from("--cpu=ivybridge"),
-            CPU::Haswell => String::from("--cpu=haswell"),
-            CPU::Broadwell => String::from("--cpu=broadwell"),
-            CPU::Knl => String::from("--cpu=knl"),
-            CPU::Skx => String::from("--cpu=skx"),
-            CPU::Icl => String::from("--cpu=icl"),
-            CPU::Silvermont => String::from("--cpu=silvermont"),
-            CPU::CoretexA15 => String::from("--cpu=cortex-a15"),
-            CPU::CoretexA9 => String::from("--cpu=cortex-a9"),
-            CPU::CoretexA35 => String::from("--cpu=cortex-a35"),
-            CPU::CoretexA53 => String::from("--cpu=cortex-a53"),
-            CPU::CoretexA57 => String::from("--cpu=cortex-a57"),
+            CPU::Generic => write!(f, "--cpu=generic"),
+            CPU::Bonnell => write!(f, "--cpu=bonnell"),
+            CPU::Core2 => write!(f, "--cpu=core2"),
+            CPU::Penryn => write!(f, "--cpu=penryn"),
+            CPU::Nehalem => write!(f, "--cpu=nehalem"),
+            CPU::Ps4 => write!(f, "--cpu=ps4"),
+            CPU::SandyBridge => write!(f, "--cpu=sandybridge"),
+            CPU::IvyBridge => write!(f, "--cpu=ivybridge"),
+            CPU::Haswell => write!(f, "--cpu=haswell"),
+            CPU::Broadwell => write!(f, "--cpu=broadwell"),
+            CPU::Knl => write!(f, "--cpu=knl"),
+            CPU::Skx => write!(f, "--cpu=skx"),
+            CPU::Icl => write!(f, "--cpu=icl"),
+            CPU::Silvermont => write!(f, "--cpu=silvermont"),
+            CPU::CoretexA15 => write!(f, "--cpu=cortex-a15"),
+            CPU::CoretexA9 => write!(f, "--cpu=cortex-a9"),
+            CPU::CoretexA35 => write!(f, "--cpu=cortex-a35"),
+            CPU::CoretexA53 => write!(f, "--cpu=cortex-a53"),
+            CPU::CoretexA57 => write!(f, "--cpu=cortex-a57"),
         }
     }
 }
@@ -139,16 +139,16 @@ pub enum OptimizationOpt {
     DisableZmm,
 }
 
-impl ToString for OptimizationOpt {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for OptimizationOpt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            OptimizationOpt::DisableAssertions => String::from("--opt=disable-assertions"),
-            OptimizationOpt::DisableFMA => String::from("--opt=disable-fma"),
-            OptimizationOpt::DisableLoopUnroll => String::from("--opt=disable-loop-unroll"),
-            OptimizationOpt::FastMaskedVload => String::from("--opt=fast-masked-vload"),
-            OptimizationOpt::FastMath => String::from("--opt=fast-math"),
-            OptimizationOpt::ForceAlignedMemory => String::from("--opt=force-aligned-memory"),
-            OptimizationOpt::DisableZmm => String::from("--opt=disable-zmm"),
+            OptimizationOpt::DisableAssertions => write!(f, "--opt=disable-assertions"),
+            OptimizationOpt::DisableFMA => write!(f, "--opt=disable-fma"),
+            OptimizationOpt::DisableLoopUnroll => write!(f, "--opt=disable-loop-unroll"),
+            OptimizationOpt::FastMaskedVload => write!(f, "--opt=fast-masked-vload"),
+            OptimizationOpt::FastMath => write!(f, "--opt=fast-math"),
+            OptimizationOpt::ForceAlignedMemory => write!(f, "--opt=force-aligned-memory"),
+            OptimizationOpt::DisableZmm => write!(f, "--opt=disable-zmm"),
         }
     }
 }
@@ -208,30 +208,30 @@ impl TargetISA {
     }
 }
 
-impl ToString for TargetISA {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for TargetISA {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            TargetISA::Host => String::from("host"),
-            TargetISA::SSE2i32x4 => String::from("sse2-i32x4"),
-            TargetISA::SSE2i32x8 => String::from("sse2-i32x8"),
-            TargetISA::SSE4i32x4 => String::from("sse4-i32x4"),
-            TargetISA::SSE4i32x8 => String::from("sse4-i32x8"),
-            TargetISA::SSE4i16x8 => String::from("sse4-i16x8"),
-            TargetISA::SSE4i8x16 => String::from("sse4-i8x16"),
-            TargetISA::AVX1i32x4 => String::from("avx1-i32x4"),
-            TargetISA::AVX1i32x8 => String::from("avx1-i32x8"),
-            TargetISA::AVX1i32x16 => String::from("avx1-i32x16"),
-            TargetISA::AVX1i64x4 => String::from("avx1-i64x4"),
-            TargetISA::AVX2i32x8 => String::from("avx2-i32x8"),
-            TargetISA::AVX2i32x16 => String::from("avx2-i32x16"),
-            TargetISA::AVX2i64x4 => String::from("avx2-i64x4"),
-            TargetISA::AVX512KNLi32x16 => String::from("avx512knl-i32x16"),
-            TargetISA::AVX512SKXi32x16 => String::from("avx512skx-i32x16"),
-            TargetISA::AVX512SKXi32x8 => String::from("avx512skx-i32x8"),
-            TargetISA::Neoni8x16 => String::from("neon-i8x16"),
-            TargetISA::Neoni16x8 => String::from("neon-i16x8"),
-            TargetISA::Neoni32x4 => String::from("neon-i32x4"),
-            TargetISA::Neoni32x8 => String::from("neon-i32x8"),
+            TargetISA::Host => write!(f, "host"),
+            TargetISA::SSE2i32x4 => write!(f, "sse2-i32x4"),
+            TargetISA::SSE2i32x8 => write!(f, "sse2-i32x8"),
+            TargetISA::SSE4i32x4 => write!(f, "sse4-i32x4"),
+            TargetISA::SSE4i32x8 => write!(f, "sse4-i32x8"),
+            TargetISA::SSE4i16x8 => write!(f, "sse4-i16x8"),
+            TargetISA::SSE4i8x16 => write!(f, "sse4-i8x16"),
+            TargetISA::AVX1i32x4 => write!(f, "avx1-i32x4"),
+            TargetISA::AVX1i32x8 => write!(f, "avx1-i32x8"),
+            TargetISA::AVX1i32x16 => write!(f, "avx1-i32x16"),
+            TargetISA::AVX1i64x4 => write!(f, "avx1-i64x4"),
+            TargetISA::AVX2i32x8 => write!(f, "avx2-i32x8"),
+            TargetISA::AVX2i32x16 => write!(f, "avx2-i32x16"),
+            TargetISA::AVX2i64x4 => write!(f, "avx2-i64x4"),
+            TargetISA::AVX512KNLi32x16 => write!(f, "avx512knl-i32x16"),
+            TargetISA::AVX512SKXi32x16 => write!(f, "avx512skx-i32x16"),
+            TargetISA::AVX512SKXi32x8 => write!(f, "avx512skx-i32x8"),
+            TargetISA::Neoni8x16 => write!(f, "neon-i8x16"),
+            TargetISA::Neoni16x8 => write!(f, "neon-i16x8"),
+            TargetISA::Neoni32x4 => write!(f, "neon-i32x4"),
+            TargetISA::Neoni32x8 => write!(f, "neon-i32x8"),
         }
     }
 }
@@ -260,15 +260,15 @@ impl TargetOS {
     }
 }
 
-impl ToString for TargetOS {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for TargetOS {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            TargetOS::Windows => String::from("--target-os=windows"),
-            TargetOS::Ps4 => String::from("--target-os=ps4"),
-            TargetOS::Linux => String::from("--target-os=linux"),
-            TargetOS::Macos => String::from("--target-os=macos"),
-            TargetOS::Android => String::from("--target-os=android"),
-            TargetOS::Ios => String::from("--target-os=ios"),
+            TargetOS::Windows => write!(f, "--target-os=windows"),
+            TargetOS::Ps4 => write!(f, "--target-os=ps4"),
+            TargetOS::Linux => write!(f, "--target-os=linux"),
+            TargetOS::Macos => write!(f, "--target-os=macos"),
+            TargetOS::Android => write!(f, "--target-os=android"),
+            TargetOS::Ios => write!(f, "--target-os=ios"),
         }
     }
 }
