@@ -28,8 +28,8 @@ exclude = [
 ]
 
 [dependencies]
-bindgen = "0.69.1"
+bindgen = "0.69"
 cc = "1"
-libc = "0.2.137"
-regex = "1.7.0"
-semver = "1.0.14"
+libc = "0.2"
+regex = "1.10"
+semver = "1.0"

@@ -25,5 +25,5 @@ exclude = [
 ]
 
 [dependencies]
-libc = "0.2.137"
-num_cpus = "1.14.0"
+libc = "0.2"
+num_cpus = "1.14"
