@@ -420,7 +420,7 @@ impl Config {
             .arg("crus")
             .arg(format!("lib{lib}.a"))
             .args(objects)
-            .current_dir(&self.get_out_dir())
+            .current_dir(self.get_out_dir())
             .status()
             .unwrap()
     }
@@ -434,7 +434,7 @@ impl Config {
         lib_cmd
             .arg(format!("/OUT:{lib}.lib"))
             .args(objects)
-            .current_dir(&self.get_out_dir())
+            .current_dir(self.get_out_dir())
             .status()
             .unwrap()
     }
