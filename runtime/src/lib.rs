@@ -45,6 +45,7 @@ pub use crate::task::ISPCTaskFn;
 #[macro_export]
 macro_rules! ispc_module {
     ($lib:ident) => {
+        #[allow(clippy::all)]
         include!(concat!(env!("ISPC_OUT_DIR"), "/", stringify!($lib), ".rs"));
     };
 }
