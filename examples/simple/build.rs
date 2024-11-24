@@ -12,8 +12,6 @@ fn link_ispc() {
         TargetISA::SSE4i32x4,
         TargetISA::AVX1i32x8,
         TargetISA::AVX2i32x8,
-        TargetISA::AVX512KNLi32x16,
-        TargetISA::AVX512SKXi32x8,
     ];
 
     #[cfg(target_arch = "aarch64")]
