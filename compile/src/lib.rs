@@ -281,7 +281,7 @@ impl Config {
         self
     }
     /// Enable support for LLVM intrinsics 
-    pub fn llvm_intrinsics(&mut self) -> &mut Config {
+    pub fn enable_llvm_intrinsics(&mut self) -> &mut Config {
         self.enable_llvm_intrinsics = true;
         self
     }
