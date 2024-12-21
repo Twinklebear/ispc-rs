@@ -541,7 +541,6 @@ impl Config {
         if self.enable_llvm_intrinsics {
             ispc_args.push(String::from("--enable-llvm-intrinsics"));
         }
-
         if let Some(ref t) = self.target_isa {
             let mut isa_str = String::from("--target=");
             isa_str.push_str(&t[0].to_string());
