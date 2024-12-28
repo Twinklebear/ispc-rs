@@ -15,7 +15,6 @@ pub trait ISPCGeometry {
 }
 
 /// A simple sphere with some radius located at `center`
-
 #[allow(dead_code)]
 pub struct Sphere {
     center: Vec3f,

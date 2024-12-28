@@ -148,7 +148,7 @@ pub struct ContextIter<'a> {
     context: &'a Context,
 }
 
-impl<'a> Iterator for ContextIter<'a> {
+impl Iterator for ContextIter<'_> {
     type Item = Arc<Group>;
 
     /// Get a Group with tasks remaining to be executed, returns None if there
@@ -289,7 +289,7 @@ pub struct Chunk<'a> {
 
 impl<'a> Chunk<'a> {
     /// Create a new chunk to execute tasks in the group from [start, end)
-    pub fn new(group: &'a Group, start: usize, end: usize) -> Chunk {
+    pub fn new(group: &'a Group, start: usize, end: usize) -> Chunk<'a> {
         let d = AtomicPtr::new(group.data.load(atomic::Ordering::SeqCst));
         Chunk {
             start: start as i32,
