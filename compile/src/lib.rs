@@ -280,7 +280,7 @@ impl Config {
         self.instrument = true;
         self
     }
-    /// Enable support for LLVM intrinsics 
+    /// Enable support for LLVM intrinsics
     pub fn enable_llvm_intrinsics(&mut self) -> &mut Config {
         self.enable_llvm_intrinsics = true;
         self
