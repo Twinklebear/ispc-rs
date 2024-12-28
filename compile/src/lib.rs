@@ -100,6 +100,7 @@ pub struct Config {
     woff: bool,
     wno_perf: bool,
     instrument: bool,
+    enable_llvm_intrinsics: bool,
     target_isa: Option<Vec<TargetISA>>,
     architecture: Option<Architecture>,
     target_os: Option<TargetOS>,
@@ -153,6 +154,7 @@ impl Config {
             woff: false,
             wno_perf: false,
             instrument: false,
+            enable_llvm_intrinsics: false,
             target_isa: None,
             architecture: None,
             target_os: None,
@@ -276,6 +278,11 @@ impl Config {
             );
         }
         self.instrument = true;
+        self
+    }
+    /// Enable support for LLVM intrinsics 
+    pub fn enable_llvm_intrinsics(&mut self) -> &mut Config {
+        self.enable_llvm_intrinsics = true;
         self
     }
     /// Select the target ISA and vector width. If none is specified ispc will
@@ -530,6 +537,9 @@ impl Config {
         }
         if self.instrument {
             ispc_args.push(String::from("--instrument"));
+        }
+        if self.enable_llvm_intrinsics {
+            ispc_args.push(String::from("--enable-llvm-intrinsics"));
         }
         if let Some(ref t) = self.target_isa {
             let mut isa_str = String::from("--target=");
