@@ -294,17 +294,17 @@ impl TargetISA {
             TargetISA::SSE41i8x16
             | TargetISA::SSE41i16x8
             | TargetISA::SSE41i32x4
-            | TargetISA::SSE41i32x8 => String::from("sse4.1"),
+            | TargetISA::SSE41i32x8 => String::from("sse4"),
             // SSE4.2
             TargetISA::SSE42i8x16
             | TargetISA::SSE42i16x8
             | TargetISA::SSE42i32x4
-            | TargetISA::SSE42i32x8 => String::from("sse4.2"),
+            | TargetISA::SSE42i32x8 => String::from("sse4"),
             // AVX1
             TargetISA::AVX1i32x4
             | TargetISA::AVX1i32x8
             | TargetISA::AVX1i32x16
-            | TargetISA::AVX1i64x4 => String::from("avx1"),
+            | TargetISA::AVX1i64x4 => String::from("avx"),
             // AVX2
             TargetISA::AVX2i32x8
             | TargetISA::AVX2i32x16
