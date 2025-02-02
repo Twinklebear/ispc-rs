@@ -247,25 +247,25 @@ pub enum TargetISA {
     AVX2VNNIi32x8,
     AVX2VNNIi32x16,
     // x86: AVX512 variants
-    AVX512KNLi32x16,
+    AVX512KNLx16,
     // AVX512SKX variants
-    AVX512SKXi32x4,
-    AVX512SKXi32x8,
-    AVX512SKXi32x16,
-    AVX512SKXi32x32,
-    AVX512SKXi32x64,
+    AVX512SKXx4,
+    AVX512SKXx8,
+    AVX512SKXx16,
+    AVX512SKXx32,
+    AVX512SKXx64,
     // AVX512ICL variants
-    AVX512ICLi32x4,
-    AVX512ICLi32x8,
-    AVX512ICLi32x16,
-    AVX512ICLi32x32,
-    AVX512ICLi32x64,
+    AVX512ICLx4,
+    AVX512ICLx8,
+    AVX512ICLx16,
+    AVX512ICLx32,
+    AVX512ICLx64,
     // AVX512SPR variants
-    AVX512SPRi32x4,
-    AVX512SPRi32x8,
-    AVX512SPRi32x16,
-    AVX512SPRi32x32,
-    AVX512SPRi32x64,
+    AVX512SPRx4,
+    AVX512SPRx8,
+    AVX512SPRx16,
+    AVX512SPRx32,
+    AVX512SPRx64,
     // Neon targets
     Neoni8x16,
     Neoni16x8,
@@ -317,22 +317,22 @@ impl TargetISA {
             | TargetISA::AVX2VNNIi32x8
             | TargetISA::AVX2VNNIi32x16 => String::from("avx2vnni"),
             // AVX512 variants:
-            TargetISA::AVX512KNLi32x16 => String::from("avx512knl"),
-            TargetISA::AVX512SKXi32x4
-            | TargetISA::AVX512SKXi32x8
-            | TargetISA::AVX512SKXi32x16
-            | TargetISA::AVX512SKXi32x32
-            | TargetISA::AVX512SKXi32x64 => String::from("avx512skx"),
-            TargetISA::AVX512ICLi32x4
-            | TargetISA::AVX512ICLi32x8
-            | TargetISA::AVX512ICLi32x16
-            | TargetISA::AVX512ICLi32x32
-            | TargetISA::AVX512ICLi32x64 => String::from("avx512icl"),
-            TargetISA::AVX512SPRi32x4
-            | TargetISA::AVX512SPRi32x8
-            | TargetISA::AVX512SPRi32x16
-            | TargetISA::AVX512SPRi32x32
-            | TargetISA::AVX512SPRi32x64 => String::from("avx512spr"),
+            TargetISA::AVX512KNLx16 => String::from("avx512knl"),
+            TargetISA::AVX512SKXx4
+            | TargetISA::AVX512SKXx8
+            | TargetISA::AVX512SKXx16
+            | TargetISA::AVX512SKXx32
+            | TargetISA::AVX512SKXx64 => String::from("avx512skx"),
+            TargetISA::AVX512ICLx4
+            | TargetISA::AVX512ICLx8
+            | TargetISA::AVX512ICLx16
+            | TargetISA::AVX512ICLx32
+            | TargetISA::AVX512ICLx64 => String::from("avx512icl"),
+            TargetISA::AVX512SPRx4
+            | TargetISA::AVX512SPRx8
+            | TargetISA::AVX512SPRx16
+            | TargetISA::AVX512SPRx32
+            | TargetISA::AVX512SPRx64 => String::from("avx512spr"),
             // Neon targets
             TargetISA::Neoni8x16
             | TargetISA::Neoni16x8
@@ -381,22 +381,22 @@ impl std::fmt::Display for TargetISA {
             TargetISA::AVX2VNNIi32x8 => write!(f, "avx2vnni-i32x8"),
             TargetISA::AVX2VNNIi32x16 => write!(f, "avx2vnni-i32x16"),
             // AVX512 variants
-            TargetISA::AVX512KNLi32x16 => write!(f, "avx512knl-i32x16"),
-            TargetISA::AVX512SKXi32x4 => write!(f, "avx512skx-i32x4"),
-            TargetISA::AVX512SKXi32x8 => write!(f, "avx512skx-i32x8"),
-            TargetISA::AVX512SKXi32x16 => write!(f, "avx512skx-i32x16"),
-            TargetISA::AVX512SKXi32x32 => write!(f, "avx512skx-i32x32"),
-            TargetISA::AVX512SKXi32x64 => write!(f, "avx512skx-i32x64"),
-            TargetISA::AVX512ICLi32x4 => write!(f, "avx512icl-i32x4"),
-            TargetISA::AVX512ICLi32x8 => write!(f, "avx512icl-i32x8"),
-            TargetISA::AVX512ICLi32x16 => write!(f, "avx512icl-i32x16"),
-            TargetISA::AVX512ICLi32x32 => write!(f, "avx512icl-i32x32"),
-            TargetISA::AVX512ICLi32x64 => write!(f, "avx512icl-i32x64"),
-            TargetISA::AVX512SPRi32x4 => write!(f, "avx512spr-i32x4"),
-            TargetISA::AVX512SPRi32x8 => write!(f, "avx512spr-i32x8"),
-            TargetISA::AVX512SPRi32x16 => write!(f, "avx512spr-i32x16"),
-            TargetISA::AVX512SPRi32x32 => write!(f, "avx512spr-i32x32"),
-            TargetISA::AVX512SPRi32x64 => write!(f, "avx512spr-i32x64"),
+            TargetISA::AVX512KNLx16 => write!(f, "avx512knl-x16"),
+            TargetISA::AVX512SKXx4 => write!(f, "avx512skx-x4"),
+            TargetISA::AVX512SKXx8 => write!(f, "avx512skx-x8"),
+            TargetISA::AVX512SKXx16 => write!(f, "avx512skx-x16"),
+            TargetISA::AVX512SKXx32 => write!(f, "avx512skx-x32"),
+            TargetISA::AVX512SKXx64 => write!(f, "avx512skx-x64"),
+            TargetISA::AVX512ICLx4 => write!(f, "avx512icl-x4"),
+            TargetISA::AVX512ICLx8 => write!(f, "avx512icl-x8"),
+            TargetISA::AVX512ICLx16 => write!(f, "avx512icl-x16"),
+            TargetISA::AVX512ICLx32 => write!(f, "avx512icl-x32"),
+            TargetISA::AVX512ICLx64 => write!(f, "avx512icl-x64"),
+            TargetISA::AVX512SPRx4 => write!(f, "avx512spr-x4"),
+            TargetISA::AVX512SPRx8 => write!(f, "avx512spr-x8"),
+            TargetISA::AVX512SPRx16 => write!(f, "avx512spr-x16"),
+            TargetISA::AVX512SPRx32 => write!(f, "avx512spr-x32"),
+            TargetISA::AVX512SPRx64 => write!(f, "avx512spr-x64"),
             // Neon targets
             TargetISA::Neoni8x16 => write!(f, "neon-i8x16"),
             TargetISA::Neoni16x8 => write!(f, "neon-i16x8"),
