@@ -230,6 +230,11 @@ pub enum TargetISA {
     SSE42i16x8,
     SSE42i32x4,
     SSE42i32x8,
+    // x86: SSE4 (alias for SSE4.2)
+    SSE4i8x16,
+    SSE4i16x8,
+    SSE4i32x4,
+    SSE4i32x8,
     // x86: AVX1
     AVX1i32x4,
     AVX1i32x8,
@@ -246,7 +251,15 @@ pub enum TargetISA {
     AVX2VNNIi32x4,
     AVX2VNNIi32x8,
     AVX2VNNIi32x16,
+    // x86: AVX512 deprecated variants
+    #[deprecated(note = "use AVX512KNLx16 instead")]
+    AVX512KNLi32x16,
+    #[deprecated(note = "use AVX512SKXx16 instead")]
+    AVX512SKXi32x16,
+    #[deprecated(note = "use AVX512SKXx8 instead")]
+    AVX512SKXi32x8,
     // x86: AVX512 variants
+    #[deprecated(note = "will be removed in future ispc release")]
     AVX512KNLx16,
     // AVX512SKX variants
     AVX512SKXx4,
@@ -272,7 +285,9 @@ pub enum TargetISA {
     Neoni32x4,
     Neoni32x8,
     // Xe targets
+    #[deprecated(note = "will be removed in future ispc release")]
     GEN9x8,
+    #[deprecated(note = "will be removed in future ispc release")]
     GEN9x16,
     XELPx8,
     XELPx16,
@@ -300,6 +315,11 @@ impl TargetISA {
             | TargetISA::SSE42i16x8
             | TargetISA::SSE42i32x4
             | TargetISA::SSE42i32x8 => String::from("sse4"),
+            // SSE4 (alias for SSE4.2)
+            TargetISA::SSE4i8x16
+            | TargetISA::SSE4i16x8
+            | TargetISA::SSE4i32x4
+            | TargetISA::SSE4i32x8 => String::from("sse4"),
             // AVX1
             TargetISA::AVX1i32x4
             | TargetISA::AVX1i32x8
@@ -316,7 +336,14 @@ impl TargetISA {
             TargetISA::AVX2VNNIi32x4
             | TargetISA::AVX2VNNIi32x8
             | TargetISA::AVX2VNNIi32x16 => String::from("avx2vnni"),
+            // AVX512 deprecated variants:
+            #[allow(deprecated)]
+            TargetISA::AVX512KNLi32x16 => String::from("avx512knl"),
+            #[allow(deprecated)]
+            TargetISA::AVX512SKXi32x16
+            | TargetISA::AVX512SKXi32x8 => String::from("avx512skx"),
             // AVX512 variants:
+            #[allow(deprecated)]
             TargetISA::AVX512KNLx16 => String::from("avx512knl"),
             TargetISA::AVX512SKXx4
             | TargetISA::AVX512SKXx8
@@ -339,6 +366,7 @@ impl TargetISA {
             | TargetISA::Neoni32x4
             | TargetISA::Neoni32x8 => String::from("neon"),
             // Xe targets
+            #[allow(deprecated)]
             TargetISA::GEN9x8 | TargetISA::GEN9x16 => String::from("gen9"),
             TargetISA::XELPx8 | TargetISA::XELPx16 => String::from("xelp"),
             TargetISA::XEHPGx8 | TargetISA::XEHPGx16 => String::from("xehpg"),
@@ -364,6 +392,11 @@ impl std::fmt::Display for TargetISA {
             TargetISA::SSE42i16x8 => write!(f, "sse4.2-i16x8"),
             TargetISA::SSE42i32x4 => write!(f, "sse4.2-i32x4"),
             TargetISA::SSE42i32x8 => write!(f, "sse4.2-i32x8"),
+            // SSE4 (alias for SSE4.2)
+            TargetISA::SSE4i8x16 => write!(f, "sse4.2-i8x16"),
+            TargetISA::SSE4i16x8 => write!(f, "sse4.2-i16x8"),
+            TargetISA::SSE4i32x4 => write!(f, "sse4.2-i32x4"),
+            TargetISA::SSE4i32x8 => write!(f, "sse4.2-i32x8"),
             // AVX1
             TargetISA::AVX1i32x4 => write!(f, "avx1-i32x4"),
             TargetISA::AVX1i32x8 => write!(f, "avx1-i32x8"),
@@ -380,7 +413,15 @@ impl std::fmt::Display for TargetISA {
             TargetISA::AVX2VNNIi32x4 => write!(f, "avx2vnni-i32x4"),
             TargetISA::AVX2VNNIi32x8 => write!(f, "avx2vnni-i32x8"),
             TargetISA::AVX2VNNIi32x16 => write!(f, "avx2vnni-i32x16"),
+            // AVX512 deprecated variants
+            #[allow(deprecated)]
+            TargetISA::AVX512KNLi32x16 => write!(f, "avx512knl-i32x16"),
+            #[allow(deprecated)]
+            TargetISA::AVX512SKXi32x16 => write!(f, "avx512skx-i32x16"),
+            #[allow(deprecated)]
+            TargetISA::AVX512SKXi32x8 => write!(f, "avx512skx-i32x8"),
             // AVX512 variants
+            #[allow(deprecated)]
             TargetISA::AVX512KNLx16 => write!(f, "avx512knl-x16"),
             TargetISA::AVX512SKXx4 => write!(f, "avx512skx-x4"),
             TargetISA::AVX512SKXx8 => write!(f, "avx512skx-x8"),
@@ -403,7 +444,9 @@ impl std::fmt::Display for TargetISA {
             TargetISA::Neoni32x4 => write!(f, "neon-i32x4"),
             TargetISA::Neoni32x8 => write!(f, "neon-i32x8"),
             // Xe targets
+            #[allow(deprecated)]
             TargetISA::GEN9x8 => write!(f, "gen9-x8"),
+            #[allow(deprecated)]
             TargetISA::GEN9x16 => write!(f, "gen9-x16"),
             TargetISA::XELPx8 => write!(f, "xelp-x8"),
             TargetISA::XELPx16 => write!(f, "xelp-x16"),
