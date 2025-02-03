@@ -6,7 +6,7 @@ on:
         - cron: "0 0 * * 1"
 env:
     CARGO_TERM_COLOR: always
-    ISPC_VERSION: 1.22.0
+    ISPC_VERSION: 1.25.3
 jobs:
     build_linux:
         runs-on: ubuntu-latest
