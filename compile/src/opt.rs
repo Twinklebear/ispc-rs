@@ -333,15 +333,14 @@ impl TargetISA {
             | TargetISA::AVX2i16x16
             | TargetISA::AVX2i32x4 => String::from("avx2"),
             // AVX2 VNNI
-            TargetISA::AVX2VNNIi32x4
-            | TargetISA::AVX2VNNIi32x8
-            | TargetISA::AVX2VNNIi32x16 => String::from("avx2vnni"),
+            TargetISA::AVX2VNNIi32x4 | TargetISA::AVX2VNNIi32x8 | TargetISA::AVX2VNNIi32x16 => {
+                String::from("avx2vnni")
+            }
             // AVX512 deprecated variants:
             #[allow(deprecated)]
             TargetISA::AVX512KNLi32x16 => String::from("avx512knl"),
             #[allow(deprecated)]
-            TargetISA::AVX512SKXi32x16
-            | TargetISA::AVX512SKXi32x8 => String::from("avx512skx"),
+            TargetISA::AVX512SKXi32x16 | TargetISA::AVX512SKXi32x8 => String::from("avx512skx"),
             // AVX512 variants:
             #[allow(deprecated)]
             TargetISA::AVX512KNLx16 => String::from("avx512knl"),
