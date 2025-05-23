@@ -111,17 +111,26 @@ pub enum CPU {
     /// Synonym: znver2 (also ps5)
     Znver2,
     Znver3,
+    #[deprecated = "Removed in ISPC 1.26"]
     CortexA9,
+    #[deprecated = "Removed in ISPC 1.26"]
     CortexA15,
     CortexA35,
     CortexA53,
+    CortexA55,
     CortexA57,
+    CortexA78,
+    CortexA510,
+    CortexA520,
     AppleA7,
     AppleA10,
     AppleA11,
     AppleA12,
     AppleA13,
     AppleA14,
+    AppleA15,
+    AppleA16,
+    AppleA17,
 }
 
 impl std::fmt::Display for CPU {
@@ -154,17 +163,26 @@ impl std::fmt::Display for CPU {
             CPU::Znver1 => write!(f, "--cpu=znver1"),
             CPU::Znver2 => write!(f, "--cpu=znver2"),
             CPU::Znver3 => write!(f, "--cpu=znver3"),
+            #[allow(deprecated)]
             CPU::CortexA9 => write!(f, "--cpu=cortex-a9"),
+            #[allow(deprecated)]
             CPU::CortexA15 => write!(f, "--cpu=cortex-a15"),
             CPU::CortexA35 => write!(f, "--cpu=cortex-a35"),
             CPU::CortexA53 => write!(f, "--cpu=cortex-a53"),
+            CPU::CortexA55 => write!(f, "--cpu=cortex-a55"),
             CPU::CortexA57 => write!(f, "--cpu=cortex-a57"),
+            CPU::CortexA78 => write!(f, "--cpu=cortex-a78"),
+            CPU::CortexA510 => write!(f, "--cpu=cortex-a510"),
+            CPU::CortexA520 => write!(f, "--cpu=cortex-a520"),
             CPU::AppleA7 => write!(f, "--cpu=apple-a7"),
             CPU::AppleA10 => write!(f, "--cpu=apple-a10"),
             CPU::AppleA11 => write!(f, "--cpu=apple-a11"),
             CPU::AppleA12 => write!(f, "--cpu=apple-a12"),
             CPU::AppleA13 => write!(f, "--cpu=apple-a13"),
             CPU::AppleA14 => write!(f, "--cpu=apple-a14"),
+            CPU::AppleA15 => write!(f, "--cpu=apple-a15"),
+            CPU::AppleA16 => write!(f, "--cpu=apple-a16"),
+            CPU::AppleA17 => write!(f, "--cpu=apple-a17"),
         }
     }
 }
@@ -252,14 +270,14 @@ pub enum TargetISA {
     AVX2VNNIi32x8,
     AVX2VNNIi32x16,
     // x86: AVX512 deprecated variants
-    #[deprecated(note = "use AVX512KNLx16 instead")]
+    #[deprecated(note = "Use AVX512KNLx16 instead")]
     AVX512KNLi32x16,
-    #[deprecated(note = "use AVX512SKXx16 instead")]
+    #[deprecated(note = "Use AVX512SKXx16 instead")]
     AVX512SKXi32x16,
-    #[deprecated(note = "use AVX512SKXx8 instead")]
+    #[deprecated(note = "Use AVX512SKXx8 instead")]
     AVX512SKXi32x8,
     // x86: AVX512 variants
-    #[deprecated(note = "will be removed in future ispc release")]
+    #[deprecated(note = "Removed in ISPC 1.26")]
     AVX512KNLx16,
     // AVX512SKX variants
     AVX512SKXx4,
@@ -281,13 +299,15 @@ pub enum TargetISA {
     AVX512SPRx64,
     // Neon targets
     Neoni8x16,
+    Neoni8x32,
     Neoni16x8,
+    Neoni16x16,
     Neoni32x4,
     Neoni32x8,
     // Xe targets
-    #[deprecated(note = "will be removed in future ispc release")]
+    #[deprecated(note = "Will be removed in future ispc release")]
     GEN9x8,
-    #[deprecated(note = "will be removed in future ispc release")]
+    #[deprecated(note = "Will be removed in future ispc release")]
     GEN9x16,
     XELPx8,
     XELPx16,
@@ -361,7 +381,9 @@ impl TargetISA {
             | TargetISA::AVX512SPRx64 => String::from("avx512spr"),
             // Neon targets
             TargetISA::Neoni8x16
+            | TargetISA::Neoni8x32
             | TargetISA::Neoni16x8
+            | TargetISA::Neoni16x16
             | TargetISA::Neoni32x4
             | TargetISA::Neoni32x8 => String::from("neon"),
             // Xe targets
@@ -439,7 +461,9 @@ impl std::fmt::Display for TargetISA {
             TargetISA::AVX512SPRx64 => write!(f, "avx512spr-x64"),
             // Neon targets
             TargetISA::Neoni8x16 => write!(f, "neon-i8x16"),
+            TargetISA::Neoni8x32 => write!(f, "neon-i8x32"),
             TargetISA::Neoni16x8 => write!(f, "neon-i16x8"),
+            TargetISA::Neoni16x16 => write!(f, "neon-i16x16"),
             TargetISA::Neoni32x4 => write!(f, "neon-i32x4"),
             TargetISA::Neoni32x8 => write!(f, "neon-i32x8"),
             // Xe targets
@@ -457,8 +481,7 @@ impl std::fmt::Display for TargetISA {
     }
 }
 
-/// Target instruction sets and vector widths available to specialize for. The
-/// default if none is set will be the host CPU's ISA and vector width.
+/// Target OS to specialize for.
 pub enum TargetOS {
     Windows,
     Ps4,

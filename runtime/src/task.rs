@@ -287,9 +287,9 @@ pub struct Chunk<'a> {
     group: &'a Group,
 }
 
-impl<'a> Chunk<'a> {
+impl Chunk<'_> {
     /// Create a new chunk to execute tasks in the group from [start, end)
-    pub fn new(group: &'a Group, start: usize, end: usize) -> Chunk<'a> {
+    pub fn new(group: &Group, start: usize, end: usize) -> Chunk<'_> {
         let d = AtomicPtr::new(group.data.load(atomic::Ordering::SeqCst));
         Chunk {
             start: start as i32,
