@@ -235,6 +235,20 @@ impl std::fmt::Display for OptimizationOpt {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TargetISA {
     Host,
+    // Generic
+    Generici16x16,
+    Generici16x8,
+    Generici1x16,
+    Generici1x32,
+    Generici1x4,
+    Generici1x64,
+    Generici1x8,
+    Generici32x16,
+    Generici32x4,
+    Generici32x8,
+    Generici64x4,
+    Generici8x16,
+    Generici8x32,
     // x86: SSE2
     SSE2i32x4,
     SSE2i32x8,
@@ -323,6 +337,20 @@ impl TargetISA {
     pub fn lib_suffix(&self) -> String {
         match *self {
             TargetISA::Host => String::from("host"),
+            // Generic
+            TargetISA::Generici16x16
+            | TargetISA::Generici16x8
+            | TargetISA::Generici1x16
+            | TargetISA::Generici1x32
+            | TargetISA::Generici1x4
+            | TargetISA::Generici1x64
+            | TargetISA::Generici1x8
+            | TargetISA::Generici32x16
+            | TargetISA::Generici32x4
+            | TargetISA::Generici32x8
+            | TargetISA::Generici64x4
+            | TargetISA::Generici8x16
+            | TargetISA::Generici8x32 => String::from("generic"),
             // SSE2
             TargetISA::SSE2i32x4 | TargetISA::SSE2i32x8 => String::from("sse2"),
             // SSE4.1
@@ -400,6 +428,20 @@ impl std::fmt::Display for TargetISA {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             TargetISA::Host => write!(f, "host"),
+            // Generic
+            TargetISA::Generici16x16 => write!(f, "generic-i16x16"),
+            TargetISA::Generici16x8 => write!(f, "generic-i16x8"),
+            TargetISA::Generici1x16 => write!(f, "generic-i1x16"),
+            TargetISA::Generici1x32 => write!(f, "generic-i1x32"),
+            TargetISA::Generici1x4 => write!(f, "generic-i1x4"),
+            TargetISA::Generici1x64 => write!(f, "generic-i1x64"),
+            TargetISA::Generici1x8 => write!(f, "generic-i1x8"),
+            TargetISA::Generici32x16 => write!(f, "generic-i32x16"),
+            TargetISA::Generici32x4 => write!(f, "generic-i32x4"),
+            TargetISA::Generici32x8 => write!(f, "generic-i32x8"),
+            TargetISA::Generici64x4 => write!(f, "generic-i64x4"),
+            TargetISA::Generici8x16 => write!(f, "generic-i8x16"),
+            TargetISA::Generici8x32 => write!(f, "generic-i8x32"),
             // SSE2
             TargetISA::SSE2i32x4 => write!(f, "sse2-i32x4"),
             TargetISA::SSE2i32x8 => write!(f, "sse2-i32x8"),
