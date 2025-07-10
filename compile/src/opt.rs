@@ -226,7 +226,7 @@ impl std::fmt::Display for OptimizationOpt {
             OptimizationOpt::ForceAlignedMemory => "force-aligned-memory",
             OptimizationOpt::ResetFTZDaz => "reset-ftz-daz",
         };
-        write!(f, "--opt={}", option_str)
+        write!(f, "--opt={option_str}")
     }
 }
 
