@@ -473,14 +473,14 @@ impl Config {
             // The ispc compiler crashes if we give -O0 and --cpu=generic,
             // see https://github.com/ispc/ispc/issues/1223
             if *c != CPU::Generic || (*c == CPU::Generic && opt_level != 0) {
-                ispc_args.push(String::from("-O") + &opt_level.to_string());
+                ispc_args.push(format!("-O{opt_level}"));
             } else {
                 self.print(
                     &"cargo:warning=ispc-rs: Omitting -O0 on CPU::Generic target, ispc bug 1223",
                 );
             }
         } else {
-            ispc_args.push(String::from("-O") + &opt_level.to_string());
+            ispc_args.push(format!("-O{opt_level}"));
         }
 
         // If we're on Unix we need position independent code
@@ -495,10 +495,10 @@ impl Config {
         } else if target.starts_with("aarch64") {
             ispc_args.push(String::from("--arch=aarch64"));
         }
-        for d in &self.defines {
-            match d.1 {
-                Some(ref v) => ispc_args.push(format!("-D{}={}", d.0, v)),
-                None => ispc_args.push(format!("-D{}", d.0)),
+        for (name, value) in &self.defines {
+            match value {
+                Some(value) => ispc_args.push(format!("-D{name}={value}")),
+                None => ispc_args.push(format!("-D{name}")),
             }
         }
         ispc_args.push(self.math_lib.to_string());
@@ -506,7 +506,7 @@ impl Config {
             ispc_args.push(s.to_string());
         }
         if let Some(ref f) = self.force_alignment {
-            ispc_args.push(String::from("--force-alignment=") + &f.to_string());
+            ispc_args.push(format!("--force-alignment={f}"));
         }
         for o in &self.optimization_opts {
             ispc_args.push(o.to_string());
@@ -543,9 +543,12 @@ impl Config {
         }
         if let Some(ref t) = self.target_isa {
             let mut isa_str = String::from("--target=");
-            isa_str.push_str(&t[0].to_string());
-            for isa in t.iter().skip(1) {
-                isa_str.push_str(&format!(",{}", isa));
+            for (i, isa) in t.iter().enumerate() {
+                if i > 0 {
+                    isa_str.push(',');
+                }
+                use std::fmt::Write as _;
+                let _ = write!(isa_str, "{isa}");
             }
             ispc_args.push(isa_str);
         } else if target.starts_with("aarch64") {
@@ -584,7 +587,7 @@ impl Config {
     /// env("DEBUG")
     fn get_debug(&self) -> bool {
         self.debug
-            .unwrap_or_else(|| env::var("DEBUG").map(|x| x == "true").unwrap())
+            .unwrap_or_else(|| env::var("DEBUG").unwrap() == "true")
     }
     /// Returns the user-set optimization level if they've set one, otherwise
     /// returns env("OPT_LEVEL")
