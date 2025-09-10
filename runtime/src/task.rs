@@ -102,7 +102,7 @@ impl Context {
     /// An iterator over the **current** groups in the context which have remaining tasks to
     /// run on a thread. If more task groups are added before this iterator has returned
     /// None those will appear as well.
-    pub fn iter(&self) -> ContextIter {
+    pub fn iter(&self) -> ContextIter<'_> {
         ContextIter { context: self }
     }
     /// Get a Group with tasks remaining to be executed, returns None if there
@@ -111,7 +111,7 @@ impl Context {
     /// Note that you can't assume that the Group you get back is guaranteed
     /// to have tasks remaining since between the time of checking that the
     /// group has outstanding tasks and getting the group back to call `chunks`
-    /// those remaining tasks may have been taken by another threaad.
+    /// those remaining tasks may have been taken by another thread.
     fn get_active_group(&self) -> Option<Arc<Group>> {
         let tasks = self.tasks.read().unwrap();
         for group in tasks.iter() {
@@ -157,7 +157,7 @@ impl Iterator for ContextIter<'_> {
     /// Note that you can't assume that the Group you get back is guaranteed
     /// to have tasks remaining since between the time of checking that the
     /// group has outstanding tasks and getting the group back to call `chunks`
-    /// those remaining tasks may have been taken by another threaad.
+    /// those remaining tasks may have been taken by another thread.
     fn next(&mut self) -> Option<Arc<Group>> {
         self.context.get_active_group()
     }
@@ -208,7 +208,7 @@ impl Group {
         }
     }
     /// Get an iterator over `chunk_size` chunks of tasks to be executed for this group
-    pub fn chunks(&self, chunk_size: usize) -> GroupChunks {
+    pub fn chunks(&self, chunk_size: usize) -> GroupChunks<'_> {
         GroupChunks {
             group: self,
             chunk_size,
@@ -234,7 +234,7 @@ impl Group {
     /// though you may get fewer if there aren't that many tasks left. If the chunk
     /// you get is the last chunk to be executed (`chunk.end == total.0 * total.1 * total.2`)
     /// you must mark this group as finished upon completing execution of the chunk
-    fn get_chunk(&self, desired_tasks: usize) -> Option<Chunk> {
+    fn get_chunk(&self, desired_tasks: usize) -> Option<Chunk<'_>> {
         let start = self
             .start
             .fetch_add(desired_tasks, atomic::Ordering::SeqCst);
