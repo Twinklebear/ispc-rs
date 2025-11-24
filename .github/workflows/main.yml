@@ -11,7 +11,7 @@ jobs:
     build_linux:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
             - run: curl -L https://github.com/ispc/ispc/releases/download/v$ISPC_VERSION/ispc-v$ISPC_VERSION-linux.tar.gz | tar xzv ispc-v$ISPC_VERSION-linux/bin/ispc
             - run: realpath "ispc-v$ISPC_VERSION-linux/bin/" >> $GITHUB_PATH
             - run: cargo build --all --all-targets --features ispc
@@ -25,7 +25,7 @@ jobs:
     build_mac:
         runs-on: macos-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
             - name: Prepare Environment
               run: |
                 curl -L https://github.com/ispc/ispc/releases/download/v$ISPC_VERSION/ispc-v$ISPC_VERSION-macOS.universal.tar.gz | tar xzv ispc-v$ISPC_VERSION-macOS.universal/bin/ispc
@@ -36,7 +36,7 @@ jobs:
     build_windows:
         runs-on: windows-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
             - run: |
                   curl -LO https://github.com/ispc/ispc/releases/download/v$env:ISPC_VERSION/ispc-v$env:ISPC_VERSION-windows.zip
                   unzip ispc-v$env:ISPC_VERSION-windows.zip ispc-v$env:ISPC_VERSION-windows/bin/ispc.exe
