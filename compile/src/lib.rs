@@ -104,6 +104,7 @@ pub struct Config {
     target_isa: Option<Vec<TargetISA>>,
     architecture: Option<Architecture>,
     target_os: Option<TargetOS>,
+    darwin_version_min: Option<(u32, u32)>,
     bindgen_builder: bindgen::Builder,
 }
 
@@ -158,6 +159,7 @@ impl Config {
             target_isa: None,
             architecture: None,
             target_os: None,
+            darwin_version_min: None,
             bindgen_builder: Default::default(),
         }
     }
@@ -309,6 +311,11 @@ impl Config {
         self.target_os = Some(os);
         self
     }
+    /// Set the minimum macOS/iOS version required for the deployment.
+    pub fn darwin_version_min(&mut self, major: u32, minor: u32) -> &mut Config {
+        self.darwin_version_min = Some((major, minor));
+        self
+    }
     /// Set whether Cargo metadata should be emitted to link to the compiled library
     pub fn cargo_metadata(&mut self, metadata: bool) -> &mut Config {
         self.cargo_metadata = metadata;
@@ -324,6 +331,7 @@ impl Config {
         let dst = self.get_out_dir();
         let build_dir = self.get_build_dir();
         let default_args = self.default_args();
+        dbg!(&default_args);
         let mut objects = vec![];
         let mut headers = vec![];
         for s in &self.ispc_files {
@@ -563,6 +571,9 @@ impl Config {
         }
         if let Some(ref o) = self.target_os {
             ispc_args.push(o.to_string());
+        }
+        if let Some((maj, min)) = self.darwin_version_min {
+            ispc_args.push(format!("--darwin-version-min={maj}.{min}"));
         }
         ispc_args
     }
