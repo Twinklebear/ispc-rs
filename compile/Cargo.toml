@@ -1,6 +1,6 @@
 [package]
 name = "ispc_compile"
-version = "2.0.3"
+version = "2.0.4"
 edition = "2021"
 authors = ["Will Usher <will@willusher.io>"]
 homepage = "https://github.com/Twinklebear/ispc-rs"
@@ -31,5 +31,5 @@ exclude = [
 bindgen = "0.71"
 cc = "1"
 libc = "0.2"
-regex = "1.10"
+regex = "1.12"
 semver = "1.0"
