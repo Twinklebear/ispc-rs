@@ -28,7 +28,7 @@ exclude = [
 ]
 
 [dependencies]
-bindgen = "0.71"
+bindgen = "0.72"
 cc = "1"
 libc = "0.2"
 regex = "1.12"
